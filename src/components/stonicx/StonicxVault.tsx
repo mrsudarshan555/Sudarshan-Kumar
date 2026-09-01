@@ -337,7 +337,7 @@ export const StonicxVault: React.FC<StonicxVaultProps> = ({
                 <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
                 <div>
                   <span className="font-bold">Autonomous Sync Active: </span>
-                  <span>STONICX continuously updates this profile whenever you share facts in chat (e.g. &ldquo;Mera naam Rahul hai&rdquo; or &ldquo;I prefer TypeScript&rdquo;).</span>
+                  <span>STONICX continuously updates this profile whenever you share facts in chat (e.g. &ldquo;Mera naam Zafer hai&rdquo; or &ldquo;I prefer TypeScript&rdquo;).</span>
                 </div>
               </div>
 

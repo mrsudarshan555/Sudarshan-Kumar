@@ -44,6 +44,8 @@ const DEFAULT_PERSONAL_CONFIG: UserPersonalConfig = {
   fullName: '',
   preferredName: '',
   email: '',
+  profession: '',
+  additionalInfo: '',
   countryDialCode: '+91',
   countryName: 'India',
   greetingStyle: 'warm',

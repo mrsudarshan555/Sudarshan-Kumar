@@ -7,15 +7,18 @@ import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground'
 import { useCharacterController } from '../../hooks/useCharacterController';
 import { useBarehandsGesture } from '../../hooks/useBarehandsGesture';
 import { BarehandsCameraOverlay } from '../character/BarehandsCameraOverlay';
+import { BarehandsCameraStage } from '../stage/BarehandsCameraStage';
+import { ApkExportModal } from '../dev/ApkExportModal';
 import { MayraLogo } from '../common/MayraLogo';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
 import { getDynamicSuggestions } from '../../utils/dynamicSuggestions';
 import { StagePhysicsEngine } from '../../services/stage/stagePhysicsEngine';
+import { UserAccount } from '../../types/auth';
 import { 
   Settings as SettingsIcon, Send, Paperclip, 
   Sparkles, ScreenShare, Lock, Unlock, FileText, 
-  X, PenTool, Hand, Zap, Smartphone, ChevronDown, Check, Cpu
+  X, PenTool, Hand, Zap, Smartphone, ChevronDown, Check, Cpu, User
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -37,6 +40,8 @@ interface HomeScreenProps {
   onOpenWhiteboard?: () => void;
   onOpenRoutines?: () => void;
   onOpenWidgetGuide?: () => void;
+  onOpenSignIn?: () => void;
+  currentUser?: UserAccount | null;
   modelMetadata?: CharacterModelMetadata;
   proactiveEnabled?: boolean;
 }
@@ -60,6 +65,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenWhiteboard,
   onOpenRoutines,
   onOpenWidgetGuide,
+  onOpenSignIn,
+  currentUser = null,
   modelMetadata,
   proactiveEnabled = true
 }) => {
@@ -102,6 +109,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [isProactivePromptActive, setIsProactivePromptActive] = useState<boolean>(false);
   const [isSwitcherOpen, setIsSwitcherOpen] = useState<boolean>(false);
   const [isStageCanvasOpen, setIsStageCanvasOpen] = useState<boolean>(false);
+  const [isBarehandsCameraOpen, setIsBarehandsCameraOpen] = useState<boolean>(false);
+  const [isApkExportOpen, setIsApkExportOpen] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -521,6 +530,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
           {/* Right: Sleek Pure Action Icons with Spring Hover & Tap animations */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Sign In Button: Only visible on Home when user is not authenticated */}
+            {!currentUser && onOpenSignIn && (
+              <motion.button
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={onOpenSignIn}
+                className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/35 hover:to-cyan-500/35 border border-cyan-400/40 hover:border-cyan-400/70 rounded-full text-[10px] font-sans font-medium text-cyan-200 hover:text-white transition-all cursor-pointer shadow-[0_0_12px_rgba(6,182,212,0.25)] shrink-0"
+                title="Sign In / Sync Profile"
+              >
+                <User className="w-3 h-3 text-cyan-300 stroke-[2]" />
+                <span>Sign In</span>
+              </motion.button>
+            )}
+
             {onOpenRoutines && (
               <motion.button
                 whileHover={{ scale: 1.15 }}
@@ -565,21 +588,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <motion.button
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.88 }}
-              onClick={toggleHandTracking}
+              onClick={() => {
+                setIsBarehandsCameraOpen(true);
+                if (!isHandTrackingActive) {
+                  toggleHandTracking();
+                }
+              }}
               className={`p-1 bg-transparent border-0 transition-colors cursor-pointer ${
-                isHandTrackingActive || isHandTrackingLoading
-                  ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)]'
+                isBarehandsCameraOpen || isHandTrackingActive || isHandTrackingLoading
+                  ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)] scale-110'
                   : 'text-slate-300 hover:text-white'
               }`}
               title={
                 isHandTrackingLoading
                   ? 'Initializing Barehands...'
-                  : isHandTrackingActive
-                  ? 'Disable Hand Tracking (Camera)'
-                  : 'Enable Barehands Hand Tracking (Rotate & Zoom via Gestures)'
+                  : isBarehandsCameraOpen
+                  ? 'Full-Screen Hand Camera Open'
+                  : 'Open Full-Screen Barehands AR Camera (Gestures & Motion Control)'
               }
             >
-              <Hand className={`w-4 h-4 stroke-[1.8] ${isHandTrackingLoading ? 'animate-pulse text-cyan-400' : ''}`} />
+              <Hand className={`w-4 h-4 stroke-[1.8] ${isHandTrackingLoading || isBarehandsCameraOpen ? 'animate-pulse text-cyan-400' : ''}`} />
             </motion.button>
 
             {/* Screen Share / Cast Button */}
@@ -610,6 +638,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               ) : (
                 <Unlock className="w-4 h-4 text-slate-300 hover:text-white stroke-[1.8]" />
               )}
+            </motion.button>
+
+            {/* APK Builder / Download Button */}
+            <motion.button
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.88 }}
+              onClick={() => setIsApkExportOpen(true)}
+              className="p-1 bg-transparent border-0 transition-colors text-emerald-400 hover:text-emerald-300 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)] cursor-pointer"
+              title="Build / Export Android APK"
+            >
+              <Smartphone className="w-4 h-4 stroke-[1.8]" />
             </motion.button>
 
             {/* Settings Gear Icon: Clean rotating gear with spring hover */}
@@ -740,7 +779,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             status={status}
             attachedFile={attachedFile}
             onRemoveAttachment={() => setAttachedFile(null)}
-            placeholder="Ask anything"
+            placeholder="What's your mind today"
           />
         </div>
 
@@ -753,6 +792,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         onSelectAttachment={(item) => {
           setAttachedFile(item);
         }}
+      />
+
+      {/* 5. Full-Screen Barehands AR Camera Stage (Gesture Tracking, 3D Object manipulation, and Fireball Particle Effects) */}
+      <BarehandsCameraStage
+        isOpen={isBarehandsCameraOpen}
+        onClose={() => setIsBarehandsCameraOpen(false)}
+        userName={personalConfig.preferredName || personalConfig.fullName || 'Zafer'}
+        onTriggerVoice={onTriggerVoice}
+      />
+
+      {/* 6. Build & Export Android APK Modal */}
+      <ApkExportModal
+        isOpen={isApkExportOpen}
+        onClose={() => setIsApkExportOpen(false)}
       />
 
     </motion.div>

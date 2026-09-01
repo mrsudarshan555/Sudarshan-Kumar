@@ -518,7 +518,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             status={status}
             attachedFile={attachedFile}
             onRemoveAttachment={() => setAttachedFile(null)}
-            placeholder="Type a message or ask anything..."
+            placeholder="What's your mind today"
           />
         </div>
       </div>

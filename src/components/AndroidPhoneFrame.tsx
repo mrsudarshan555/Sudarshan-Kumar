@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   AssistantStatus, UserPersonalConfig, AssistantConfig, 
@@ -6,6 +6,7 @@ import {
   IntegrationItem, MemoryItem, ChatMessage, SettingsSubScreen, ActiveTab,
   PermissionItem, AppearanceConfig, AgentTaskContext
 } from '../types';
+import { UserAccount } from '../types/auth';
 import { HomeScreen } from './screens/HomeScreen';
 import { ScannerScreen } from './screens/ScannerScreen';
 import { MemoriesScreen } from './screens/MemoriesScreen';
@@ -130,7 +131,14 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
 
   // Active sync account
   const authService = AccountSyncService.getInstance();
-  const currentUser = authService.getCurrentUser();
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(authService.getCurrentUser());
+
+  useEffect(() => {
+    const unsubscribe = authService.subscribe((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, [authService]);
 
   // App Lock Security State & Persistence
   const {
@@ -238,26 +246,19 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* User Account / Sync Profile Button */}
-            <motion.button
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
-              onClick={() => setIsAuthModalOpen(true)}
-              className="flex items-center gap-1.5 px-2 py-1 bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 rounded-full text-[10px] font-sans text-purple-200 transition-all cursor-pointer"
-              title={currentUser ? `Signed in as ${currentUser.name}` : 'Sign In / Sync Account'}
-            >
-              {currentUser ? (
-                <>
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="truncate max-w-[80px] font-medium">{currentUser.name.split(' ')[0]}</span>
-                </>
-              ) : (
-                <>
-                  <UserCheck className="w-3 h-3 text-purple-300" />
-                  <span>Sign In</span>
-                </>
-              )}
-            </motion.button>
+            {/* User Account / Sync Profile Button - only shown when not signed in */}
+            {!currentUser && (
+              <motion.button
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 rounded-full text-[10px] font-sans text-purple-200 transition-all cursor-pointer shadow-sm"
+                title="Sign In / Sync Account"
+              >
+                <UserCheck className="w-3 h-3 text-purple-300" />
+                <span>Sign In</span>
+              </motion.button>
+            )}
 
             {/* Backup button ONLY on Memories and Chat screens */}
             {(activeTab === 'memories' || activeTab === 'chat') && (
@@ -374,6 +375,8 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     }}
                     onOpenRoutines={() => setIsRoutinesOpen(true)}
                     onOpenWidgetGuide={() => setIsWidgetGuideOpen(true)}
+                    onOpenSignIn={() => setIsAuthModalOpen(true)}
+                    currentUser={currentUser}
                     personalConfig={personalConfig}
                     assistantConfig={assistantConfig}
                     appearanceConfig={appearanceConfig}
@@ -608,11 +611,12 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       <GlassAuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        userName={personalConfig.preferredName || personalConfig.fullName || 'Zafer'}
         onLoginSuccess={(user) => {
           setPersonalConfig(prev => ({
             ...prev,
             fullName: user.name,
-            preferredName: user.name.split(' ')[0],
+            preferredName: user.name,
             email: user.email
           }));
         }}

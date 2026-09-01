@@ -197,4 +197,18 @@ export class AccountSyncService {
     localStorage.removeItem(ACTIVE_USER_KEY);
     this.notify();
   }
+
+  public async updateUserProfile(updates: Partial<UserAccount>): Promise<UserAccount | null> {
+    if (!this.currentUser) return null;
+    this.currentUser = { ...this.currentUser, ...updates };
+    localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(this.currentUser));
+    const accounts = this.getAllAccounts();
+    const existingIndex = accounts.findIndex(a => a.id === this.currentUser?.id);
+    if (existingIndex >= 0) {
+      accounts[existingIndex] = { ...accounts[existingIndex], ...this.currentUser };
+      localStorage.setItem(ACCOUNTS_DB_KEY, JSON.stringify(accounts));
+    }
+    this.notify();
+    return this.currentUser;
+  }
 }

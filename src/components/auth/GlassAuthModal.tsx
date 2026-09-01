@@ -3,17 +3,20 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Mail, Lock, User, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { AccountSyncService } from '../../services/auth/accountSyncService';
 import { UserAccount } from '../../types/auth';
+import { MayraLogo } from '../common/MayraLogo';
 
 interface GlassAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess?: (user: UserAccount) => void;
+  userName?: string;
 }
 
 export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
   isOpen,
   onClose,
-  onLoginSuccess
+  onLoginSuccess,
+  userName = 'Zafer'
 }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
@@ -22,6 +25,8 @@ export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const displayName = userName && userName !== 'Rahul' ? userName : 'Zafer';
 
   if (!isOpen) return null;
 
@@ -41,10 +46,10 @@ export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
 
     try {
       const authService = AccountSyncService.getInstance();
-      const res = await authService.loginWithEmail(email, name);
+      const res = await authService.loginWithEmail(email, name || displayName);
 
       if (res.success && res.user) {
-        setSuccessMsg(isSignUp ? `Welcome to Mayra, ${res.user.name}!` : `Welcome back, ${res.user.name}!`);
+        setSuccessMsg(isSignUp ? `Welcome to Mayra, ${res.user.name}!` : `Welcome, ${res.user.name}!`);
         setTimeout(() => {
           if (onLoginSuccess) onLoginSuccess(res.user);
           onClose();
@@ -62,8 +67,8 @@ export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
     setErrorMsg('');
     try {
       const authService = AccountSyncService.getInstance();
-      const demoEmail = email.trim() || 'rahul.sharma@gmail.com';
-      const demoName = name.trim() || 'Rahul Sharma';
+      const demoEmail = email.trim() || 'zafer@gmail.com';
+      const demoName = name.trim() || displayName || 'Zafer';
       const res = await authService.loginWithGoogle(demoEmail, demoName);
       if (res.success && res.user) {
         setSuccessMsg(`Google Account Connected (${res.user.name})`);
@@ -105,22 +110,19 @@ export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
           className="relative w-full max-w-[370px] rounded-[32px] p-7 bg-[#160b29]/45 backdrop-blur-3xl border border-white/20 shadow-[0_24px_50px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.4),0_0_40px_rgba(147,51,234,0.25)] flex flex-col items-center select-none"
         >
           {/* Top Specular Pill Highlight */}
-          <div className="w-12 h-1 rounded-full bg-white/25 mb-4" />
+          <div className="w-12 h-1 rounded-full bg-white/25 mb-3" />
 
-          {/* Minimalist iPhone Brand Logo */}
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400/20 to-purple-600/30 border border-white/30 flex items-center justify-center shadow-[0_8px_20px_rgba(147,51,234,0.3)] mb-3">
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-6 h-2 rounded-full bg-gradient-to-r from-violet-300 to-fuchsia-300 transform -rotate-45" />
-              <div className="w-6 h-2 rounded-full bg-gradient-to-r from-violet-300 to-fuchsia-300 transform -rotate-45" />
-            </div>
+          {/* App's Main Logo */}
+          <div className="mb-2.5 flex items-center justify-center">
+            <MayraLogo size={56} showGlow={true} variant="raw" />
           </div>
 
           <h2 className="text-sm font-semibold tracking-widest text-purple-200 uppercase font-mono">
             ★𝐌₳ᎽⱤ₳ ᥫ᭡
           </h2>
 
-          <h3 className="text-xl font-medium text-white tracking-tight mt-3 mb-1 text-center font-sans">
-            {isSignUp ? 'Create Your Account' : 'Welcome Back, Rahul'}
+          <h3 className="text-xl font-medium text-white tracking-tight mt-2.5 mb-1 text-center font-sans">
+            {isSignUp ? 'Create Your Account' : `Welcome, ${displayName}`}
           </h3>
 
           <p className="text-xs text-purple-200/70 text-center mb-6 font-sans">
@@ -162,7 +164,7 @@ export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Rahul Sharma"
+                    placeholder="Zafer"
                     className="w-full bg-[#120722]/60 hover:bg-[#120722]/80 focus:bg-[#120722]/90 border border-white/20 focus:border-violet-400/80 rounded-2xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder:text-purple-300/30 outline-none transition-all font-sans shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
                   />
                 </div>
@@ -179,7 +181,7 @@ export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="rahul@example.com"
+                  placeholder="zafer@example.com"
                   className="w-full bg-[#120722]/60 hover:bg-[#120722]/80 focus:bg-[#120722]/90 border border-white/20 focus:border-violet-400/80 rounded-2xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder:text-purple-300/30 outline-none transition-all font-sans shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
                 />
               </div>

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPersonalConfig } from '../../types';
+import { AccountSyncService } from '../../services/auth/accountSyncService';
+import { UserAccount } from '../../types/auth';
 import { 
-  User, Mail, Globe, Sparkles, Key, 
-  Eye, EyeOff, Check, Cpu, Lock, ShieldCheck, ChevronRight, ArrowLeft
+  User, Mail, Globe, Sparkles, Key, Briefcase, FileText,
+  Eye, EyeOff, Check, Cpu, Lock, ShieldCheck, ChevronRight, ArrowLeft, LogOut, CheckCircle2
 } from 'lucide-react';
 
 interface PersonalSettingsProps {
@@ -20,10 +22,25 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
 }) => {
   const [showKey, setShowKey] = useState(false);
   const [savedBadge, setSavedBadge] = useState(false);
+  
+  const authService = AccountSyncService.getInstance();
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(authService.getCurrentUser());
+
+  useEffect(() => {
+    const unsubscribe = authService.subscribe((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, [authService]);
 
   const triggerSaveNotification = () => {
     setSavedBadge(true);
     setTimeout(() => setSavedBadge(false), 1500);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    triggerSaveNotification();
   };
 
   return (
@@ -44,8 +61,8 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
               <User className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-sans font-bold text-white uppercase tracking-wider">Personal Settings</h2>
-              <p className="text-[10px] text-purple-300/70 font-sans">Account & Identity Preferences</p>
+              <h2 className="text-xs font-sans font-bold text-white uppercase tracking-wider">Account Settings</h2>
+              <p className="text-[10px] text-purple-300/70 font-sans">Profile, Work & Cloud Sync</p>
             </div>
           </div>
         </div>
@@ -58,14 +75,77 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
 
       <div className="p-4 space-y-4 text-xs font-sans pb-8">
         
-        {/* User Identity Section - Liquid Frosted Card */}
-        <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        {/* Connected Cloud Account Status Card */}
+        <div className="p-4 bg-gradient-to-br from-[#1c0d36]/70 to-[#120626]/80 backdrop-blur-2xl border border-purple-500/30 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-300" /> Account Status
+            </div>
+            <span className={`text-[9px] font-sans px-2.5 py-0.5 rounded-full border flex items-center gap-1 shadow-sm ${
+              currentUser
+                ? 'text-emerald-300 bg-emerald-950/70 border-emerald-400/40'
+                : 'text-amber-300 bg-amber-950/70 border-amber-400/40'
+            }`}>
+              {currentUser ? <CheckCircle2 className="w-2.5 h-2.5" /> : null}
+              <span>{currentUser ? 'Signed In' : 'Local Guest'}</span>
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-[0_4px_12px_rgba(147,51,234,0.3)]">
+                {(config.preferredName || config.fullName || 'Z')[0].toUpperCase()}
+              </div>
+              <div>
+                <div className="font-semibold text-white text-xs">
+                  {currentUser ? currentUser.name : (config.preferredName || config.fullName || 'Zafer')}
+                </div>
+                <div className="text-[10px] text-purple-300/70 truncate max-w-[190px]">
+                  {currentUser ? currentUser.email : (config.email || 'zafer@example.com')}
+                </div>
+              </div>
+            </div>
+
+            {currentUser && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 hover:text-red-200 rounded-xl text-[10px] flex items-center gap-1 transition-all cursor-pointer"
+                title="Sign out of account"
+              >
+                <LogOut className="w-3 h-3" />
+                <span>Sign Out</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* User Identity & Editable Details Section */}
+        <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5" /> User Profile
+            <User className="w-3.5 h-3.5" /> User Profile & Details
           </div>
 
           <div>
-            <label className="text-[10px] font-sans text-purple-300/70 uppercase block mb-1">Full Name</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[10px] font-sans text-purple-300/80 uppercase block">Display / Preferred Name</label>
+              <span className="text-[9px] text-purple-300/50">Used for greetings & chat</span>
+            </div>
+            <input
+              type="text"
+              value={config.preferredName}
+              onChange={(e) => {
+                onChange({ preferredName: e.target.value });
+                authService.updateUserProfile({ name: e.target.value });
+                triggerSaveNotification();
+              }}
+              placeholder="e.g. Zafer"
+              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-sans text-purple-300/80 uppercase block mb-1">Full Legal Name</label>
             <input
               type="text"
               value={config.fullName}
@@ -74,28 +154,31 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 triggerSaveNotification();
               }}
               placeholder="e.g. Zafer"
-              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
             />
           </div>
 
           <div>
-            <label className="text-[10px] font-sans text-purple-300/70 uppercase block mb-1">Preferred Name / Pronoun</label>
-            <input
-              type="text"
-              value={config.preferredName}
-              onChange={(e) => {
-                onChange({ preferredName: e.target.value });
-                triggerSaveNotification();
-              }}
-              placeholder="e.g. Zafer"
-              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-sans text-purple-300/70 uppercase block mb-1">Email (Optional)</label>
+            <label className="text-[10px] font-sans text-purple-300/80 uppercase block mb-1">Profession / Work</label>
             <div className="relative">
-              <Mail className="w-3.5 h-3.5 text-purple-300/60 absolute left-3.5 top-2.5" />
+              <Briefcase className="w-3.5 h-3.5 text-purple-300/60 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={config.profession || ''}
+                onChange={(e) => {
+                  onChange({ profession: e.target.value });
+                  triggerSaveNotification();
+                }}
+                placeholder="e.g. Software Engineer, Designer, Student, Doctor..."
+                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-9 pr-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-sans text-purple-300/80 uppercase block mb-1">Email Address</label>
+            <div className="relative">
+              <Mail className="w-3.5 h-3.5 text-purple-300/60 absolute left-3.5 top-3" />
               <input
                 type="email"
                 value={config.email}
@@ -104,14 +187,33 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   triggerSaveNotification();
                 }}
                 placeholder="e.g. zafer@example.com"
-                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-9 pr-3 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-9 pr-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[10px] font-sans text-purple-300/80 uppercase block">Bio & Additional Context</label>
+              <span className="text-[9px] text-purple-300/50">Personal notes for Mayra</span>
+            </div>
+            <div className="relative">
+              <textarea
+                rows={2}
+                value={config.additionalInfo || ''}
+                onChange={(e) => {
+                  onChange({ additionalInfo: e.target.value });
+                  triggerSaveNotification();
+                }}
+                placeholder="Interests, tech stack, daily goals, or lifestyle notes..."
+                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40 resize-none"
               />
             </div>
           </div>
 
           {/* Country Code Trigger Card */}
           <div>
-            <label className="text-[10px] font-sans text-purple-300/70 uppercase block mb-1">Country & Region</label>
+            <label className="text-[10px] font-sans text-purple-300/80 uppercase block mb-1">Country & Region</label>
             <button
               onClick={onOpenCountryPicker}
               className="w-full bg-[#1c0d36]/60 hover:bg-[#25104d] border border-white/15 hover:border-purple-400/50 rounded-2xl px-3.5 py-2.5 flex items-center justify-between transition-all text-left shadow-sm cursor-pointer"

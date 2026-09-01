@@ -202,6 +202,8 @@ export interface UserPersonalConfig {
   fullName: string;
   preferredName: string;
   email: string;
+  profession?: string;
+  additionalInfo?: string;
   countryDialCode: string;
   countryName: string;
   greetingStyle: 'warm' | 'formal' | 'casual' | 'brief';

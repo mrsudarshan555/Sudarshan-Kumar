@@ -11,6 +11,7 @@ import { AssistantStatus, AppearanceConfig } from '../../types';
 import { GestureUsageService } from '../../services/gestures/gestureUsageService';
 import { GestureTutorialModal } from '../gestures/GestureTutorialModal';
 import { GesturePracticeModal } from '../gestures/GesturePracticeModal';
+import { BarehandsCameraStage } from '../stage/BarehandsCameraStage';
 import { BarehandsTracker } from '../../services/gestures/barehandsTracker';
 import { BarehandsGestureState, GestureThrowPayload, GestureClapClearPayload, GestureFistHoldPayload } from '../../types/gestures';
 import { GestureEventBus } from '../../services/gestures/gestureEventBus';
@@ -51,6 +52,7 @@ export const BackgroundGestureOverlayBubble: React.FC<BackgroundGestureOverlayBu
   // Tutorial & Practice Modals State
   const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
   const [isPracticeOpen, setIsPracticeOpen] = useState<boolean>(false);
+  const [isFullScreenStageOpen, setIsFullScreenStageOpen] = useState<boolean>(false);
 
   // Floating bubble position coordinates
   const [position, setPosition] = useState<{ x: number; y: number }>({ x: 18, y: 140 });
@@ -729,12 +731,22 @@ export const BackgroundGestureOverlayBubble: React.FC<BackgroundGestureOverlayBu
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    setIsFullScreenStageOpen(true);
+                  }}
+                  className="p-0.5 text-cyan-300 hover:text-white rounded hover:bg-white/10"
+                  title="Open Fullscreen AR Camera Stage"
+                >
+                  <Maximize2 className="w-2.5 h-2.5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setIsPipMinimized(prev => !prev);
                   }}
                   className="p-0.5 text-slate-400 hover:text-white rounded hover:bg-white/10"
                   title={isPipMinimized ? 'Expand PiP Preview' : 'Minimize PiP Preview'}
                 >
-                  {isPipMinimized ? <Maximize2 className="w-2.5 h-2.5" /> : <Minimize2 className="w-2.5 h-2.5" />}
+                  {isPipMinimized ? <Camera className="w-2.5 h-2.5" /> : <Minimize2 className="w-2.5 h-2.5" />}
                 </button>
               </div>
             </div>
@@ -1037,6 +1049,25 @@ export const BackgroundGestureOverlayBubble: React.FC<BackgroundGestureOverlayBu
                     </div>
                     <span className="text-[9px] px-1.5 py-0.5 bg-emerald-900/60 text-emerald-300 rounded font-mono">Clear</span>
                   </button>
+                  {/* Open Fullscreen AR Camera Stage Button */}
+                  <button
+                    onClick={() => {
+                      setIsFullScreenStageOpen(true);
+                      setIsExpanded(false);
+                    }}
+                    className="w-full p-2 bg-gradient-to-r from-cyan-600/30 to-purple-600/30 hover:from-cyan-600/45 hover:to-purple-600/45 text-cyan-200 hover:text-white border border-cyan-400/50 rounded-xl flex items-center justify-between transition-all text-left shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-lg bg-cyan-500/20 text-cyan-300">
+                        <Maximize2 className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold block text-cyan-300">Full-Screen AR Camera</span>
+                        <span className="text-[8px] text-slate-300 font-mono">Camera Stage with 3D Holograms</span>
+                      </div>
+                    </div>
+                    <span className="text-[9px] px-1.5 py-0.5 bg-cyan-500/30 text-cyan-200 rounded font-mono font-bold">FULLSCREEN</span>
+                  </button>
                 </div>
 
                 {/* Open Full App Button */}
@@ -1090,6 +1121,13 @@ export const BackgroundGestureOverlayBubble: React.FC<BackgroundGestureOverlayBu
         isOpen={isPracticeOpen}
         onClose={() => setIsPracticeOpen(false)}
         onOpenTutorial={() => setIsTutorialOpen(true)}
+      />
+
+      {/* 7. FULL-SCREEN BAREHANDS AR CAMERA STAGE */}
+      <BarehandsCameraStage
+        isOpen={isFullScreenStageOpen}
+        onClose={() => setIsFullScreenStageOpen(false)}
+        onTriggerVoice={onTriggerVoice}
       />
     </>
   );

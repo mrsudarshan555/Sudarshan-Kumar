@@ -17,6 +17,15 @@ interface MorphingAuroraInputBoxProps {
   headingText?: string;
 }
 
+const SUGGESTIONS = [
+  "Ask Mayra anything...",
+  "Search memories or facts...",
+  "Analyze a document or photo...",
+  "Plan today's schedule & routines...",
+  "Draft a message or summarize...",
+  "Ask about tech, health, or code..."
+];
+
 export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   inputText,
   setInputText,
@@ -26,12 +35,33 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   status = 'IDLE',
   attachedFile = null,
   onRemoveAttachment,
-  placeholder = 'Ask anything',
+  placeholder = "What's your mind today",
   showHeading = true,
   headingText = "What's on your mind today?"
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [suggestionIdx, setSuggestionIdx] = useState<number>(0);
+
+  // Rotate smart suggestions only while the user has focused/tapped into the input box
+  useEffect(() => {
+    if (!isFocused) return;
+    const interval = setInterval(() => {
+      setSuggestionIdx((prev) => (prev + 1) % SUGGESTIONS.length);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, [isFocused]);
+
+  // Resolve dynamic placeholder with strict visual consistency
+  const activePlaceholder = (() => {
+    if (status === 'THINKING') {
+      return 'thinking...';
+    }
+    if (isFocused) {
+      return SUGGESTIONS[suggestionIdx];
+    }
+    return placeholder || "What's your mind today";
+  })();
 
   const hasText = inputText.trim().length > 0 || Boolean(attachedFile);
   // Expand when text is long or has newlines or attachment
@@ -164,7 +194,7 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
                   onKeyDown={handleKeyDown}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  placeholder={placeholder}
+                  placeholder={activePlaceholder}
                   rows={2}
                   className="w-full bg-transparent border-none outline-none resize-none text-[13px] sm:text-sm text-white placeholder-purple-200/40 font-sans leading-relaxed min-h-[50px] max-h-[130px] scrollbar-thin scrollbar-thumb-fuchsia-500/20"
                 />
@@ -253,7 +283,7 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
                   }}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  placeholder={placeholder}
+                  placeholder={activePlaceholder}
                   className="flex-1 bg-transparent border-none outline-none text-[13px] sm:text-sm text-white placeholder-purple-200/40 font-sans min-w-0"
                 />
 

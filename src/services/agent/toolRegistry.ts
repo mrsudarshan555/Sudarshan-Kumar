@@ -54,7 +54,7 @@ export class AgentToolRegistry {
         properties: {
           query: {
             type: 'string',
-            description: 'The search query or keyword (e.g., "Rahul phone number", "favorite food", "birthday")'
+            description: 'The search query or keyword (e.g., "Zafer phone number", "favorite food", "birthday")'
           },
           category: {
             type: 'string',

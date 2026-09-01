@@ -422,8 +422,8 @@ interface SettingCategorySection {
       items: [
         {
           id: 'personal' as SettingsSubScreen,
-          title: 'Personal',
-          subtitle: `${personalConfig.preferredName || personalConfig.fullName} • API configuration`,
+          title: 'Account',
+          subtitle: `${personalConfig.preferredName || personalConfig.fullName || 'Zafer'}${personalConfig.profession ? ` • ${personalConfig.profession}` : ''} • Profile & AI Config`,
           icon: <AppIconTile icon={User} color="indigo" size="md" />
         },
         {
