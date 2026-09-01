@@ -5,6 +5,18 @@ export type ActiveTab = PhoneNavTab;
 
 export type SettingsSubScreen = 
   | 'root'
+  | 'persona_voice_studio'
+  | 'touch_security_vault'
+  | 'system_unlock_automation'
+  | 'emergency_sos'
+  | 'driving_mode_studio'
+  | 'unified_app_hub'
+  | 'ai_toolkit_scanner'
+  | 'smart_lifestyle_iot'
+  | 'deep_automation_matrix'
+  | 'quantum_memory_vision'
+  | 'automation_dialogue_matrix'
+  | 'neural_trading_matrix'
   | 'permissions'
   | 'native_integration'
   | 'personal'

@@ -24,16 +24,29 @@ import { PermissionsCenterView } from './PermissionsCenterView';
 import { NativeIntegrationView } from './NativeIntegrationView';
 import { LinkedDevicesView } from './LinkedDevicesView';
 import { OfflineModelsView } from './OfflineModelsView';
+import { PersonaVoiceStudioView } from './PersonaVoiceStudioView';
+import { TouchSecurityVaultView } from './TouchSecurityVaultView';
+import { SystemUnlockAutomationView } from './SystemUnlockAutomationView';
+import { EmergencySOSView } from './EmergencySOSView';
+import { DrivingModeStudioView } from './DrivingModeStudioView';
+import { UnifiedAppHubView } from './UnifiedAppHubView';
+import { AIToolkitScannerView } from './AIToolkitScannerView';
+import { SmartLifestyleIoTView } from './SmartLifestyleIoTView';
+import { DeepAutomationMatrixView } from './DeepAutomationMatrixView';
+import { QuantumMemoryVisionView } from './QuantumMemoryVisionView';
+import { AutomationDialogueStudioView } from './AutomationDialogueStudioView';
+import { NeuralTradingStudioView } from './NeuralTradingStudioView';
 import { WhiteboardTool } from '../tools/WhiteboardTool';
 import { MayraLogo } from '../common/MayraLogo';
 import { AppIconTile } from '../common/AppIconTile';
 import { ORB_STYLES, ORB_COLORS } from '../character/MayraOrb';
 import { 
   Settings as SettingsIcon, User, Globe, Sparkles, 
-  Wrench, Bot, ShieldCheck, Database, Cpu, 
+  Wrench, Bot, ShieldCheck, ShieldAlert, Database, Cpu, 
   Boxes, Lock, Info, ChevronRight, ArrowLeft, Search, X,
   Shield, CheckCircle2, Smartphone, PenTool, HardDrive,
-  Palette, Moon, Sun
+  Palette, Moon, Sun, KeyRound, AlertOctagon, Car, MessageSquare,
+  ScanText, Zap, Terminal, Brain, Volume2, TrendingUp
 } from 'lucide-react';
 
 interface MayraSettingsScreenProps {
@@ -205,6 +218,127 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
           selectedDialCode={personalConfig.countryDialCode}
           onSelectCountry={handleSelectCountry}
           onBack={() => setCurrentSubScreen('personal')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'persona_voice_studio') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <PersonaVoiceStudioView
+          userGender="Male"
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'touch_security_vault') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <TouchSecurityVaultView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'system_unlock_automation') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <SystemUnlockAutomationView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'emergency_sos') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <EmergencySOSView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'driving_mode_studio') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <DrivingModeStudioView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'unified_app_hub') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <UnifiedAppHubView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'ai_toolkit_scanner') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <AIToolkitScannerView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'smart_lifestyle_iot') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <SmartLifestyleIoTView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'deep_automation_matrix') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <DeepAutomationMatrixView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'quantum_memory_vision') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <QuantumMemoryVisionView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'automation_dialogue_matrix') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <AutomationDialogueStudioView
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'neural_trading_matrix') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <NeuralTradingStudioView
+          onBack={() => setCurrentSubScreen('root')}
         />
       </div>
     );
@@ -438,6 +572,13 @@ interface SettingCategorySection {
       category: 'ASSISTANT',
       items: [
         {
+          id: 'persona_voice_studio' as SettingsSubScreen,
+          title: 'Persona & Voice Studio',
+          subtitle: 'STONICX, Friday, Venom • 15 Regional Indian Dialects • High-Emotion',
+          badge: 'STUDIO',
+          icon: <AppIconTile icon={Bot} color="purple" size="md" />
+        },
+        {
           id: 'assistant' as SettingsSubScreen,
           title: 'AI Assistant Core Engine',
           subtitle: assistantConfig.activeMode === 'stonicx' 
@@ -468,14 +609,89 @@ interface SettingCategorySection {
       ]
     },
     {
-      category: 'VOICE GUARDIAN',
+      category: 'SECURITY & HARDWARE GUARDIAN',
       items: [
+        {
+          id: 'touch_security_vault' as SettingsSubScreen,
+          title: 'Touch Guard & Anti-Theft Vault',
+          subtitle: 'Motion Alarm • 105dB Siren • Intruder Camera Capture • God Mode',
+          badge: 'SECURITY',
+          icon: <AppIconTile icon={ShieldAlert} color="rose" size="md" />
+        },
+        {
+          id: 'emergency_sos' as SettingsSubScreen,
+          title: 'Emergency SOS & Escalation',
+          subtitle: 'Voice SOS • Live GPS SMS • 5 Priority Contacts Auto-Dialer',
+          badge: 'SOS',
+          icon: <AppIconTile icon={AlertOctagon} color="rose" size="md" />
+        },
         {
           id: 'voice_guardian' as SettingsSubScreen,
           title: 'Voice Guardian',
           subtitle: voiceGuardianConfig.enabled ? 'ACTIVE • Owner Only' : 'DISABLED',
           badge: voiceGuardianConfig.enabled ? 'SHIELD ON' : 'OFF',
           icon: <AppIconTile icon={ShieldCheck} color="cyan" size="md" />
+        }
+      ]
+    },
+    {
+      category: 'SYSTEM AUTOMATION & MOBILITY',
+      items: [
+        {
+          id: 'system_unlock_automation' as SettingsSubScreen,
+          title: 'System Unlock Automation',
+          subtitle: 'Voice Screen Unlock • PIN & Pattern Path Calibration • Auto-Lock',
+          badge: 'AUTO',
+          icon: <AppIconTile icon={KeyRound} color="cyan" size="md" />
+        },
+        {
+          id: 'driving_mode_studio' as SettingsSubScreen,
+          title: 'Driving Mode Studio',
+          subtitle: 'Auto-Reject Calls • Driving SMS • Caller Name Announcement',
+          badge: 'AUTO',
+          icon: <AppIconTile icon={Car} color="amber" size="md" />
+        },
+        {
+          id: 'unified_app_hub' as SettingsSubScreen,
+          title: 'All-In-One Unified App Hub',
+          subtitle: 'WhatsApp • Telegram • Truecaller Spam Radar • Gallery • Alarms',
+          badge: 'HUB',
+          icon: <AppIconTile icon={MessageSquare} color="emerald" size="md" />
+        },
+        {
+          id: 'smart_lifestyle_iot' as SettingsSubScreen,
+          title: 'Smart Lifestyle, Media & IoT Hub',
+          subtitle: 'Spotify/YouTube • Smart Home • Cricket Radar • Fitness & Cabs',
+          badge: 'IOT PRO',
+          icon: <AppIconTile icon={Zap} color="indigo" size="md" />
+        },
+        {
+          id: 'deep_automation_matrix' as SettingsSubScreen,
+          title: 'Deep Automation & Matrix Routines',
+          subtitle: 'Voice Macros • Air Gestures • Hardware Telemetry • Kernel Terminal',
+          badge: 'DEV PRO',
+          icon: <AppIconTile icon={Terminal} color="cyan" size="md" />
+        },
+        {
+          id: 'quantum_memory_vision' as SettingsSubScreen,
+          title: 'Quantum Memory & Neural Vision Brain',
+          subtitle: 'Semantic Memory Vault • Multi-Modal Lens • Doc AI • Voice Memos',
+          badge: 'BRAIN AI',
+          icon: <AppIconTile icon={Brain} color="purple" size="md" />
+        },
+        {
+          id: 'automation_dialogue_matrix' as SettingsSubScreen,
+          title: 'Automation Voice Dialogue Matrix',
+          subtitle: '55 Trigger Speech Rules • Action, Success & Failure Dialogues',
+          badge: '55 RULES',
+          icon: <AppIconTile icon={Volume2} color="emerald" size="md" />
+        },
+        {
+          id: 'neural_trading_matrix' as SettingsSubScreen,
+          title: 'Neural Trading & Chart Finance Engine',
+          subtitle: 'Auto Support/Resistance • Custom Strategy Radar • Risk-Reward Calc',
+          badge: 'FINANCE AI',
+          icon: <AppIconTile icon={TrendingUp} color="emerald" size="md" />
         }
       ]
     },
@@ -495,6 +711,13 @@ interface SettingCategorySection {
           subtitle: 'Canvas drawing, wireframing & Vision AI analysis',
           badge: 'NEW',
           icon: <AppIconTile icon={PenTool} color="rose" size="md" />
+        },
+        {
+          id: 'ai_toolkit_scanner' as SettingsSubScreen,
+          title: 'All-In-One AI Toolkit & Scanner',
+          subtitle: 'OCR Doc Scanner • QR Studio • Live Translator • Converter',
+          badge: 'AI PRO',
+          icon: <AppIconTile icon={ScanText} color="purple" size="md" />
         },
         {
           id: 'widget_guide' as SettingsSubScreen,
