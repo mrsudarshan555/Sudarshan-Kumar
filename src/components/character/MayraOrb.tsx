@@ -157,6 +157,30 @@ export interface OrbStyleDefinition {
 
 export const ORB_STYLES: OrbStyleDefinition[] = [
   {
+    id: 'electric_plasma',
+    name: 'Electric Plasma Sphere',
+    description: '3D obsidian sphere with pulsating cyan & blue lightning plasma arcs wrapping the spherical boundary (Video 1)',
+    category: 'energy'
+  },
+  {
+    id: 'siri_prismatic_halo',
+    name: 'Apple Siri Prismatic Halo',
+    description: 'iOS Siri-style frosted glass pill with rotating chromatic dispersion lens flare & rainbow prism ring (Video 2)',
+    category: 'fluid'
+  },
+  {
+    id: 'silk_ribbon_vortex',
+    name: 'Fluid Silk Ribbon Mesh',
+    description: '3D undulating waveform mesh filaments flowing like luminous silk cloth in lime green & cobalt blue (Video 3)',
+    category: 'harmonic'
+  },
+  {
+    id: 'quantum_stardust',
+    name: 'Quantum Nebula Stardust',
+    description: 'Thousands of sparkling micro-particles forming a celestial nebula sphere with cosmic dust clouds (Video 4)',
+    category: 'cosmic'
+  },
+  {
     id: 'particle_swirl',
     name: 'Particle Swirl',
     description: 'Hundreds of cosmic particles orbiting and drifting with faint ring trails',
@@ -256,14 +280,18 @@ export const ORB_STYLES: OrbStyleDefinition[] = [
 
 // Helper to normalize style id (handles legacy names)
 export function normalizeOrbStyle(style?: string): OrbStyleType {
-  if (!style) return 'particle_swirl';
+  if (!style) return 'electric_plasma';
+  if (style === 'plasma' || style === 'electric_plasma') return 'electric_plasma';
+  if (style === 'siri_halo' || style === 'siri_prismatic_halo') return 'siri_prismatic_halo';
+  if (style === 'silk_mesh' || style === 'silk_ribbon_vortex') return 'silk_ribbon_vortex';
+  if (style === 'stardust' || style === 'quantum_stardust') return 'quantum_stardust';
   if (style === 'glow') return 'luminous_glow';
   if (style === 'nova') return 'nova_ring';
   if (style === 'grid') return 'grid_globe';
   if (style === 'pulse') return 'pulse_reactor';
   if (style === 'nebula') return 'particle_swirl';
   const found = ORB_STYLES.some(s => s.id === style);
-  return found ? (style as OrbStyleType) : 'particle_swirl';
+  return found ? (style as OrbStyleType) : 'electric_plasma';
 }
 
 interface MayraOrbProps {
@@ -431,6 +459,78 @@ export const MayraOrb: React.FC<MayraOrbProps> = ({
         prevPx: 0,
         prevPy: 0,
         hasPrev: false
+      };
+    });
+
+    // ==========================================================
+    // 1. VIDEO 1: Electric Plasma Sphere Persistent Tendrils (10 3D lightning arcs)
+    // ==========================================================
+    const plasmaArcs = Array.from({ length: 12 }, (_, i) => {
+      const rotAxisX = Math.random() * Math.PI * 2;
+      const rotAxisY = Math.random() * Math.PI * 2;
+      const rotAxisZ = Math.random() * Math.PI * 2;
+      const speedX = (0.35 + Math.random() * 0.5) * (i % 2 === 0 ? 1 : -1);
+      const speedY = (0.3 + Math.random() * 0.45) * (i % 3 === 0 ? 1 : -1);
+      const arcLength = 0.45 + Math.random() * 0.5; // arc angular coverage
+      const arcOffset = (i / 12) * Math.PI * 2;
+      const jitterFreq = 14 + Math.random() * 10;
+      const arcPalette = ['#00F0FF', '#38BDF8', '#00D2FF', '#2563EB', '#60A5FA', '#93C5FD', '#FFFFFF'];
+      return {
+        rotAxisX,
+        rotAxisY,
+        rotAxisZ,
+        speedX,
+        speedY,
+        arcLength,
+        arcOffset,
+        jitterFreq,
+        color: arcPalette[i % arcPalette.length],
+        thickness: 1.4 + Math.random() * 2.2
+      };
+    });
+
+    // ==========================================================
+    // 2. VIDEO 4: Quantum Nebula Stardust Particles (320 3D cosmic dust nodes)
+    // ==========================================================
+    const quantumStardust = Array.from({ length: 320 }, (_, i) => {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = Math.acos(2 * u - 1);
+      const phi = 2 * Math.PI * v;
+      // Dense shell + inner spiral nebula
+      const isShell = Math.random() > 0.35;
+      const distRatio = isShell ? (0.82 + Math.random() * 0.16) : (0.15 + Math.random() * 0.65);
+      const speed = (0.25 + Math.random() * 0.45) * (i % 2 === 0 ? 1 : -1);
+      const rad = 0.6 + Math.random() * 2.2;
+      const stardustPalette = ['#00F0FF', '#3B82F6', '#1D4ED8', '#8B5CF6', '#A855F7', '#EC4899', '#67E8F9', '#FFFFFF'];
+      return {
+        theta,
+        phi,
+        distRatio,
+        speed,
+        size: rad,
+        color: stardustPalette[i % stardustPalette.length],
+        twinkleOffset: Math.random() * Math.PI * 2,
+        twinkleSpeed: 2.5 + Math.random() * 4.0,
+        isGlintStar: i % 18 === 0 // special diamond star flare
+      };
+    });
+
+    // ==========================================================
+    // 3. VIDEO 3: Silk Ribbon Wave Lattice (14 undulating harmonic strands)
+    // ==========================================================
+    const silkRibbons = Array.from({ length: 14 }, (_, i) => {
+      const latRatio = (i / 13) * 2 - 1; // -1 to 1 across sphere
+      const baseLat = Math.asin(latRatio * 0.88);
+      const ribbonPalette = ['#84CC16', '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#00F0FF', '#3B82F6', '#2563EB'];
+      return {
+        baseLat,
+        speed: 0.8 + (i % 4) * 0.25,
+        freq: 2 + (i % 3),
+        phase: (i / 14) * Math.PI * 2,
+        color: ribbonPalette[i % ribbonPalette.length],
+        secondaryColor: ribbonPalette[(i + 2) % ribbonPalette.length],
+        thickness: 1.2 + (1 - Math.abs(latRatio)) * 2.2
       };
     });
 
@@ -634,9 +734,385 @@ export const MayraOrb: React.FC<MayraOrbProps> = ({
       renderSwarmBatch(back3DParticles, false);
 
       // ========================================================
+      // VIDEO 1. ELECTRIC PLASMA SPHERE (Obsidian Core + Electric Cyan & Blue Lightning Plasma Arcs)
+      // ========================================================
+      if (normalizedStyle === 'electric_plasma') {
+        const plasmaRot = elapsed * 0.75 * speedFactor;
+
+        // 1. Dark Obsidian Sphere Base with Specular Rim
+        ctx.save();
+        const obsR = radius * 0.88 * energyPulse;
+        const obsGrad = ctx.createRadialGradient(
+          centerX - obsR * 0.25, 
+          centerY - obsR * 0.25, 
+          0, 
+          centerX, 
+          centerY, 
+          obsR
+        );
+        obsGrad.addColorStop(0, '#0a1428');
+        obsGrad.addColorStop(0.5, '#040814');
+        obsGrad.addColorStop(0.85, '#020308');
+        obsGrad.addColorStop(1, '#000000');
+        ctx.fillStyle = obsGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, obsR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner electric rim reflection
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+        ctx.lineWidth = 1.6 * dpr;
+        ctx.shadowColor = '#00F0FF';
+        ctx.shadowBlur = 12 * dpr;
+        ctx.stroke();
+        ctx.restore();
+
+        // 2. 3D Rotating Plasma Lightning Tendrils
+        plasmaArcs.forEach((arc, arcIdx) => {
+          ctx.save();
+          ctx.translate(centerX, centerY);
+          
+          // Rotate along unique 3D Euler angles
+          ctx.rotate(arc.rotAxisZ + plasmaRot * arc.speedX);
+
+          ctx.beginPath();
+          const segments = 45;
+          const arcSpread = Math.PI * 2 * arc.arcLength;
+          const startAngle = arc.arcOffset + elapsed * arc.speedY * 0.6;
+          
+          for (let s = 0; s <= segments; s++) {
+            const segRatio = s / segments;
+            const currentAngle = startAngle + segRatio * arcSpread;
+            
+            // High-frequency electric lightning jitter
+            const jitterTime = elapsed * arc.jitterFreq + s * 0.8;
+            const jitterAmp = (1.0 + Math.sin(jitterTime * 2.2)) * (1.8 * dpr);
+            const highFreqSpike = (Math.sin(jitterTime * 4.5) * Math.cos(jitterTime * 7.1)) * (2.2 * dpr);
+            
+            const r = (radius * 0.85 * energyPulse) + jitterAmp + highFreqSpike;
+            const sx = Math.cos(currentAngle) * r;
+            const sy = Math.sin(currentAngle) * r * (0.85 + Math.sin(arc.rotAxisX + elapsed) * 0.15);
+            
+            if (s === 0) ctx.moveTo(sx, sy);
+            else ctx.lineTo(sx, sy);
+          }
+
+          // Layer 1: Outer Corona Plasma Glow
+          ctx.strokeStyle = arc.color;
+          ctx.lineWidth = (arc.thickness + 2.0) * dpr;
+          ctx.shadowColor = '#00D2FF';
+          ctx.shadowBlur = (14 + Math.sin(elapsed * 10 + arcIdx) * 6) * dpr;
+          ctx.globalAlpha = 0.55;
+          ctx.stroke();
+
+          // Layer 2: Core Hot White Lightning Filament
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = Math.max(0.75 * dpr, arc.thickness * 0.65 * dpr);
+          ctx.shadowColor = '#FFFFFF';
+          ctx.shadowBlur = 4 * dpr;
+          ctx.globalAlpha = 0.95;
+          ctx.stroke();
+
+          // Flashing Lightning Spark Nodes
+          if ((arcIdx + Math.floor(elapsed * 8)) % 3 === 0) {
+            const sparkAngle = startAngle + (arcSpread * 0.5);
+            const sparkR = radius * 0.86 * energyPulse;
+            const spx = Math.cos(sparkAngle) * sparkR;
+            const spy = Math.sin(sparkAngle) * sparkR;
+            ctx.beginPath();
+            ctx.arc(spx, spy, 2.5 * dpr, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.shadowColor = '#00F0FF';
+            ctx.shadowBlur = 10 * dpr;
+            ctx.fill();
+          }
+
+          ctx.restore();
+        });
+
+        // 3. Central Deep Blue Plasma Singularity
+        const coreR = radius * 0.32 * energyPulse;
+        const plasmaCoreGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreR);
+        plasmaCoreGrad.addColorStop(0, '#FFFFFF');
+        plasmaCoreGrad.addColorStop(0.35, '#00F0FF');
+        plasmaCoreGrad.addColorStop(0.7, '#1E40AF');
+        plasmaCoreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = plasmaCoreGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, coreR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ========================================================
+      // VIDEO 2. APPLE SIRI PRISMATIC HALO (Frosted Glass Disc + Chromatic Dispersion Lens Flare Ring)
+      // ========================================================
+      else if (normalizedStyle === 'siri_prismatic_halo') {
+        const sweepRot = elapsed * 2.2 * speedFactor;
+
+        // 1. Frosted Translucent Dark Glass Capsule Disc
+        ctx.save();
+        const glassR = radius * 0.82 * energyPulse;
+        const glassGrad = ctx.createRadialGradient(
+          centerX, 
+          centerY, 
+          0, 
+          centerX, 
+          centerY, 
+          glassR
+        );
+        glassGrad.addColorStop(0, 'rgba(15, 23, 42, 0.72)');
+        glassGrad.addColorStop(0.65, 'rgba(10, 15, 30, 0.88)');
+        glassGrad.addColorStop(1, 'rgba(5, 8, 18, 0.98)');
+        ctx.fillStyle = glassGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, glassR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glass Inner Edge Bevel
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+        ctx.lineWidth = 1.5 * dpr;
+        ctx.stroke();
+        ctx.restore();
+
+        // 2. Chromatic Dispersion Rainbow Fringe Layers (Red/Amber, Green, Cyan, Blue, Magenta)
+        const haloR = radius * 0.84 * energyPulse;
+        const dispersionOffsets = [
+          { color: 'rgba(239, 68, 68, 0.75)', offset: -0.06, width: 3.5 }, // Red/Amber
+          { color: 'rgba(245, 158, 11, 0.85)', offset: -0.03, width: 3.2 }, // Amber Gold
+          { color: 'rgba(34, 197, 94, 0.85)', offset: 0.00, width: 3.0 }, // Emerald
+          { color: 'rgba(6, 182, 212, 0.95)', offset: 0.03, width: 3.2 }, // Electric Cyan
+          { color: 'rgba(59, 130, 246, 0.90)', offset: 0.06, width: 3.5 }, // Royal Blue
+          { color: 'rgba(217, 70, 239, 0.85)', offset: 0.09, width: 3.8 }  // Magenta Violet
+        ];
+
+        dispersionOffsets.forEach((layer) => {
+          ctx.save();
+          ctx.translate(centerX, centerY);
+          ctx.rotate(sweepRot + layer.offset);
+
+          const arcGrad = ctx.createLinearGradient(-haloR, -haloR, haloR, haloR);
+          arcGrad.addColorStop(0, layer.color);
+          arcGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.95)');
+          arcGrad.addColorStop(1, 'transparent');
+
+          ctx.strokeStyle = arcGrad;
+          ctx.lineWidth = layer.width * dpr;
+          ctx.beginPath();
+          ctx.arc(0, 0, haloR, 0, Math.PI * 1.5);
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        // 3. Leading Intense Traveling Prismatic Flare Beam (Apple Siri Flare)
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(sweepRot);
+
+        const flareX = Math.cos(0) * haloR;
+        const flareY = Math.sin(0) * haloR;
+
+        // Wide Radial Bloom
+        const flareBloom = ctx.createRadialGradient(flareX, flareY, 0, flareX, flareY, 22 * dpr);
+        flareBloom.addColorStop(0, '#FFFFFF');
+        flareBloom.addColorStop(0.2, '#FEF08A');
+        flareBloom.addColorStop(0.5, '#00F0FF');
+        flareBloom.addColorStop(0.8, '#A855F7');
+        flareBloom.addColorStop(1, 'transparent');
+        ctx.fillStyle = flareBloom;
+        ctx.beginPath();
+        ctx.arc(flareX, flareY, 22 * dpr, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Horizontal Anamorphic Lens Flare Streak
+        ctx.beginPath();
+        ctx.ellipse(flareX, flareY, 18 * dpr, 2.2 * dpr, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.shadowColor = '#00F0FF';
+        ctx.shadowBlur = 12 * dpr;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // ========================================================
+      // VIDEO 3. FLUID SILK RIBBON MESH (3D Undulating Waveform Mesh in Lime Green & Cobalt Blue)
+      // ========================================================
+      else if (normalizedStyle === 'silk_ribbon_vortex') {
+        const silkRot = elapsed * 0.9 * speedFactor;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(silkRot * 0.35);
+
+        // Render layered silk ribbons with undulating cloth wave physics
+        silkRibbons.forEach((ribbon, rIdx) => {
+          const lat = ribbon.baseLat;
+          const ribbonRadius = radius * 0.85 * Math.cos(lat) * energyPulse;
+          const ribbonY = radius * 0.85 * Math.sin(lat) * 0.65;
+          const pointsCount = 48;
+
+          ctx.beginPath();
+          for (let p = 0; p <= pointsCount; p++) {
+            const angle = (p / pointsCount) * Math.PI * 2;
+            
+            // Harmonic wave interference for fluid silk undulation
+            const wave1 = Math.sin(angle * ribbon.freq + elapsed * ribbon.speed * 2.8 + ribbon.phase) * (8 * dpr);
+            const wave2 = Math.cos(angle * (ribbon.freq + 1) - elapsed * 1.8) * (5 * dpr);
+            const waveVoice = isSpeaking ? Math.sin(angle * 6 + elapsed * 12) * (7 * dpr) : 0;
+            
+            const currentR = ribbonRadius + wave1 + wave2 + waveVoice;
+            const px = Math.cos(angle + silkRot) * currentR;
+            const py = ribbonY + Math.sin(angle + silkRot) * (currentR * 0.38) + wave1 * 0.4;
+
+            if (p === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+
+          // Gradient silk ribbon stroke
+          ctx.strokeStyle = ribbon.color;
+          ctx.lineWidth = ribbon.thickness * dpr;
+          ctx.shadowColor = ribbon.color;
+          ctx.shadowBlur = (8 + Math.sin(elapsed * 4 + rIdx) * 4) * dpr;
+          ctx.globalAlpha = 0.72;
+          ctx.stroke();
+
+          // Connect vertical silk lattice mesh lines for translucent fabric depth
+          if (rIdx % 2 === 0) {
+            ctx.beginPath();
+            for (let p = 0; p < pointsCount; p += 6) {
+              const angle = (p / pointsCount) * Math.PI * 2;
+              const currentR = ribbonRadius;
+              const px1 = Math.cos(angle + silkRot) * currentR;
+              const py1 = ribbonY + Math.sin(angle + silkRot) * (currentR * 0.38);
+              const px2 = Math.cos(angle + silkRot) * (currentR * 0.85);
+              const py2 = ribbonY - 8 * dpr + Math.sin(angle + silkRot) * (currentR * 0.32);
+              
+              ctx.moveTo(px1, py1);
+              ctx.lineTo(px2, py2);
+            }
+            ctx.strokeStyle = ribbon.secondaryColor;
+            ctx.lineWidth = 0.75 * dpr;
+            ctx.globalAlpha = 0.35;
+            ctx.stroke();
+          }
+        });
+
+        // Center emerald-cyan radiant core
+        const silkCoreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.35 * energyPulse);
+        silkCoreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        silkCoreGrad.addColorStop(0.3, 'rgba(34, 197, 94, 0.75)');
+        silkCoreGrad.addColorStop(0.65, 'rgba(6, 182, 212, 0.4)');
+        silkCoreGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = silkCoreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.35 * energyPulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // ========================================================
+      // VIDEO 4. QUANTUM NEBULA STARDUST (Celestial Stardust Particles in Deep Sapphire Blue & Violet Pink)
+      // ========================================================
+      else if (normalizedStyle === 'quantum_stardust') {
+        const stardustRot = elapsed * 0.45 * speedFactor;
+
+        // 1. Celestial Deep Cosmic Nebula Background Gas Clouds
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(-stardustRot * 0.5);
+
+        const nebGrad1 = ctx.createRadialGradient(
+          -radius * 0.2, 
+          -radius * 0.15, 
+          0, 
+          0, 
+          0, 
+          radius * 0.92
+        );
+        nebGrad1.addColorStop(0, 'rgba(29, 78, 216, 0.45)');   // Deep sapphire blue
+        nebGrad1.addColorStop(0.45, 'rgba(139, 92, 246, 0.28)'); // Violet nebula
+        nebGrad1.addColorStop(0.75, 'rgba(236, 72, 153, 0.15)'); // Pink dust
+        nebGrad1.addColorStop(1, 'transparent');
+        ctx.fillStyle = nebGrad1;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.92 * energyPulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 2. 3D Flowing Quantum Stardust Particles
+        quantumStardust.forEach((star, sIdx) => {
+          const currentTheta = star.theta + elapsed * star.speed * 0.35 * speedFactor;
+          const currentPhi = star.phi + elapsed * star.speed * 0.55 * speedFactor;
+          const dynamicR = radius * star.distRatio * (energyPulse * 0.92 + 0.08);
+
+          // 3D Cartesian coordinates
+          const rawX = dynamicR * Math.sin(currentTheta) * Math.cos(currentPhi);
+          const rawY = dynamicR * Math.cos(currentTheta);
+          const rawZ = dynamicR * Math.sin(currentTheta) * Math.sin(currentPhi);
+
+          // 3D Euler rotation
+          const cosR = Math.cos(stardustRot), sinR = Math.sin(stardustRot);
+          const x3 = rawX * cosR - rawZ * sinR;
+          const z3 = rawX * sinR + rawZ * cosR;
+          const y3 = rawY;
+
+          // Camera projection
+          const camDist = radius * 3.2;
+          const pers = camDist / Math.max(10, camDist - z3);
+          const px = centerX + x3 * pers;
+          const py = centerY + y3 * pers;
+
+          // Twinkle and depth alpha
+          const twinkle = 0.5 + Math.sin(elapsed * star.twinkleSpeed + star.twinkleOffset) * 0.5;
+          const depthAlpha = Math.max(0.12, Math.min(1.0, 0.5 + (z3 / (radius * 1.4)) * 0.5));
+          const pSize = Math.max(0.65 * dpr, star.size * pers * dpr);
+
+          // Render Particle
+          ctx.beginPath();
+          ctx.arc(px, py, pSize, 0, Math.PI * 2);
+          ctx.fillStyle = star.color;
+          ctx.globalAlpha = depthAlpha * (0.55 + twinkle * 0.45);
+          ctx.shadowColor = star.color;
+          ctx.shadowBlur = (pSize > 1.2 * dpr) ? 6 * dpr : 0;
+          ctx.fill();
+
+          // 3. Diamond Starburst Glint for special celestial stars
+          if (star.isGlintStar && z3 > 0 && twinkle > 0.7) {
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(elapsed * 1.5 + sIdx);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 1 * dpr;
+            ctx.globalAlpha = (twinkle - 0.7) * 3.3;
+
+            // 4-point Diamond Cross Flare
+            const flareLen = 5.5 * dpr;
+            ctx.beginPath();
+            ctx.moveTo(-flareLen, 0);
+            ctx.lineTo(flareLen, 0);
+            ctx.moveTo(0, -flareLen);
+            ctx.lineTo(0, flareLen);
+            ctx.stroke();
+            ctx.restore();
+          }
+        });
+
+        // 3. Bright Luminous Galactic Stardust Core
+        const stardustCore = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 0.42 * energyPulse);
+        stardustCore.addColorStop(0, '#FFFFFF');
+        stardustCore.addColorStop(0.3, '#67E8F9');
+        stardustCore.addColorStop(0.65, '#3B82F6');
+        stardustCore.addColorStop(1, 'transparent');
+        ctx.fillStyle = stardustCore;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.42 * energyPulse, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // ========================================================
       // 1. PARTICLE SWIRL / NEBULA
       // ========================================================
-      if (normalizedStyle === 'particle_swirl') {
+      else if (normalizedStyle === 'particle_swirl') {
         // Faint orbital rings
         ctx.save();
         ctx.strokeStyle = colorDef.isGradient ? 'rgba(236, 72, 153, 0.18)' : `${colorDef.secondary}22`;

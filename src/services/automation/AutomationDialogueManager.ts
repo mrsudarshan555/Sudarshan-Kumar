@@ -28,9 +28,9 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'SCREEN UNLOCK AUTOMATION',
     category: 'screen',
     triggers: ['फोन अनलॉक करो', 'स्क्रीन अनलॉक करो', 'अनलॉक करो', 'unlock phone', 'unlock screen'],
-    actionSpeech: 'स्क्रीन स्वाइप करके पिन/पैटर्न प्रोसेस कर रही हूँ, {Title}...',
-    successSpeech: 'डन {Title}, फोन सफलतापूर्वक अनलॉक हो गया है।',
-    failureSpeech: 'स्क्रीन अनलॉक नहीं हो सका {Title}। स्वाइप कोऑर्डिनेट्स मिसमैच हैं, कृपया फाइन-ट्यून करें।'
+    actionSpeech: 'स्क्रीन अनलॉक सिम्युलेटर प्रोसेस कर रही हूँ, {Title}...',
+    successSpeech: '{Title}, यह एक सिम्युलेशन डेमो है। वेब ब्राउज़र में सुरक्षित लॉकस्क्रीन सिमुलेट की गई है।',
+    failureSpeech: 'सिम्युलेशन स्क्रीन अनलॉक नहीं हो सका, {Title}।'
   },
 
   // 2. SCREEN LOCK AUTOMATION
@@ -39,9 +39,9 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'SCREEN LOCK AUTOMATION',
     category: 'screen',
     triggers: ['फोन लॉक कर दो', 'स्क्रीन लॉक करो', 'फोन बंद करो', 'lock phone', 'lock screen'],
-    actionSpeech: 'डिवाइस लॉक प्रोसेस कर रही हूँ, {Title}...',
-    successSpeech: 'फोन सुरक्षित लॉक कर दिया गया है, {Title}।',
-    failureSpeech: 'एक्सेसिबिलिटी परमिशन न होने के कारण फोन लॉक नहीं हुआ, {Title}।'
+    actionSpeech: 'डिवाइस लॉक सिमुलेशन प्रोसेस कर रही हूँ, {Title}...',
+    successSpeech: 'ऐप इंटरफ़ेस लॉक कर दिया गया है {Title}। वास्तविक ओएस लॉक हेतु नेटिव प्लगइन आवश्यक है।',
+    failureSpeech: 'लॉक सिमुलेशन में त्रुटि, {Title}।'
   },
 
   // 3. WHATSAPP SCREENSHOT & SEND
@@ -50,9 +50,9 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'WHATSAPP SCREENSHOT & SEND',
     category: 'messaging',
     triggers: ['स्क्रीनशॉट लो और whatsapp पर भेजो', 'स्क्रीनशॉट भेजो whatsapp पर', 'screenshot and send to whatsapp'],
-    actionSpeech: 'स्क्रीनशॉट कैप्चर कर रही हूँ और WhatsApp चैट ओपन कर रही हूँ, {Title}...',
-    successSpeech: '{Target} को स्क्रीनशॉट सफलतापूर्वक भेज दिया गया है, {Title}।',
-    failureSpeech: 'स्क्रीनशॉट कैप्चर हो गया है {Title}, लेकिन {Target} का कॉन्टैक्ट नहीं मिला। कृपया सही नाम बताएं।'
+    actionSpeech: 'स्क्रीनशॉट कैप्चर करके WhatsApp लिंक तैयार कर रही हूँ, {Title}...',
+    successSpeech: 'WhatsApp शेयर लिंक तैयार है {Title}, टैप करके सीधे सेंड करें।',
+    failureSpeech: 'स्क्रीनशॉट कैप्चर हो गया है {Title}, लेकिन WhatsApp लिंक तैयार नहीं हो सका।'
   },
 
   // 4. WHATSAPP VOICE MESSAGING
@@ -61,9 +61,9 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'WHATSAPP VOICE MESSAGING',
     category: 'messaging',
     triggers: ['whatsapp पर बोलो कि', 'whatsapp मैसेज भेजो', 'send whatsapp message'],
-    actionSpeech: 'WhatsApp चैट में मैसेज टाइप कर रही हूँ, {Title}...',
-    successSpeech: 'मैसेज सफलतापूर्वक सेंड कर दिया गया है, {Title}।',
-    failureSpeech: 'चैट बॉक्स लोड नहीं हो पाया या नेटवर्क समस्या है, {Title}।'
+    actionSpeech: 'WhatsApp मैसेज लिंक तैयार कर रही हूँ, {Title}...',
+    successSpeech: 'WhatsApp मैसेज ड्राफ्ट तैयार है {Title}, सेंड करने के लिए विंडो ओपन हो गई है।',
+    failureSpeech: 'मैसेज लिंक नहीं बन सका, {Title}।'
   },
 
   // 5. WHATSAPP INCOMING MESSAGE AUTO-READER
@@ -72,9 +72,9 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'WHATSAPP INCOMING MESSAGE AUTO-READER',
     category: 'messaging',
     triggers: ['whatsapp मैसेज पढ़ो', 'read incoming message'],
-    actionSpeech: 'WhatsApp पर नया मैसेज आया है...',
-    successSpeech: '{Title}, {Sender} ने मैसेज भेजा है: {Message}।',
-    failureSpeech: 'नया नोटिफिकेशन आया है लेकिन मैसेज रीड करने की परमिशन ब्लॉक है, {Title}।'
+    actionSpeech: 'डेमो इनबॉक्स से नया मैसेज रीड कर रही हूँ...',
+    successSpeech: '{Title}, डेमो इनबॉक्स में {Sender} ने मैसेज भेजा है: {Message}।',
+    failureSpeech: 'कोई नया डेमो मैसेज उपलब्ध नहीं है, {Title}।'
   },
 
   // 6. WHATSAPP AUTO-REPLY AI CHATBOT
@@ -84,7 +84,7 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     category: 'messaging',
     triggers: ['auto reply to whatsapp', 'whatsapp ऑटो रिप्लाई'],
     actionSpeech: 'इनकमिंग मैसेज का AI रिस्पॉन्स तैयार कर रही हूँ...',
-    successSpeech: 'Auto-replied to {Sender} according to tone rules.',
+    successSpeech: 'Auto-replied to {Sender} (Demo Simulation).',
     failureSpeech: 'Message skipped due to group exclusion or blacklist rule.'
   },
 
@@ -95,7 +95,7 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     category: 'messaging',
     triggers: ['आज की शिफ्ट रिपोर्ट ग्रुप में सेंड करो', 'शिफ्ट रिपोर्ट भेजो', 'send shift report'],
     actionSpeech: 'शिफ्ट डेटा और आज की तारीख संकलित कर रही हूँ, {Title}...',
-    successSpeech: 'शिफ्ट प्रोडक्शन रिपोर्ट निर्धारित ग्रुप में भेज दी गई है, {Title}।',
+    successSpeech: 'शिफ्ट प्रोडक्शन रिपोर्ट संकलित कर ली गई है (सिम्युलेटेड डेमो), {Title}।',
     failureSpeech: 'रिपोर्ट डेटा मिसिंग है या ग्रुप नहीं मिला, {Title}।'
   },
 
@@ -105,9 +105,9 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'SOCIAL MEDIA LOCAL IMAGE GENERATION & STORY POSTING',
     category: 'social_media',
     triggers: ['मोटिवेशनल कोट की इमेज बनाओ और facebook/instagram स्टोरी पर लगाओ', 'स्टोरी पर लगाओ', 'post to story'],
-    actionSpeech: 'लोकल कैनवस रेंडर करके स्टोरी अपलोड प्रोसेस शुरू कर रही हूँ, {Title}...',
-    successSpeech: 'इमेज तैयार करके स्टोरी पर सफलतापूर्वक अपलोड कर दी गई है, {Title}।',
-    failureSpeech: 'ऐप इंटरफ़ेस पर अपलोड बटन डिटेक्ट नहीं हुआ {Title}, एक्सेसिबिलिटी चेक करें।'
+    actionSpeech: 'लोकल कैनवस रेंडर करके स्टोरी प्रीव्यू तैयार कर रही हूँ, {Title}...',
+    successSpeech: 'इमेज कैनवस पर तैयार हो गई है {Title}, इसे सोशल मीडिया पर शेयर करने के लिए सेव कर दिया गया है।',
+    failureSpeech: 'इमेज रेंडरिंग में समस्या आई, {Title}।'
   },
 
   // 9. SCHEDULED SOCIAL MEDIA POSTING
@@ -117,8 +117,8 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     category: 'social_media',
     triggers: ['scheduled morning story', 'सुबह की स्टोरी शेड्यूल'],
     actionSpeech: 'शेड्यूल्ड स्टोरी पोस्टिंग प्रोसेस शुरू हो रहा है...',
-    successSpeech: 'Scheduled morning story posted successfully, {Title}.',
-    failureSpeech: 'Scheduled post failed: Screen unlock timeout.'
+    successSpeech: 'Scheduled story logged in local queue (Demo Mode), {Title}.',
+    failureSpeech: 'Scheduled post queue error.'
   },
 
   // 10. CALL REJECTION & DRIVING MODE SMS
@@ -127,8 +127,8 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'CALL REJECTION & DRIVING MODE SMS',
     category: 'telephony',
     triggers: ['driving mode ऑन करो', 'ड्राइविंग मोड चालू करो', 'activate driving mode'],
-    actionSpeech: 'ड्राइविंग मोड एक्टिवेट कर दिया गया है, {Title}।',
-    successSpeech: '{UserName} अभी ड्राइव कर रहे हैं, बाद में संपर्क करें।',
+    actionSpeech: 'ड्राइविंग मोड सिमुलेशन प्रोफाइल सक्रिय कर रही हूँ, {Title}...',
+    successSpeech: 'ड्राइविंग मोड सक्रिय है (डेमो मोड)। वास्तविक GSM कॉल रिजेक्ट के लिए नेटिव टेलीकॉम परमिशन आवश्यक है।',
     failureSpeech: 'कॉल रिजेक्ट परमिशन उपलब्ध नहीं है, {Title}।'
   },
 
@@ -139,7 +139,7 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     category: 'telephony',
     triggers: ['incoming call announcement', 'कॉलर का नाम बताओ'],
     actionSpeech: 'इनकमिंग कॉल चेक कर रही हूँ...',
-    successSpeech: '{Title}, {CallerName} की कॉल आ रही है।',
+    successSpeech: '{Title}, {CallerName} की कॉल का सिमुलेशन अनाउंसमेंट हो रहा है।',
     failureSpeech: '{Title}, किसी अज्ञात नंबर से कॉल आ रही है।'
   },
 
@@ -149,9 +149,9 @@ export const AUTOMATION_VOICE_RULES: AutomationVoiceRule[] = [
     name: 'EMERGENCY SOS & PRIORITY CALLING',
     category: 'security',
     triggers: ['sos एक्टिवेट करो', 'इमरजेंसी मोड चालू करो', 'help me', 'emergency sos'],
-    actionSpeech: 'इमरजेंसी अलर्ट सक्रिय! GPS लोकेशन के साथ 5 संपर्कों को संदेश भेजा जा रहा है, {Title}...',
-    successSpeech: 'एसओएस अलर्ट भेज दिया गया है और प्रायोरिटी 1 पर कॉल मिला रही हूँ, {Title}।',
-    failureSpeech: 'GPS सिग्नल नहीं मिल पाया, डिफ़ॉल्ट इमरजेंसी SMS भेज दिया गया है, {Title}।'
+    actionSpeech: 'इमरजेंसी अलर्ट सिम्युलेट कर रही हूँ और लाइव GPS स्कैन कर रही हूँ, {Title}...',
+    successSpeech: 'इमरजेंसी अलर्ट सिम्युलेट कर दिया गया है {Title}। कृपया ध्यान दें यह डेमो मोड है, वास्तविक आपातकाल के लिए सीधे 112 डायल करें।',
+    failureSpeech: 'GPS सिग्नल नहीं मिल पाया, डेमो अलर्ट स्क्रीन पर दर्शाया गया है, {Title}।'
   },
 
   // 13. TOUCH GUARD & INTRUDER PHOTO BURST

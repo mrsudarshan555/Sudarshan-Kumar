@@ -135,22 +135,54 @@ export class SystemAutomationEmergencyEngine {
   }
 
   // --- SOS METHODS ---
-  public triggerEmergencySOS(): { success: boolean; dispatchedTo: string[]; mapsUrl: string } {
+  public async triggerEmergencySOS(): Promise<{ 
+    success: boolean; 
+    dispatchedTo: string[]; 
+    mapsUrl: string; 
+    isRealGps: boolean;
+    isSimulationMode: boolean;
+    warningMessage: string;
+    latitude: number;
+    longitude: number;
+  }> {
     this.isSosActive = true;
     this.currentDialingPriority = 1;
 
-    // Simulated GPS Coordinates
-    const lat = 28.6139;
-    const lon = 77.2090;
-    const mapsUrl = `https://maps.google.com/?q=${lat},${lon}`;
+    let lat = 28.6139;
+    let lon = 77.2090;
+    let isRealGps = false;
 
+    // Attempt real browser geolocation
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 60000
+          });
+        });
+        lat = position.coords.latitude;
+        lon = position.coords.longitude;
+        isRealGps = true;
+      } catch (err) {
+        console.warn('[SOS] Real GPS fetch failed or permission denied, using fallback coordinates', err);
+      }
+    }
+
+    const mapsUrl = `https://maps.google.com/?q=${lat},${lon}`;
     const dispatchedTo = this.emergencyContacts.map(c => `${c.name} (${c.phoneNumber})`);
 
     this.notify();
     return {
       success: true,
       dispatchedTo,
-      mapsUrl
+      mapsUrl,
+      isRealGps,
+      isSimulationMode: true,
+      warningMessage: '⚠️ DEMO MODE: Background carrier SMS is simulated in web app. Real emergency ke liye phone ka built-in SOS ya 112 use karein.',
+      latitude: lat,
+      longitude: lon
     };
   }
 

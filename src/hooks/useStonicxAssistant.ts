@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { AssistantStatus, ChatMessage, UserPersonalConfig, AssistantConfig } from '../types';
 import { playPcmAudio, stopCurrentSpeech } from '../utils/speechEngine';
+import { OfflineVoiceMatcher } from '../services/audio/offlineVoiceMatcher';
 import {
   StonicxUserProfile,
   StonicxTopicNote,
@@ -172,38 +173,15 @@ export function useStonicxAssistant({ personalConfig, assistantConfig, onSwitchT
       console.warn('[STONICX Voice Pipeline] Charon direct voice endpoint notice, engaging deep male synthesis fallback.');
     }
 
-    // 2. Secondary Fallback: Deep, authoritative male speech synthesis
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      const cleanText = text
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/#+\s/g, '')
-        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+    // 2. Secondary Fallback: Deep, authoritative male speech synthesis matching Charon
+    const spokeOffline = OfflineVoiceMatcher.speakOffline(text, {
+      persona: 'STONICX',
+      language: 'en',
+      onStart: () => setStatus('SPEAKING'),
+      onEnd: handleSpeechEnd
+    });
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.rate = 1.0;
-      utterance.pitch = 0.75; // Deep, commanding JARVIS tone
-
-      const voices = window.speechSynthesis.getVoices();
-      const maleVoice = voices.find(v => 
-        v.name.toLowerCase().includes('male') || 
-        v.name.toLowerCase().includes('david') || 
-        v.name.toLowerCase().includes('daniel') || 
-        v.name.toLowerCase().includes('george') || 
-        v.name.toLowerCase().includes('guy') || 
-        v.name.toLowerCase().includes('james') ||
-        v.name.toLowerCase().includes('google uk english male')
-      ) || voices.find(v => v.lang.startsWith('en'));
-
-      if (maleVoice) utterance.voice = maleVoice;
-
-      utterance.onstart = () => setStatus('SPEAKING');
-      utterance.onend = handleSpeechEnd;
-      utterance.onerror = handleSpeechEnd;
-
-      window.speechSynthesis.speak(utterance);
-    } else {
+    if (!spokeOffline) {
       handleSpeechEnd();
     }
   }, []);

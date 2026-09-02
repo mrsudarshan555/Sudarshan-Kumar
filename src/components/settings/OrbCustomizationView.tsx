@@ -214,7 +214,91 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
           </div>
         </section>
 
-        {/* (b) 'ORB TYPE' QUICK-SELECT BUTTONS */}
+        {/* (b) SELECT ORB CORE STYLE (Video-Inspired & All Presets) */}
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
+              <h3 className={`text-[10px] font-bold uppercase tracking-widest ${
+                isDark ? 'text-cyan-400' : 'text-cyan-600'
+              }`}>
+                ORB CORE STYLES & PRESETS
+              </h3>
+            </div>
+            <span className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {ORB_STYLES.length} Dynamic Engines
+            </span>
+          </div>
+
+          {/* Featured Video-Inspired Orbs Highlight */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {ORB_STYLES.map((styleDef) => {
+              const isSelected = currentNormalizedStyle === styleDef.id;
+              const isVideoSpecial = ['electric_plasma', 'siri_prismatic_halo', 'silk_ribbon_vortex', 'quantum_stardust'].includes(styleDef.id);
+              
+              return (
+                <button
+                  key={styleDef.id}
+                  onClick={() => onChange({ orbStyle: styleDef.id })}
+                  className={`p-3 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between group ${
+                    isSelected
+                      ? isDark
+                        ? 'bg-gradient-to-b from-[#141b3a] to-[#0a1024] border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
+                        : 'bg-gradient-to-b from-cyan-50 to-white border-cyan-500 shadow-md ring-1 ring-cyan-500'
+                      : isDark
+                      ? 'bg-[#0C1021] border-white/10 hover:border-cyan-500/40 hover:bg-white/[0.04]'
+                      : 'bg-white border-slate-200 hover:border-cyan-400 hover:bg-slate-50'
+                  }`}
+                >
+                  {/* Top Badge for Video Special */}
+                  {isVideoSpecial && (
+                    <div className="absolute top-2 right-2">
+                      <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        NEW HD
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Live Mini Orb Preview */}
+                  <div className="w-full flex items-center justify-center py-2">
+                    <div className="p-1 rounded-full bg-black/40 border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
+                      <MayraOrb
+                        style={styleDef.id}
+                        color={config.orbColor}
+                        orbType={config.orbType || 'classic'}
+                        customHue={config.customHue}
+                        size={48}
+                        status={previewStatus}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-1">
+                    <div className="flex items-center justify-between">
+                      <span className={`font-bold text-xs tracking-tight ${
+                        isSelected 
+                          ? isDark ? 'text-white font-extrabold' : 'text-cyan-950 font-extrabold'
+                          : isDark ? 'text-slate-100' : 'text-slate-900'
+                      }`}>
+                        {styleDef.name}
+                      </span>
+                      {isSelected && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      )}
+                    </div>
+                    <p className={`text-[9px] font-normal mt-0.5 line-clamp-2 leading-tight ${
+                      isDark ? 'text-slate-400' : 'text-slate-500'
+                    }`}>
+                      {styleDef.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* (c) 'ORB TYPE' QUICK-SELECT BUTTONS */}
         <section className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <h3 className={`text-[10px] font-bold uppercase tracking-widest ${

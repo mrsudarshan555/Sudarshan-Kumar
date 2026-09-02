@@ -18,6 +18,7 @@ import {
 } from './routerStateBus';
 import { MemoryVaultService } from '../memory/memoryVaultService';
 import { playPcmAudio, stopCurrentSpeech, speakText, sanitizeTextForSpeech } from '../../utils/speechEngine';
+import { OfflineVoiceMatcher } from '../audio/offlineVoiceMatcher';
 import { loadStonicxTopicNotes, saveStonicxTopicNotes } from '../../utils/stonicxMemoryStore';
 import { StonicxTopicNote } from '../../types/stonicxMemory';
 import { ChatMessage, MemoryItem } from '../../types';
@@ -247,9 +248,6 @@ export class PersonaSwitchBridge {
         () => {},
         () => resolve()
       ).catch(() => resolve());
-
-      // Timeout safety
-      setTimeout(resolve, 2200);
     });
   }
 
@@ -259,13 +257,13 @@ export class PersonaSwitchBridge {
   public static async speakCharonVoice(text: string): Promise<void> {
     if (!text || typeof window === 'undefined') return;
 
-    stopCurrentSpeech();
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    return new Promise((resolve) => {
+      stopCurrentSpeech();
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
 
-    try {
-      const res = await fetch('/api/voice/speak', {
+      fetch('/api/voice/speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -274,51 +272,29 @@ export class PersonaSwitchBridge {
           assistant: 'stonicx',
           language: 'en'
         })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.audioBase64) {
-          await new Promise<void>((resolve) => {
-            const played = playPcmAudio(
-              data.audioBase64,
-              () => {},
-              () => resolve()
-            );
-            if (!played) resolve();
-            setTimeout(resolve, 2500);
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (data.audioBase64) {
+              const played = playPcmAudio(
+                data.audioBase64,
+                () => {},
+                () => resolve()
+              );
+              if (played) return;
+            }
+          }
+          throw new Error('Fallback needed');
+        })
+        .catch(() => {
+          // Secondary fallback: High fidelity deep baritone persona matching Charon
+          OfflineVoiceMatcher.speakOffline(text, {
+            persona: 'STONICX',
+            language: 'en',
+            onEnd: () => resolve()
           });
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('[PersonaBridge] Charon voice fetch note, using secondary voice fallback');
-    }
-
-    // Secondary fallback
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      await new Promise<void>((resolve) => {
-        const clean = sanitizeTextForSpeech(text);
-        const utterance = new SpeechSynthesisUtterance(clean);
-        utterance.rate = 1.0;
-        utterance.pitch = 0.75;
-
-        const voices = window.speechSynthesis.getVoices();
-        const maleVoice = voices.find(v => 
-          v.name.toLowerCase().includes('male') || 
-          v.name.toLowerCase().includes('david') || 
-          v.name.toLowerCase().includes('daniel') || 
-          v.name.toLowerCase().includes('george')
-        ) || voices.find(v => v.lang.startsWith('en'));
-
-        if (maleVoice) utterance.voice = maleVoice;
-
-        utterance.onend = () => resolve();
-        utterance.onerror = () => resolve();
-        window.speechSynthesis.speak(utterance);
-
-        setTimeout(resolve, 2500);
-      });
-    }
+        });
+    });
   }
 }

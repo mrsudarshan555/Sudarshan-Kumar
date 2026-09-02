@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
+import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
 import { getDynamicSuggestions } from '../../utils/dynamicSuggestions';
 import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
 import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
@@ -43,6 +44,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [isAttachmentSheetOpen, setIsAttachmentSheetOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState<number>(0);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
 
   // Chat Search State
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
@@ -189,9 +191,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       className="flex-1 flex flex-col h-full overflow-hidden bg-[#070312] text-slate-100 relative min-h-0 transition-[padding-bottom] duration-200 ease-out"
       style={keyboardOffset > 0 ? { paddingBottom: `${keyboardOffset}px` } : undefined}
     >
+      {/* 1. Atmospheric Ambient Background Depth & Drifting Particles (Matching 3D Avatar/Home) */}
+      <HomeAtmosphereBackground status={status} />
       
       {/* Top Floating Mini Header with Search & Clear */}
-      <div className="px-3.5 py-2 border-b border-white/10 flex items-center justify-between bg-[#120626]/80 backdrop-blur-2xl z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="relative px-3.5 py-2 border-b border-white/10 flex items-center justify-between bg-[#120626]/70 backdrop-blur-2xl z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30">
             <Sparkles className="w-3.5 h-3.5" />
@@ -439,25 +443,32 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         )}
       </PullToRefresh>
 
-      {/* Suggested Quick Chips */}
-      {messages.length > 0 && messages.length < 5 && (
-        <div className="px-3.5 py-1 flex gap-2 overflow-x-auto scrollbar-none shrink-0">
-          {samplePrompts.slice(0, 4).map((p) => (
-            <motion.button
-              key={p}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.94 }}
-              onClick={() => {
-                setInputText(p);
-                inputRef.current?.focus();
-              }}
-              className="px-3 py-1 bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 rounded-full text-[11px] text-slate-300 hover:text-white whitespace-nowrap backdrop-blur-md transition-colors cursor-pointer shadow-sm"
-            >
-              {p}
-            </motion.button>
-          ))}
-        </div>
-      )}
+      {/* Dynamic Suggested Quick Chips: Appears above input box on focus or when input text is entered */}
+      <AnimatePresence>
+        {(isInputFocused || inputText.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: 8, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="px-3.5 py-1 flex gap-2 overflow-x-auto scrollbar-none shrink-0 z-10"
+          >
+            {samplePrompts.slice(0, 5).map((p, pIdx) => (
+              <motion.button
+                key={`chat-prompt-${p}-${pIdx}`}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => {
+                  setInputText(p);
+                }}
+                className="px-3 py-1 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/30 hover:border-cyan-400/60 rounded-full text-[11px] text-purple-200 hover:text-white whitespace-nowrap backdrop-blur-xl transition-all shadow-[0_0_10px_rgba(168,85,247,0.15)] cursor-pointer shrink-0"
+              >
+                {p}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Attached File Preview Chip */}
       <AnimatePresence>
@@ -466,7 +477,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="px-3.5 py-1.5 shrink-0"
+            className="px-3.5 py-1.5 shrink-0 z-10"
           >
             <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-xs font-mono text-cyan-300">
               <div className="flex items-center gap-2 truncate">
@@ -490,12 +501,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Chat Input Bar - Morphing Aurora Capsule */}
-      <div className="p-3 border-t border-white/10 bg-[#120626]/80 backdrop-blur-3xl shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] flex justify-center">
+      {/* Chat Input Bar - Morphing Aurora Capsule (Fully Blended with Space Ambient Glow) */}
+      <div className="p-3 bg-transparent shrink-0 flex justify-center z-10">
         <div className="w-full max-w-lg">
           <MorphingAuroraInputBox
             inputText={inputText}
             setInputText={setInputText}
+            isFocused={isInputFocused}
+            onFocusChange={setIsInputFocused}
             onSubmit={() => {
               if (inputText.trim() || attachedFile) {
                 onSubmitPrompt(
@@ -518,7 +531,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             status={status}
             attachedFile={attachedFile}
             onRemoveAttachment={() => setAttachedFile(null)}
-            placeholder="What's your mind today"
+            placeholder="Ask Mayra anything..."
+            showHeading={false}
           />
         </div>
       </div>

@@ -15,6 +15,8 @@ interface MorphingAuroraInputBoxProps {
   placeholder?: string;
   showHeading?: boolean;
   headingText?: string;
+  isFocused?: boolean;
+  onFocusChange?: (focused: boolean) => void;
 }
 
 const SUGGESTIONS = [
@@ -32,16 +34,25 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   onSubmit,
   onTriggerVoice,
   onOpenAttachment,
-  status = 'IDLE',
+  status = 'READY',
   attachedFile = null,
   onRemoveAttachment,
   placeholder = "What's your mind today",
   showHeading = true,
-  headingText = "What's on your mind today?"
+  headingText = "What's on your mind today?",
+  isFocused: externalIsFocused,
+  onFocusChange
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [internalIsFocused, setInternalIsFocused] = useState<boolean>(false);
   const [suggestionIdx, setSuggestionIdx] = useState<number>(0);
+
+  const isFocused = externalIsFocused !== undefined ? externalIsFocused : internalIsFocused;
+
+  const handleFocusChange = (focused: boolean) => {
+    setInternalIsFocused(focused);
+    onFocusChange?.(focused);
+  };
 
   // Rotate smart suggestions only while the user has focused/tapped into the input box
   useEffect(() => {
@@ -90,19 +101,22 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   return (
     <div className="w-full flex flex-col items-center select-none relative px-2">
       
-      {/* 1. TOP HEADING FROM VIDEO ("What's on your mind today?") */}
-      {showHeading && (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-2.5 text-center"
-        >
-          <h2 className="text-[15px] sm:text-base font-sans font-medium text-white/90 tracking-wide drop-shadow-[0_2px_14px_rgba(217,70,239,0.5)]">
-            {headingText}
-          </h2>
-        </motion.div>
-      )}
+      {/* 1. TOP HEADING ("What's on your mind today?") - Hides when user taps/focuses into chat box */}
+      <AnimatePresence>
+        {showHeading && !isFocused && !hasText && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-2.5 text-center overflow-hidden"
+          >
+            <h2 className="text-[14px] sm:text-[15px] font-sans font-medium text-white/90 tracking-wide drop-shadow-[0_2px_14px_rgba(217,70,239,0.5)]">
+              {headingText}
+            </h2>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 2. OUTER CONTAINER WITH 4 FLOATING DUAL-COLOR AURORAS (Half Blue-Violet, Half Hot-Magenta) */}
       <div className="relative w-full max-w-md flex flex-col items-center">
@@ -192,8 +206,8 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
+                  onFocus={() => handleFocusChange(true)}
+                  onBlur={() => handleFocusChange(false)}
                   placeholder={activePlaceholder}
                   rows={2}
                   className="w-full bg-transparent border-none outline-none resize-none text-[13px] sm:text-sm text-white placeholder-purple-200/40 font-sans leading-relaxed min-h-[50px] max-h-[130px] scrollbar-thin scrollbar-thumb-fuchsia-500/20"
@@ -215,7 +229,7 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
 
                   {/* Circular Up-Arrow Button at bottom-right corner */}
                   <div className="flex items-center gap-1.5">
-                    <AnimatePresence mode="wait">
+                      <AnimatePresence mode="wait">
                       {hasText ? (
                         <motion.button
                           key="multiline-send"
@@ -281,8 +295,8 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
                       onSubmit();
                     }
                   }}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
+                  onFocus={() => handleFocusChange(true)}
+                  onBlur={() => handleFocusChange(false)}
                   placeholder={activePlaceholder}
                   className="flex-1 bg-transparent border-none outline-none text-[13px] sm:text-sm text-white placeholder-purple-200/40 font-sans min-w-0"
                 />

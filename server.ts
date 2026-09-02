@@ -269,6 +269,7 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
   if (!cleanText) return null;
 
   try {
+    const targetVoice = voiceName || 'Charon';
     const callPromise = ai.models.generateContent({
       model: 'gemini-3.1-flash-tts-preview',
       contents: cleanText,
@@ -277,7 +278,7 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: {
-              voiceName: voiceName || 'Charon'
+              voiceName: targetVoice
             }
           }
         }
@@ -285,7 +286,7 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
     });
 
     const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 3500)
+      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 10000)
     );
 
     const response = await Promise.race([callPromise, timeoutPromise]) as any;
@@ -307,11 +308,11 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
     const isQuotaOrRateLimit = errMsg.includes('quota') || errMsg.includes('429') || errMsg.includes('resource_exhausted') || errStatus === 'RESOURCE_EXHAUSTED' || errStatus === 429;
 
     if (isQuotaOrRateLimit) {
-      // Pause TTS calls for 60 seconds and gracefully fall back to local voice synthesis without spamming logs
-      ttsQuotaExhaustedUntil = Date.now() + 60000;
-      console.log('[Gemini Voice Engine] Gemini TTS preview quota reached. Circuit-breaker active for 60s (using high-fidelity client voice synthesis).');
+      // Pause TTS calls for 10 seconds and gracefully fall back to local voice synthesis without spamming logs
+      ttsQuotaExhaustedUntil = Date.now() + 10000;
+      console.log('[Gemini Voice Engine] Gemini TTS preview quota reached. Circuit-breaker active for 10s (using high-fidelity client voice synthesis).');
     } else {
-      console.log('[Gemini Voice Engine] Gemini direct TTS notice: fallback to client speech synthesis.');
+      console.log(`[Gemini Voice Engine] Gemini direct TTS notice (${err?.message || 'notice'}): fallback to client speech synthesis.`);
     }
     return null;
   }

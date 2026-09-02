@@ -73,13 +73,22 @@ export const DrivingModeStudioView: React.FC<DrivingModeStudioViewProps> = ({ on
               <Car className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                Driving Mode Studio
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                  Driving Mode Studio
+                </h2>
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-mono font-bold">
+                  SIMULATION DEMO
+                </span>
+              </div>
               <p className="text-[10px] text-slate-400 font-sans">Features 81-86: Auto Reject Call, SMS & Caller Announcer</p>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="px-4 py-2 bg-amber-950/20 border-b border-amber-500/20 text-[10px] text-amber-200/90 font-mono">
+        ℹ️ Note: Browser environment cannot intercept incoming GSM cellular calls directly. In native Android APK, this connects to Android InCallService Telecom API.
       </div>
 
       <div className="p-4 space-y-4 text-xs font-sans pb-12">

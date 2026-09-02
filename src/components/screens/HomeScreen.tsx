@@ -324,12 +324,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return getDynamicSuggestions(messages, (assistantConfig as any)?.language || 'en', rotationSeed);
   }, [messages, assistantConfig, rotationSeed]);
 
+  const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
+  const [keyboardOffset, setKeyboardOffset] = useState<number>(0);
+
+  // Keyboard open/close layout coordinator via visualViewport
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const handleVisualResize = () => {
+      if (!window.visualViewport) return;
+      const visualHeight = window.visualViewport.height;
+      const windowHeight = window.innerHeight;
+      const offset = Math.max(0, windowHeight - visualHeight - (window.visualViewport.offsetTop || 0));
+      setKeyboardOffset(offset);
+    };
+
+    window.visualViewport.addEventListener('resize', handleVisualResize);
+    window.visualViewport.addEventListener('scroll', handleVisualResize);
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleVisualResize);
+      window.visualViewport?.removeEventListener('scroll', handleVisualResize);
+    };
+  }, []);
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.99 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-      className="relative w-full h-full flex flex-col justify-between overflow-hidden bg-[#070312] text-slate-100 select-none min-h-0"
+      className="relative w-full h-full flex flex-col justify-between overflow-hidden bg-[#070312] text-slate-100 select-none min-h-0 transition-[padding-bottom] duration-200 ease-out"
+      style={keyboardOffset > 0 ? { paddingBottom: `${keyboardOffset}px` } : undefined}
     >
       
       {/* 1. Atmospheric Ambient Background Depth & Drifting Particles */}
@@ -528,8 +553,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </AnimatePresence>
           </div>
 
-          {/* Right: Sleek Pure Action Icons with Spring Hover & Tap animations */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right: Clean Top Action Icons (Brand, Whiteboard, Share, Lock, Settings) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Sign In Button: Only visible on Home when user is not authenticated */}
             {!currentUser && onOpenSignIn && (
               <motion.button
@@ -544,47 +569,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </motion.button>
             )}
 
-            {onOpenRoutines && (
-              <motion.button
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.88 }}
-                onClick={onOpenRoutines}
-                className="p-1 bg-transparent border-0 text-amber-300 hover:text-amber-200 transition-colors cursor-pointer"
-                title="Smart Shortcuts & Dinacharya"
-              >
-                <Zap className="w-4 h-4 stroke-[2]" />
-              </motion.button>
-            )}
-
-            {onOpenWidgetGuide && (
-              <motion.button
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.88 }}
-                onClick={onOpenWidgetGuide}
-                className="p-1 bg-transparent border-0 text-cyan-300 hover:text-cyan-200 transition-colors cursor-pointer"
-                title="Android Quick Widget Preview"
-              >
-                <Smartphone className="w-4 h-4 stroke-[1.8]" />
-              </motion.button>
-            )}
-
+            {/* 1. Whiteboard (Direct Study & AI Solver Canvas) */}
             {onOpenWhiteboard && (
               <motion.button
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.88 }}
                 onClick={onOpenWhiteboard}
-                className={`p-1 bg-transparent border-0 transition-colors cursor-pointer ${
+                className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 text-[11px] font-sans ${
                   isStageCanvasOpen
-                    ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)] scale-110'
-                    : 'text-slate-300 hover:text-cyan-300'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                    : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border border-white/10 hover:border-cyan-400/40'
                 }`}
-                title={isStageCanvasOpen ? 'Close Stage Canvas (Whiteboard)' : 'Open Stage Canvas (Whiteboard)'}
+                title={isStageCanvasOpen ? 'Close Study Whiteboard' : 'Open Study Whiteboard (Mayra AI Solver)'}
               >
-                <PenTool className="w-4 h-4 stroke-[1.8]" />
+                <PenTool className="w-3.5 h-3.5 stroke-[2] text-cyan-300" />
+                <span className="hidden sm:inline text-[10px] font-medium text-slate-200">Whiteboard</span>
               </motion.button>
             )}
 
-            {/* Barehands Gesture Tracking Toggle Button */}
+            {/* 2. Barehands AR Gesture / Hand Tracking Control */}
             <motion.button
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.88 }}
@@ -594,72 +597,61 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   toggleHandTracking();
                 }
               }}
-              className={`p-1 bg-transparent border-0 transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full border transition-all cursor-pointer ${
                 isBarehandsCameraOpen || isHandTrackingActive || isHandTrackingLoading
-                  ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)] scale-110'
-                  : 'text-slate-300 hover:text-white'
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.5)]'
+                  : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border-white/10 hover:border-cyan-400/40'
               }`}
               title={
                 isHandTrackingLoading
                   ? 'Initializing Barehands...'
                   : isBarehandsCameraOpen
-                  ? 'Full-Screen Hand Camera Open'
-                  : 'Open Full-Screen Barehands AR Camera (Gestures & Motion Control)'
+                  ? 'Full-Screen Hand Camera Active'
+                  : 'Barehands AR Hand Gesture Control'
               }
             >
-              <Hand className={`w-4 h-4 stroke-[1.8] ${isHandTrackingLoading || isBarehandsCameraOpen ? 'animate-pulse text-cyan-400' : ''}`} />
+              <Hand className={`w-3.5 h-3.5 stroke-[1.8] ${isHandTrackingLoading || isBarehandsCameraOpen ? 'animate-pulse text-cyan-400' : ''}`} />
             </motion.button>
 
-            {/* Screen Share / Cast Button */}
+            {/* 3. Screen Share / Cast Button */}
             <motion.button
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.88 }}
               onClick={handleToggleScreenShare}
-              className={`p-1 bg-transparent border-0 transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-colors cursor-pointer ${
                 isScreenSharing
-                  ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)]'
+                  ? 'text-cyan-400 border-cyan-400/50 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)]'
                   : 'text-slate-300 hover:text-white'
               }`}
               title={isScreenSharing ? 'Disconnect Screen Share' : 'Connect Screen Stream'}
             >
-              <ScreenShare className="w-4 h-4 stroke-[1.8]" />
+              <ScreenShare className="w-3.5 h-3.5 stroke-[1.8]" />
             </motion.button>
 
-            {/* Character Lock / Unlock Button */}
+            {/* 4. Character Lock / Unlock Button */}
             <motion.button
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.88 }}
               onClick={handleToggleLock}
-              className="p-1 bg-transparent border-0 transition-colors text-slate-300 hover:text-white cursor-pointer"
+              className="p-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-colors text-slate-300 hover:text-white cursor-pointer"
               title={lockState.isLocked ? 'Character Locked' : 'Character Unlocked'}
             >
               {lockState.isLocked ? (
-                <Lock className="w-4 h-4 text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)] stroke-[1.8]" />
+                <Lock className="w-3.5 h-3.5 text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)] stroke-[1.8]" />
               ) : (
-                <Unlock className="w-4 h-4 text-slate-300 hover:text-white stroke-[1.8]" />
+                <Unlock className="w-3.5 h-3.5 text-slate-300 hover:text-white stroke-[1.8]" />
               )}
             </motion.button>
 
-            {/* APK Builder / Download Button */}
-            <motion.button
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.88 }}
-              onClick={() => setIsApkExportOpen(true)}
-              className="p-1 bg-transparent border-0 transition-colors text-emerald-400 hover:text-emerald-300 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)] cursor-pointer"
-              title="Build / Export Android APK"
-            >
-              <Smartphone className="w-4 h-4 stroke-[1.8]" />
-            </motion.button>
-
-            {/* Settings Gear Icon: Clean rotating gear with spring hover */}
+            {/* 5. Settings Gear Icon */}
             <motion.button
               whileHover={{ scale: 1.15, rotate: 45 }}
               whileTap={{ scale: 0.88 }}
               onClick={onOpenSettings}
-              className="p-1 bg-transparent border-0 text-cyan-400 hover:text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)] transition-colors group cursor-pointer"
+              className="p-1.5 rounded-full bg-purple-950/50 hover:bg-purple-900/60 border border-purple-400/30 text-purple-300 hover:text-white shadow-[0_0_10px_rgba(168,85,247,0.25)] transition-all group cursor-pointer"
               title={`Settings (${userName})`}
             >
-              <SettingsIcon className="w-4 h-4 animate-[spin_10s_linear_infinite] stroke-[1.8]" />
+              <SettingsIcon className="w-3.5 h-3.5 animate-[spin_10s_linear_infinite] stroke-[1.8]" />
             </motion.button>
           </div>
         </header>
@@ -710,7 +702,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 4. LOWER INTERACTION STAGE: Cardless Live Transcript / Prompts & iOS Search Pill */}
       <div className="relative z-20 w-full px-3.5 pb-2 flex flex-col items-center gap-2 pointer-events-auto">
         
-        {/* Dynamic Cardless Transcript / Status: Direct text without large card */}
+        {/* Dynamic Cardless Transcript / Status / Suggestion Chips */}
         {status !== 'READY' ? (
           <motion.div 
             initial={{ opacity: 0, y: 6 }}
@@ -726,22 +718,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <Sparkles className="w-3 h-3 text-cyan-400 shrink-0 ml-2 animate-spin" />
           </motion.div>
         ) : (
-          /* Quick Prompt Chips with spring hover & tap */
-          <div className="w-full max-w-sm flex items-center gap-1.5 overflow-x-auto py-0.5 px-0.5 scrollbar-none">
-            {quickPrompts.map((prompt) => (
-              <motion.button
-                key={prompt}
-                whileHover={{ scale: 1.05, y: -1 }}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => {
-                  setInputText(prompt);
-                }}
-                className="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-cyan-400/40 rounded-full text-[11px] text-slate-300 hover:text-white whitespace-nowrap backdrop-blur-xl transition-colors shadow-sm cursor-pointer"
+          /* Suggestion Chips: Fluidly slides into view above chat input when focused or active */
+          <AnimatePresence>
+            {(isInputFocused || inputText.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: 'auto' }}
+                exit={{ opacity: 0, y: 8, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full max-w-sm flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 scrollbar-none"
               >
-                {prompt}
-              </motion.button>
-            ))}
-          </div>
+                {quickPrompts.map((prompt, pIdx) => (
+                  <motion.button
+                    key={`quick-prompt-${prompt}-${pIdx}`}
+                    whileHover={{ scale: 1.05, y: -1 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => {
+                      setInputText(prompt);
+                    }}
+                    className="px-3 py-1.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/30 hover:border-cyan-400/60 rounded-full text-[11px] text-purple-200 hover:text-white whitespace-nowrap backdrop-blur-xl transition-all shadow-[0_0_10px_rgba(168,85,247,0.15)] cursor-pointer shrink-0"
+                  >
+                    {prompt}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
 
         {/* Hidden File Input */}
@@ -757,6 +759,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <MorphingAuroraInputBox
             inputText={inputText}
             setInputText={setInputText}
+            isFocused={isInputFocused}
+            onFocusChange={setIsInputFocused}
             onSubmit={() => {
               if (inputText.trim() || attachedFile) {
                 onSubmitPrompt(

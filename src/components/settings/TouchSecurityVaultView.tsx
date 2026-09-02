@@ -87,9 +87,14 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
               <ShieldAlert className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                Touch Guard & Anti-Theft Vault
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                  Touch Guard & Anti-Theft Vault
+                </h2>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono font-bold">
+                  REAL SENSORS & SIREN
+                </span>
+              </div>
               <p className="text-[10px] text-slate-400 font-sans">
                 Features 45-55: Siren, Motion Alarm & Intruder Capture
               </p>

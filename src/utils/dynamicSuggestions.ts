@@ -174,8 +174,13 @@ export function getDynamicSuggestions(
     if (category) {
       const pool = isHindi && category.hi.length > 0 ? category.hi : category.en;
       if (pool.length > 0) {
-        const index = (rotationSeed + selectedChips.length) % pool.length;
-        selectedChips.push(pool[index]);
+        for (let attempt = 0; attempt < pool.length; attempt++) {
+          const candidate = pool[(rotationSeed + selectedChips.length + attempt) % pool.length];
+          if (!selectedChips.includes(candidate)) {
+            selectedChips.push(candidate);
+            break;
+          }
+        }
       }
     }
   }
@@ -189,5 +194,5 @@ export function getDynamicSuggestions(
     }
   }
 
-  return selectedChips.slice(0, 5);
+  return Array.from(new Set(selectedChips)).slice(0, 5);
 }

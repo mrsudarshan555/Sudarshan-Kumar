@@ -6,6 +6,7 @@ import {
   Layers, Globe, Radio
 } from 'lucide-react';
 import { CameraAspectRatio } from '../../types';
+import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
 
 interface ScannerScreenProps {
   onSendVisionQuery: (query: string, image?: { base64: string; mimeType?: string }) => void;
@@ -217,10 +218,12 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-center items-center overflow-y-auto overflow-x-hidden bg-[#070312] text-slate-100 select-none px-3 py-1 scrollbar-none">
+    <div className="w-full h-full flex flex-col justify-center items-center overflow-y-auto overflow-x-hidden bg-[#070312] text-slate-100 select-none px-3 py-1 scrollbar-none relative">
+      {/* 1. Atmospheric Ambient Background Depth & Drifting Particles */}
+      <HomeAtmosphereBackground status="READY" />
       
       {/* Unified Compact Scanner Container */}
-      <div className="w-full max-w-[360px] flex flex-col items-center gap-2.5 my-auto py-2">
+      <div className="relative z-10 w-full max-w-[360px] flex flex-col items-center gap-2.5 my-auto py-2">
         
         {/* 1. Scanner Heading + Camera Controls */}
         <div className="w-full px-2 py-1 flex items-center justify-between shrink-0">

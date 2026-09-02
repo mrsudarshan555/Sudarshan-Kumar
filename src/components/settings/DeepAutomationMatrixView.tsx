@@ -255,31 +255,41 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
         {/* TAB 3: HARDWARE TELEMETRY */}
         {activeTab === 'telemetry' && (
           <div className="space-y-4">
+            <div className="p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-xl text-[10px] text-cyan-300 font-mono flex items-center justify-between">
+              <span>HARDWARE TELEMETRY DIAGNOSTICS</span>
+              <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/30 font-bold">
+                HYBRID (REAL SENSORS + SIM ESTIMATION)
+              </span>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               {/* CPU Card */}
               <div className="p-4 bg-[#0C1021] border border-cyan-500/20 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-cyan-400 font-mono text-[10px]">
-                  <span className="flex items-center gap-1"><Cpu className="w-3.5 h-3.5" /> Neural CPU</span>
-                  <span>{telemetry.cpuTempCelsius}°C</span>
+                  <span className="flex items-center gap-1"><Cpu className="w-3.5 h-3.5" /> CPU Load</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-amber-300">ESTIMATED</span>
                 </div>
                 <div className="text-2xl font-mono font-black text-white">{telemetry.cpuUsage}%</div>
                 <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                   <div className="bg-cyan-400 h-full" style={{ width: `${telemetry.cpuUsage}%` }} />
                 </div>
-                <span className="text-[9px] font-mono text-slate-400">8-Core Neural Array Active</span>
+                <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                  <span>{telemetry.cpuCores} Real Hardware Cores</span>
+                  <span>{telemetry.cpuTempCelsius}°C (Est.)</span>
+                </div>
               </div>
 
               {/* Battery Card */}
               <div className="p-4 bg-[#0C1021] border border-emerald-500/20 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-emerald-400 font-mono text-[10px]">
                   <span className="flex items-center gap-1"><BatteryCharging className="w-3.5 h-3.5" /> Battery</span>
-                  <span>{telemetry.chargingStatus}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">REAL API</span>
                 </div>
                 <div className="text-2xl font-mono font-black text-white">{telemetry.batteryLevel}%</div>
                 <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                   <div className="bg-emerald-400 h-full" style={{ width: `${telemetry.batteryLevel}%` }} />
                 </div>
-                <span className="text-[9px] font-mono text-slate-400">Health: {telemetry.batteryHealth}</span>
+                <span className="text-[9px] font-mono text-slate-400">Status: {telemetry.chargingStatus}</span>
               </div>
             </div>
 

@@ -252,6 +252,10 @@ export interface AssistantConfig {
 }
 
 export type OrbStyleType = 
+  | 'electric_plasma'
+  | 'siri_prismatic_halo'
+  | 'silk_ribbon_vortex'
+  | 'quantum_stardust'
   | 'particle_swirl'
   | 'galaxy_swirl'
   | 'pulse_reactor'
@@ -269,6 +273,10 @@ export type OrbStyleType =
   | 'plasma_vortex'
   | 'luminous_glow'
   // Legacy aliases for backward compatibility
+  | 'plasma'
+  | 'siri_halo'
+  | 'silk_mesh'
+  | 'stardust'
   | 'glow' 
   | 'nova' 
   | 'grid' 

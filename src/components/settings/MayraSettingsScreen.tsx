@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppLockConfig } from '../security/useAppLock';
 import { HomeScreenWidgetModal } from '../widgets/HomeScreenWidgetModal';
 import { 
@@ -37,17 +37,46 @@ import { QuantumMemoryVisionView } from './QuantumMemoryVisionView';
 import { AutomationDialogueStudioView } from './AutomationDialogueStudioView';
 import { NeuralTradingStudioView } from './NeuralTradingStudioView';
 import { WhiteboardTool } from '../tools/WhiteboardTool';
+import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
 import { MayraLogo } from '../common/MayraLogo';
 import { AppIconTile } from '../common/AppIconTile';
 import { ORB_STYLES, ORB_COLORS } from '../character/MayraOrb';
+import { NeuralTradingFinanceEngine } from '../../services/finance/NeuralTradingFinanceEngine';
+import { DeepAutomationMatrixEngine } from '../../services/automation/DeepAutomationMatrixEngine';
+import { SystemAutomationEmergencyEngine } from '../../services/automation/SystemAutomationEmergencyEngine';
+import { TouchSecurityEngine } from '../../services/security/TouchSecurityEngine';
+import { UnifiedAppHubEngine } from '../../services/hub/UnifiedAppHubEngine';
+import { SmartLifestyleIoTEngine } from '../../services/lifestyle/SmartLifestyleIoTEngine';
 import { 
   Settings as SettingsIcon, User, Globe, Sparkles, 
   Wrench, Bot, ShieldCheck, ShieldAlert, Database, Cpu, 
   Boxes, Lock, Info, ChevronRight, ArrowLeft, Search, X,
   Shield, CheckCircle2, Smartphone, PenTool, HardDrive,
   Palette, Moon, Sun, KeyRound, AlertOctagon, Car, MessageSquare,
-  ScanText, Zap, Terminal, Brain, Volume2, TrendingUp
+  ScanText, Zap, Terminal, Brain, Volume2, TrendingUp, Activity,
+  BatteryCharging, Radio
 } from 'lucide-react';
+
+interface SettingCategoryItem {
+  id: SettingsSubScreen;
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  badge?: string;
+  onClick?: () => void;
+  oneLineSummary?: {
+    text: string;
+    chipLabel?: string;
+    chipTone?: 'emerald' | 'rose' | 'amber' | 'cyan' | 'purple' | 'blue' | 'slate';
+    isLive?: boolean;
+    isSimulated?: boolean;
+  };
+}
+
+interface SettingCategorySection {
+  category: string;
+  items: SettingCategoryItem[];
+}
 
 interface MayraSettingsScreenProps {
   currentSubScreen: SettingsSubScreen;
@@ -122,6 +151,116 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
   const isDark = appearanceConfig?.darkMode ?? true;
+
+  // --- LIVE ENGINE SUBSCRIPTIONS FOR ANDROID WIDGET STACK ---
+  const [tradingLive, setTradingLive] = useState(() => {
+    const e = NeuralTradingFinanceEngine.getInstance();
+    return { price: e.getPrice(), change: e.getChange(), symbol: e.getSymbol(), pcr: e.getPCR() };
+  });
+
+  const [telemetryLive, setTelemetryLive] = useState(() => {
+    const e = DeepAutomationMatrixEngine.getInstance();
+    return e.getTelemetry();
+  });
+
+  const [emergencyLive, setEmergencyLive] = useState(() => {
+    const e = SystemAutomationEmergencyEngine.getInstance();
+    return {
+      contactsCount: e.getEmergencyContacts().length,
+      isSosActive: e.isSosTriggered(),
+      driving: e.getDrivingConfig(),
+      unlock: e.getUnlockConfig()
+    };
+  });
+
+  const [touchLive, setTouchLive] = useState(() => {
+    const e = TouchSecurityEngine.getInstance();
+    return {
+      isArmed: e.getArmedStatus(),
+      isAlarmSounding: e.isAlarming(),
+      logsCount: e.getIntruderLogs().length
+    };
+  });
+
+  const [hubLive, setHubLive] = useState(() => {
+    const e = UnifiedAppHubEngine.getInstance();
+    return {
+      messagesCount: e.getMessages().length,
+      alarmsCount: e.getAlarms().length,
+      eventsCount: e.getCalendar().length
+    };
+  });
+
+  const [iotLive, setIotLive] = useState(() => {
+    const e = SmartLifestyleIoTEngine.getInstance();
+    return {
+      devicesCount: e.getDevices().length,
+      activeDevices: e.getDevices().filter(d => d.state).length
+    };
+  });
+
+  // Subscribe to real-time engine updates
+  useEffect(() => {
+    const tradingEngine = NeuralTradingFinanceEngine.getInstance();
+    const unsubTrading = tradingEngine.subscribe(() => {
+      setTradingLive({
+        price: tradingEngine.getPrice(),
+        change: tradingEngine.getChange(),
+        symbol: tradingEngine.getSymbol(),
+        pcr: tradingEngine.getPCR()
+      });
+    });
+
+    const matrixEngine = DeepAutomationMatrixEngine.getInstance();
+    const unsubMatrix = matrixEngine.subscribe(() => {
+      setTelemetryLive({ ...matrixEngine.getTelemetry() });
+    });
+
+    const emergencyEngine = SystemAutomationEmergencyEngine.getInstance();
+    const unsubEmergency = emergencyEngine.subscribe(() => {
+      setEmergencyLive({
+        contactsCount: emergencyEngine.getEmergencyContacts().length,
+        isSosActive: emergencyEngine.isSosTriggered(),
+        driving: emergencyEngine.getDrivingConfig(),
+        unlock: emergencyEngine.getUnlockConfig()
+      });
+    });
+
+    const touchEngine = TouchSecurityEngine.getInstance();
+    const unsubTouch = touchEngine.subscribe(() => {
+      setTouchLive({
+        isArmed: touchEngine.getArmedStatus(),
+        isAlarmSounding: touchEngine.isAlarming(),
+        logsCount: touchEngine.getIntruderLogs().length
+      });
+    });
+
+    const hubEngine = UnifiedAppHubEngine.getInstance();
+    const unsubHub = hubEngine.subscribe(() => {
+      setHubLive({
+        messagesCount: hubEngine.getMessages().length,
+        alarmsCount: hubEngine.getAlarms().length,
+        eventsCount: hubEngine.getCalendar().length
+      });
+    });
+
+    const iotEngine = SmartLifestyleIoTEngine.getInstance();
+    const unsubIot = iotEngine.subscribe(() => {
+      setIotLive({
+        devicesCount: iotEngine.getDevices().length,
+        activeDevices: iotEngine.getDevices().filter(d => d.state).length
+      });
+    });
+
+    return () => {
+      unsubTrading();
+      unsubMatrix();
+      unsubEmergency();
+      unsubTouch();
+      unsubHub();
+      unsubIot();
+    };
+  }, []);
 
   // Handle toggles
   const handleToggleSkill = (id: string) => {
@@ -493,24 +632,17 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     );
   }
 
-interface SettingCategoryItem {
-  id: SettingsSubScreen;
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  badge?: string;
-  onClick?: () => void;
-}
-
-interface SettingCategorySection {
-  category: string;
-  items: SettingCategoryItem[];
-}
-
   const grantedPermissionsCount = permissions.filter(p => p.status === 'granted' || p.id === 'default_assistant').length;
 
   const currentOrbStyleName = ORB_STYLES.find(s => s.id === appearanceConfig.orbStyle)?.name || 'Mayra Glow';
   const currentOrbColorName = ORB_COLORS[appearanceConfig.orbColor]?.name || 'Cyan';
+
+  // Format battery charging and trading numbers
+  const isCharging = telemetryLive.chargingStatus?.toLowerCase().includes('charging') && !telemetryLive.chargingStatus?.toLowerCase().includes('not');
+  const isTradePositive = tradingLive.change >= 0;
+  const changePct = ((tradingLive.change / (tradingLive.price || 1)) * 100).toFixed(2);
+  const changeSign = isTradePositive ? '+' : '';
+  const changeArrow = isTradePositive ? '▲' : '▼';
 
   const settingSections: SettingCategorySection[] = [
     {
@@ -616,82 +748,160 @@ interface SettingCategorySection {
           title: 'Touch Guard & Anti-Theft Vault',
           subtitle: 'Motion Alarm • 105dB Siren • Intruder Camera Capture • God Mode',
           badge: 'SECURITY',
-          icon: <AppIconTile icon={ShieldAlert} color="rose" size="md" />
+          icon: <AppIconTile icon={ShieldAlert} color="rose" size="md" />,
+          oneLineSummary: {
+            text: touchLive.isAlarmSounding 
+              ? '🚨 SIREN SOUNDING • Intruder Alert Active!' 
+              : touchLive.isArmed 
+              ? '🛡️ ARMED • Motion Guard & Camera Armed' 
+              : '🛡️ Standby • 105dB Siren & Motion Ready',
+            chipLabel: touchLive.isArmed ? 'ARMED' : 'STANDBY',
+            chipTone: touchLive.isArmed ? 'rose' : 'slate',
+            isLive: true
+          }
         },
         {
           id: 'emergency_sos' as SettingsSubScreen,
           title: 'Emergency SOS & Escalation',
           subtitle: 'Voice SOS • Live GPS SMS • 5 Priority Contacts Auto-Dialer',
           badge: 'SOS',
-          icon: <AppIconTile icon={AlertOctagon} color="rose" size="md" />
+          icon: <AppIconTile icon={AlertOctagon} color="rose" size="md" />,
+          oneLineSummary: {
+            text: `🆘 Demo Mode • ${emergencyLive.contactsCount} Contacts Set • 112 Ready`,
+            chipLabel: 'DEMO MODE',
+            chipTone: 'rose',
+            isLive: true,
+            isSimulated: true
+          }
         },
         {
           id: 'voice_guardian' as SettingsSubScreen,
           title: 'Voice Guardian',
           subtitle: voiceGuardianConfig.enabled ? 'ACTIVE • Owner Only' : 'DISABLED',
           badge: voiceGuardianConfig.enabled ? 'SHIELD ON' : 'OFF',
-          icon: <AppIconTile icon={ShieldCheck} color="cyan" size="md" />
+          icon: <AppIconTile icon={ShieldCheck} color="cyan" size="md" />,
+          oneLineSummary: {
+            text: voiceGuardianConfig.enabled 
+              ? '🎙️ Voice Guardian Shield: Active (Owner Passcode Locked)' 
+              : '🎙️ Voice Guardian Shield: Disabled',
+            chipLabel: voiceGuardianConfig.enabled ? 'ACTIVE' : 'OFF',
+            chipTone: voiceGuardianConfig.enabled ? 'cyan' : 'slate',
+            isLive: true
+          }
         }
       ]
     },
     {
-      category: 'SYSTEM AUTOMATION & MOBILITY',
+      category: 'AUTOMATION & INTELLIGENCE (ANDROID WIDGET STACK)',
       items: [
         {
-          id: 'system_unlock_automation' as SettingsSubScreen,
-          title: 'System Unlock Automation',
-          subtitle: 'Voice Screen Unlock • PIN & Pattern Path Calibration • Auto-Lock',
-          badge: 'AUTO',
-          icon: <AppIconTile icon={KeyRound} color="cyan" size="md" />
+          id: 'neural_trading_matrix' as SettingsSubScreen,
+          title: 'Neural Trading & Chart Finance Engine',
+          subtitle: 'Auto Support/Resistance • Strategy Radar • Risk Calculator',
+          badge: 'FINANCE AI',
+          icon: <AppIconTile icon={TrendingUp} color="emerald" size="md" />,
+          oneLineSummary: {
+            text: `📈 ${tradingLive.symbol} ₹${tradingLive.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${changeArrow}${Math.abs(tradingLive.change).toFixed(2)} (${changeSign}${changePct}%) • PCR ${tradingLive.pcr.toFixed(2)}`,
+            chipLabel: '[SIMULATED]',
+            chipTone: isTradePositive ? 'emerald' : 'rose',
+            isLive: true,
+            isSimulated: true
+          }
+        },
+        {
+          id: 'deep_automation_matrix' as SettingsSubScreen,
+          title: 'Deep Automation & Hardware Telemetry',
+          subtitle: 'Voice Macros • Air Gestures • Hardware Telemetry • Kernel Terminal',
+          badge: 'DEV PRO',
+          icon: <AppIconTile icon={Terminal} color="cyan" size="md" />,
+          oneLineSummary: {
+            text: `🔋 ${telemetryLive.batteryLevel}% • CPU ${telemetryLive.cpuUsage}% (${telemetryLive.cpuCores} Cores) • ${isCharging ? 'Charging' : 'Discharging'}`,
+            chipLabel: '[HYBRID]',
+            chipTone: telemetryLive.batteryLevel > 30 ? 'cyan' : 'amber',
+            isLive: true
+          }
         },
         {
           id: 'driving_mode_studio' as SettingsSubScreen,
           title: 'Driving Mode Studio',
           subtitle: 'Auto-Reject Calls • Driving SMS • Caller Name Announcement',
           badge: 'AUTO',
-          icon: <AppIconTile icon={Car} color="amber" size="md" />
+          icon: <AppIconTile icon={Car} color="amber" size="md" />,
+          oneLineSummary: {
+            text: emergencyLive.driving?.isEnabled 
+              ? '🚗 Driving Mode Active • Auto-Reject ON • Voice Announce' 
+              : '🚗 Driving Mode: Off (Standby)',
+            chipLabel: emergencyLive.driving?.isEnabled ? 'ACTIVE' : 'OFF',
+            chipTone: emergencyLive.driving?.isEnabled ? 'amber' : 'slate',
+            isLive: true
+          }
+        },
+        {
+          id: 'system_unlock_automation' as SettingsSubScreen,
+          title: 'System Unlock Automation',
+          subtitle: 'Voice Screen Unlock • PIN & Pattern Path Calibration • Auto-Lock',
+          badge: 'AUTO',
+          icon: <AppIconTile icon={KeyRound} color="cyan" size="md" />,
+          oneLineSummary: {
+            text: `🔓 ${emergencyLive.unlock?.unlockType.toUpperCase()} Mode • Voice Screen Unlock ${emergencyLive.unlock?.isVoiceUnlockEnabled ? 'Ready' : 'Off'}`,
+            chipLabel: '[SIMULATION]',
+            chipTone: 'cyan',
+            isLive: true,
+            isSimulated: true
+          }
         },
         {
           id: 'unified_app_hub' as SettingsSubScreen,
           title: 'All-In-One Unified App Hub',
           subtitle: 'WhatsApp • Telegram • Truecaller Spam Radar • Gallery • Alarms',
           badge: 'HUB',
-          icon: <AppIconTile icon={MessageSquare} color="emerald" size="md" />
+          icon: <AppIconTile icon={MessageSquare} color="emerald" size="md" />,
+          oneLineSummary: {
+            text: `💬 WhatsApp & Telegram • ${hubLive.messagesCount} Messages • ${hubLive.alarmsCount} Alarms Set`,
+            chipLabel: '[SIM+INTENT]',
+            chipTone: 'emerald',
+            isLive: true
+          }
         },
         {
           id: 'smart_lifestyle_iot' as SettingsSubScreen,
           title: 'Smart Lifestyle, Media & IoT Hub',
           subtitle: 'Spotify/YouTube • Smart Home • Cricket Radar • Fitness & Cabs',
           badge: 'IOT PRO',
-          icon: <AppIconTile icon={Zap} color="indigo" size="md" />
-        },
-        {
-          id: 'deep_automation_matrix' as SettingsSubScreen,
-          title: 'Deep Automation & Matrix Routines',
-          subtitle: 'Voice Macros • Air Gestures • Hardware Telemetry • Kernel Terminal',
-          badge: 'DEV PRO',
-          icon: <AppIconTile icon={Terminal} color="cyan" size="md" />
+          icon: <AppIconTile icon={Zap} color="indigo" size="md" />,
+          oneLineSummary: {
+            text: `💡 ${iotLive.devicesCount} Smart Devices (${iotLive.activeDevices} Online) • Spotify & Fitness Active`,
+            chipLabel: '[SIMULATED]',
+            chipTone: 'blue',
+            isLive: true,
+            isSimulated: true
+          }
         },
         {
           id: 'quantum_memory_vision' as SettingsSubScreen,
           title: 'Quantum Memory & Neural Vision Brain',
           subtitle: 'Semantic Memory Vault • Multi-Modal Lens • Doc AI • Voice Memos',
           badge: 'BRAIN AI',
-          icon: <AppIconTile icon={Brain} color="purple" size="md" />
+          icon: <AppIconTile icon={Brain} color="purple" size="md" />,
+          oneLineSummary: {
+            text: `🧠 Semantic Memory Vault • Multi-Modal Vision Brain Active`,
+            chipLabel: '[NEURAL]',
+            chipTone: 'purple',
+            isLive: true
+          }
         },
         {
           id: 'automation_dialogue_matrix' as SettingsSubScreen,
           title: 'Automation Voice Dialogue Matrix',
           subtitle: '55 Trigger Speech Rules • Action, Success & Failure Dialogues',
           badge: '55 RULES',
-          icon: <AppIconTile icon={Volume2} color="emerald" size="md" />
-        },
-        {
-          id: 'neural_trading_matrix' as SettingsSubScreen,
-          title: 'Neural Trading & Chart Finance Engine',
-          subtitle: 'Auto Support/Resistance • Custom Strategy Radar • Risk-Reward Calc',
-          badge: 'FINANCE AI',
-          icon: <AppIconTile icon={TrendingUp} color="emerald" size="md" />
+          icon: <AppIconTile icon={Volume2} color="emerald" size="md" />,
+          oneLineSummary: {
+            text: `🎙️ 55 Trigger Voice Dialogue Rules Configured & Active`,
+            chipLabel: '55 RULES',
+            chipTone: 'emerald',
+            isLive: true
+          }
         }
       ]
     },
@@ -717,7 +927,13 @@ interface SettingCategorySection {
           title: 'All-In-One AI Toolkit & Scanner',
           subtitle: 'OCR Doc Scanner • QR Studio • Live Translator • Converter',
           badge: 'AI PRO',
-          icon: <AppIconTile icon={ScanText} color="purple" size="md" />
+          icon: <AppIconTile icon={ScanText} color="purple" size="md" />,
+          oneLineSummary: {
+            text: `🔍 OCR Doc Scanner • QR Studio • Live Multi-Language Translator`,
+            chipLabel: '[AI ENGINE]',
+            chipTone: 'purple',
+            isLive: true
+          }
         },
         {
           id: 'widget_guide' as SettingsSubScreen,
@@ -780,9 +996,11 @@ interface SettingCategorySection {
   })).filter(section => section.items.length > 0);
 
   return (
-    <div className={`flex-1 flex flex-col h-full relative select-none transition-colors duration-200 ${
+    <div className={`flex-1 flex flex-col h-full relative select-none overflow-hidden transition-colors duration-200 ${
       isDark ? 'bg-[#070312] text-slate-100' : 'bg-slate-900 text-slate-100'
     }`}>
+      {/* Dynamic Cosmic Ambient Particle Background */}
+      <HomeAtmosphereBackground status="READY" />
       
       {/* Top Header - iPhone Liquid Frosted Glass */}
       <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-[#120626]/80 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
@@ -845,16 +1063,16 @@ interface SettingCategorySection {
 
       {/* Main Settings List - Frosted Liquid Glass Cards */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/20">
-        {filteredSections.map((section) => (
-          <div key={section.category} className="space-y-1.5">
+        {filteredSections.map((section, sIdx) => (
+          <div key={`section-${section.category}-${sIdx}`} className="space-y-1.5">
             <h3 className="text-[10px] font-sans font-bold tracking-widest px-2.5 uppercase text-purple-300/80">
               {section.category}
             </h3>
 
             <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-[#160b29]/50 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
-              {section.items.map((item) => (
+              {section.items.map((item, itemIdx) => (
                 <button
-                  key={item.id}
+                  key={`item-${section.category}-${item.id}-${itemIdx}`}
                   onClick={() => {
                     if ((item as any).onClick) {
                       (item as any).onClick();
@@ -862,40 +1080,105 @@ interface SettingCategorySection {
                       setCurrentSubScreen(item.id);
                     }
                   }}
-                  className="w-full p-3.5 flex items-center justify-between active:scale-[0.99] transition-colors text-left group hover:bg-white/[0.06] cursor-pointer"
+                  className={`w-full p-3.5 flex flex-col justify-center active:scale-[0.99] transition-all text-left group hover:bg-white/[0.06] cursor-pointer ${
+                    item.oneLineSummary ? 'gap-1.5' : ''
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="shrink-0">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold font-sans tracking-tight text-white group-hover:text-purple-300 transition-colors">
-                          {item.title}
-                        </span>
-                        {item.badge && (
-                          <span className={`text-[8px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm ${
-                            item.badge === 'STUDIO'
-                              ? 'bg-purple-950/80 text-purple-200 border border-purple-400/40'
-                              : item.badge === 'DARK'
-                              ? 'bg-purple-950/80 text-purple-300 border border-purple-500/30'
-                              : item.badge === 'LIGHT'
-                              ? 'bg-amber-950/80 text-amber-300 border border-amber-400/30'
-                              : item.badge.includes('OFF') || item.badge.includes('0/') 
-                              ? 'bg-white/10 text-purple-300/60 border border-white/10'
-                              : 'bg-emerald-950/80 text-emerald-300 border border-emerald-400/30'
-                          }`}>
-                            {item.badge}
+                  <div className="w-full flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div className="shrink-0">
+                        {item.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold font-sans tracking-tight text-white group-hover:text-purple-300 transition-colors truncate">
+                            {item.title}
                           </span>
+                          {item.badge && (
+                            <span className={`text-[8px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm shrink-0 ${
+                              item.badge === 'STUDIO'
+                                ? 'bg-purple-950/80 text-purple-200 border border-purple-400/40'
+                                : item.badge === 'FINANCE AI'
+                                ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-400/40'
+                                : item.badge === 'DEV PRO' || item.badge === 'AUTO'
+                                ? 'bg-cyan-950/90 text-cyan-300 border border-cyan-400/40'
+                                : item.badge === 'SOS' || item.badge === 'SECURITY'
+                                ? 'bg-rose-950/90 text-rose-300 border border-rose-400/40'
+                                : item.badge === 'DARK'
+                                ? 'bg-purple-950/80 text-purple-300 border border-purple-500/30'
+                                : item.badge === 'LIGHT'
+                                ? 'bg-amber-950/80 text-amber-300 border border-amber-400/30'
+                                : item.badge.includes('OFF') || item.badge.includes('0/') 
+                                ? 'bg-white/10 text-purple-300/60 border border-white/10'
+                                : 'bg-emerald-950/80 text-emerald-300 border border-emerald-400/30'
+                            }`}>
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                        {!item.oneLineSummary && (
+                          <p className="text-[10px] font-normal font-sans line-clamp-1 mt-0.5 text-purple-300/60">
+                            {item.subtitle}
+                          </p>
                         )}
                       </div>
-                      <p className="text-[10px] font-normal font-sans line-clamp-1 mt-0.5 text-purple-300/60">
-                        {item.subtitle}
-                      </p>
                     </div>
+
+                    <ChevronRight className="w-4 h-4 text-purple-300/50 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                   </div>
 
-                  <ChevronRight className="w-4 h-4 text-purple-300/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                  {/* Android Home-Screen Watchlist / Widget Stack: Compact One-Line Live Summary Card */}
+                  {item.oneLineSummary && (
+                    <div className="w-full mt-1 px-3 py-2 rounded-2xl bg-[#0d051d]/90 border border-white/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] flex items-center justify-between gap-2 group-hover:border-purple-400/40 transition-colors">
+                      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                        {item.oneLineSummary.isLive && (
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                              item.oneLineSummary.chipTone === 'rose'
+                                ? 'bg-rose-400'
+                                : item.oneLineSummary.chipTone === 'amber'
+                                ? 'bg-amber-400'
+                                : item.oneLineSummary.chipTone === 'cyan'
+                                ? 'bg-cyan-400'
+                                : 'bg-emerald-400'
+                            }`} />
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                              item.oneLineSummary.chipTone === 'rose'
+                                ? 'bg-rose-500'
+                                : item.oneLineSummary.chipTone === 'amber'
+                                ? 'bg-amber-500'
+                                : item.oneLineSummary.chipTone === 'cyan'
+                                ? 'bg-cyan-500'
+                                : 'bg-emerald-500'
+                            }`} />
+                          </span>
+                        )}
+                        <span className="text-[11px] font-mono font-medium tracking-tight text-slate-100 truncate">
+                          {item.oneLineSummary.text}
+                        </span>
+                      </div>
+
+                      {item.oneLineSummary.chipLabel && (
+                        <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-lg shrink-0 tracking-wider shadow-sm border ${
+                          item.oneLineSummary.chipTone === 'rose'
+                            ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                            : item.oneLineSummary.chipTone === 'amber'
+                            ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                            : item.oneLineSummary.chipTone === 'cyan'
+                            ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40'
+                            : item.oneLineSummary.chipTone === 'purple'
+                            ? 'bg-purple-950/80 text-purple-300 border-purple-500/40'
+                            : item.oneLineSummary.chipTone === 'blue'
+                            ? 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                            : item.oneLineSummary.chipTone === 'slate'
+                            ? 'bg-slate-800/80 text-slate-300 border-slate-600/40'
+                            : 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                        }`}>
+                          {item.oneLineSummary.chipLabel}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

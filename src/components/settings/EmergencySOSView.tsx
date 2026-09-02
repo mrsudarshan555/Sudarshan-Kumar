@@ -34,9 +34,12 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
   }, [engine]);
 
   const handleTriggerSOS = async () => {
-    const res = engine.triggerEmergencySOS();
-    setSosStatusLog(`🚨 SOS DISPATCHED to ${res.dispatchedTo.length} contacts with Live GPS Link: ${res.mapsUrl}`);
-    await mouth.speak('Emergency SOS activated. Dispatching your live GPS coordinates to emergency contacts immediately.', {
+    const res = await engine.triggerEmergencySOS();
+    const gpsType = res.isRealGps ? '🟢 Real GPS Lat/Long' : '🟡 Simulated Default GPS';
+    setSosStatusLog(`🚨 SOS SIMULATION DISPATCHED to ${res.dispatchedTo.length} contacts (${gpsType}): ${res.mapsUrl}\n${res.warningMessage}`);
+    
+    // Transparent, safety-first voice announcement
+    await mouth.speak('इमरजेंसी अलर्ट सिम्युलेट कर दिया गया है। ध्यान दें, यह अभी डेमो मोड में है। वास्तविक आपातकाल के लिए कृपया सीधे 112 डायल करें या अपने फोन का बिल्ट-इन एसओएस इस्तेमाल करें।', {
       persona: 'STONICX'
     });
   };
@@ -90,10 +93,40 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
       </div>
 
       <div className="p-4 space-y-4 text-xs font-sans pb-12">
+        {/* SAFETY FIRST CRITICAL DISCLAIMER */}
+        <div className="p-3.5 bg-amber-500/10 border border-amber-500/40 rounded-2xl flex items-start gap-3 text-amber-200">
+          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold text-[9px] border border-amber-500/30">
+                SIMULATION / DEMO MODE
+              </span>
+              <span className="font-bold text-[11px] text-amber-300">Safety Notice</span>
+            </div>
+            <p className="text-[10px] text-amber-200/90 leading-relaxed">
+              Browser environment mein background SIM SMS dispatch simulated hota hai. Real-life emergency mein kripya sidhe niche diye gaye <strong>Call 112 (National Emergency)</strong> button ya apne phone ke hardware SOS button ka upyog karein.
+            </p>
+            <div className="pt-1 flex gap-2">
+              <a
+                href="tel:112"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-[10px] rounded-lg shadow transition-transform active:scale-95"
+              >
+                <PhoneCall className="w-3 h-3" /> CALL 112 (REAL NATIONAL EMERGENCY)
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* Big SOS Trigger Button */}
         <div className={`p-5 rounded-2xl border text-center flex flex-col items-center gap-3 transition-all ${
           isSosActive ? 'bg-red-900/60 border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.4)]' : 'bg-[#0C1021] border-red-500/20'
         }`}>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-mono text-[9px] font-bold">
+              FEATURE TEST BENCH (SIMULATED SMS)
+            </span>
+          </div>
+
           <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 ${
             isSosActive ? 'bg-red-600 border-white text-white animate-ping' : 'bg-red-600/20 border-red-500 text-red-400'
           }`}>
@@ -102,10 +135,10 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
 
           <div>
             <h3 className="font-mono font-bold text-sm text-white uppercase">
-              {isSosActive ? 'EMERGENCY PROTOCOL ACTIVE' : 'VOICE SOS READY'}
+              {isSosActive ? 'EMERGENCY PROTOCOL SIMULATION ACTIVE' : 'VOICE SOS TEST READY'}
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Say <span className="text-red-400 font-mono">"STONICX SOS Activate Karo"</span> to trigger panic SMS dispatch with live GPS.
+              Say <span className="text-red-400 font-mono">"STONICX SOS Activate Karo"</span> to test live GPS lookup & alert simulation.
             </p>
           </div>
 
@@ -122,7 +155,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
                 onClick={handleTriggerSOS}
                 className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold font-mono text-xs rounded-xl shadow-md"
               >
-                🚨 TEST SOS DISPATCH NOW
+                🚨 TEST SIMULATED SOS DISPATCH
               </button>
             )}
           </div>

@@ -1,3 +1,5 @@
+import { OfflineVoiceMatcher } from '../services/audio/offlineVoiceMatcher';
+
 /**
  * MAYRA Voice & Live Audio Speech Engine
  * Powered by Pure Gemini Aoede Natural Voice Synthesis & Web Audio API (24kHz PCM).
@@ -693,12 +695,12 @@ export async function speakText(
 
       try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 4000);
+        const timer = setTimeout(() => controller.abort(), 12000);
 
         const res = await fetch('/api/voice/speak', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: currentChunkText, language: lang }),
+          body: JSON.stringify({ text: currentChunkText, language: lang, voiceName: 'Aoede', assistant: 'mayra' }),
           signal: controller.signal
         });
         clearTimeout(timer);
@@ -748,12 +750,12 @@ export async function speakText(
   // 4. Attempt direct natural Gemini Aoede Voice from backend (single chunk)
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
+    const timer = setTimeout(() => controller.abort(), 12000);
 
     const res = await fetch('/api/voice/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, language: lang }),
+      body: JSON.stringify({ text: cleanText, language: lang, voiceName: 'Aoede', assistant: 'mayra' }),
       signal: controller.signal
     });
     clearTimeout(timer);
@@ -769,6 +771,16 @@ export async function speakText(
   } catch (err) {
     // Network or timeout notice
   }
+
+  // 5. Offline & On-Device Persona Voice Matching (Soft, Warm Aoede match)
+  const spokeOffline = OfflineVoiceMatcher.speakOffline(cleanText, {
+    persona: 'MAYRA',
+    language: lang,
+    onStart,
+    onEnd
+  });
+
+  if (spokeOffline) return;
 
   if (onEnd) {
     onEnd();

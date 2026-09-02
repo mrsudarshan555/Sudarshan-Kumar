@@ -70,13 +70,22 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
               <KeyRound className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                System Unlock Automation
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                  System Unlock Automation
+                </h2>
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-mono font-bold">
+                  SIMULATION DEMO
+                </span>
+              </div>
               <p className="text-[10px] text-slate-400 font-sans">Features 56-61: Voice Lock, PIN & Pattern Automation</p>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="px-4 py-2 bg-amber-950/20 border-b border-amber-500/20 text-[10px] text-amber-200/90 font-mono">
+        ℹ️ Note: Web browser security prevents directly unlocking the physical OS lockscreen. In native APK build, this pairs with Android Accessibility Service.
       </div>
 
       <div className="p-4 space-y-4 text-xs font-sans pb-12">

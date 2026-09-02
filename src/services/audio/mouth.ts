@@ -10,6 +10,7 @@
 
 import { AudioDuckingManager } from './audioDuckingManager';
 import { playPcmAudio, stopCurrentSpeech } from '../../utils/speechEngine';
+import { OfflineVoiceMatcher } from './offlineVoiceMatcher';
 
 export interface MouthSpeakOptions {
   voice?: 'Charon' | 'Aoede' | 'Fenrir' | 'Puck' | 'Kore';
@@ -37,7 +38,7 @@ export class Mouth {
   }
 
   /**
-   * Speaks text using Charon Deep Voice or Web Speech API with automatic audio ducking
+   * Speaks text using Charon/Aoede Gemini TTS when online, or high-fidelity Offline Persona Voice Matching
    */
   public async speak(text: string, options: MouthSpeakOptions = {}): Promise<boolean> {
     if (!text || typeof window === 'undefined') return false;
@@ -56,6 +57,7 @@ export class Mouth {
 
     const persona = options.persona || 'STONICX';
     const voiceName = options.voice || (persona === 'STONICX' ? 'Charon' : 'Aoede');
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine !== false : true;
 
     const handleSpeechEnd = () => {
       this.isSpeaking = false;
@@ -65,58 +67,50 @@ export class Mouth {
       }
     };
 
-    try {
-      // 1. Primary: Server-side Gemini Live TTS / Charon endpoint
-      const res = await fetch('/api/voice/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          voiceName,
-          assistant: persona.toLowerCase(),
-          language: options.language || 'en'
-        })
-      });
+    // 1. Primary: Server-side Gemini Live TTS (Charon for STONICX, Aoede for MAYRA) when online
+    if (isOnline) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.audioBase64) {
-          const played = playPcmAudio(
-            data.audioBase64,
-            () => {},
-            handleSpeechEnd
-          );
-          if (played) return true;
+        const res = await fetch('/api/voice/speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text,
+            voiceName,
+            assistant: persona.toLowerCase(),
+            language: options.language || 'en'
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.audioBase64) {
+            const played = playPcmAudio(
+              data.audioBase64,
+              () => {},
+              handleSpeechEnd
+            );
+            if (played) return true;
+          }
         }
+      } catch (e) {
+        console.warn(`[Mouth Engine] Direct TTS service unreachable, engaging calibrated on-device ${persona} voice match.`);
       }
-    } catch (e) {
-      // Fallback
     }
 
-    // 2. Secondary Web Speech API fallback
-    if (window.speechSynthesis) {
-      const clean = text
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/#+\s/g, '')
-        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+    // 2. Secondary: Persona-matched On-Device Voice (Soft/Warm Female for MAYRA, Deep Baritone for STONICX)
+    const spoke = OfflineVoiceMatcher.speakOffline(text, {
+      persona,
+      language: options.language || 'en',
+      onStart: () => {},
+      onEnd: handleSpeechEnd
+    });
 
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.rate = 1.0;
-      utterance.pitch = persona === 'STONICX' ? 0.75 : 1.05;
-
-      utterance.onend = () => {
-        handleSpeechEnd();
-      };
-
-      utterance.onerror = () => {
-        handleSpeechEnd();
-      };
-
-      window.speechSynthesis.speak(utterance);
-      return true;
-    }
+    if (spoke) return true;
 
     handleSpeechEnd();
     return false;
@@ -125,9 +119,7 @@ export class Mouth {
   public stop(): void {
     this.isSpeaking = false;
     stopCurrentSpeech();
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    OfflineVoiceMatcher.stop();
     AudioDuckingManager.getInstance().restore({ rampUpTimeSec: 0.20 });
   }
 }

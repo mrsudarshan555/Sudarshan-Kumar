@@ -51,8 +51,23 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
   const handleSendMessage = async () => {
     if (!recipient.trim() || !msgContent.trim()) return;
     engine.sendVoiceMessage(targetApp, recipient.trim(), msgContent.trim());
-    setStatusNotification(`Dispatched ${targetApp.toUpperCase()} to ${recipient}`);
-    await mouth.speak(`Message sent to ${recipient} via ${targetApp}.`, { persona: 'STONICX' });
+    
+    // Trigger real web action for WhatsApp / Telegram / SMS where applicable
+    if (typeof window !== 'undefined') {
+      const cleanText = encodeURIComponent(`${msgContent.trim()}`);
+      if (targetApp === 'whatsapp') {
+        const cleanPhone = recipient.replace(/[^0-9]/g, '');
+        const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${cleanText}` : `https://wa.me/?text=${cleanText}`;
+        window.open(waUrl, '_blank');
+      } else if (targetApp === 'telegram') {
+        window.open(`https://t.me/share/url?url=&text=${cleanText}`, '_blank');
+      } else if (targetApp === 'sms') {
+        window.open(`sms:${recipient}?body=${cleanText}`, '_self');
+      }
+    }
+
+    setStatusNotification(`Dispatched ${targetApp.toUpperCase()} to ${recipient} (Opened real intent)`);
+    await mouth.speak(`Message link generated for ${recipient} via ${targetApp}.`, { persona: 'STONICX' });
     setRecipient('');
     setMsgContent('');
     setTimeout(() => setStatusNotification(null), 3000);
@@ -102,9 +117,14 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
               <MessageSquare className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                All-In-One Unified App Hub
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                  All-In-One Unified App Hub
+                </h2>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-mono font-bold">
+                  SIMULATION INBOX + REAL DISPATCH
+                </span>
+              </div>
               <p className="text-[10px] text-slate-400 font-sans">
                 Features 67-76: WhatsApp, Telegram, Truecaller, Gallery & Alarms
               </p>

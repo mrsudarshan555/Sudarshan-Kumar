@@ -26,16 +26,18 @@ export interface SystemVoiceMacro {
 }
 
 export interface HardwareTelemetryData {
-  cpuUsage: number; // 0 - 100%
-  cpuTempCelsius: number; // 35 - 75
-  ramUsedGb: number; // e.g. 5.4
-  ramTotalGb: number; // 8.0
-  batteryLevel: number; // 0 - 100
-  batteryHealth: string; // "98% (Excellent)"
+  cpuUsage: number; // 0 - 100% (Simulated estimation in browser sandbox)
+  cpuCores: number; // Real browser hardwareConcurrency
+  cpuTempCelsius: number; // Simulated estimation (OS privacy restriction)
+  ramUsedGb: number; 
+  ramTotalGb: number; // Real deviceMemory when supported
+  batteryLevel: number; // Real from navigator.getBattery or 85 fallback
+  batteryHealth: string;
   batteryTempCelsius: number;
   chargingStatus: 'Discharging' | 'Fast Charging' | 'Fully Charged';
   storageUsedGb: number;
   storageTotalGb: number;
+  isRealTelemetry: boolean;
 }
 
 export class DeepAutomationMatrixEngine {
@@ -90,23 +92,24 @@ export class DeepAutomationMatrixEngine {
 
   private telemetry: HardwareTelemetryData = {
     cpuUsage: 28,
+    cpuCores: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8,
     cpuTempCelsius: 41,
     ramUsedGb: 4.8,
-    ramTotalGb: 8.0,
+    ramTotalGb: typeof navigator !== 'undefined' ? (navigator as any).deviceMemory || 8.0 : 8.0,
     batteryLevel: 82,
-    batteryHealth: '97% (Excellent)',
+    batteryHealth: '97% (Healthy)',
     batteryTempCelsius: 31,
     chargingStatus: 'Discharging',
     storageUsedGb: 64.2,
-    storageTotalGb: 128.0
+    storageTotalGb: 128.0,
+    isRealTelemetry: true
   };
 
   private terminalLogs: string[] = [
-    `[${new Date().toLocaleTimeString()}] STONICX Matrix Kernel v4.2.0-Titan loaded successfully.`,
-    `[${new Date().toLocaleTimeString()}] Neural voice synthesis runtime active (Latency: 18ms).`,
-    `[${new Date().toLocaleTimeString()}] Proximity sensor & accelerometer gesture listener attached.`,
-    `[${new Date().toLocaleTimeString()}] GPS emergency link sync verified (Coordinates: 28.6139, 77.2090).`,
-    `[${new Date().toLocaleTimeString()}] God Mode & Anti-Theft background daemon armed.`
+    `[${new Date().toLocaleTimeString()}] STONICX Matrix Kernel loaded (Simulation & Diagnostics Environment).`,
+    `[${new Date().toLocaleTimeString()}] Neural voice synthesis runtime active.`,
+    `[${new Date().toLocaleTimeString()}] Hardware sensor bridge attached (Cores: ${typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8}).`,
+    `[${new Date().toLocaleTimeString()}] Note: CPU load/temp is browser-simulated. Real battery/memory queried where supported.`
   ];
 
   private listeners: Set<() => void> = new Set();
@@ -120,6 +123,38 @@ export class DeepAutomationMatrixEngine {
       const savedMacros = localStorage.getItem('stonicx_voice_macros');
       if (savedMacros) {
         try { this.macros = JSON.parse(savedMacros); } catch {}
+      }
+      this.initRealSensors();
+    }
+  }
+
+  private initRealSensors() {
+    if (typeof navigator !== 'undefined') {
+      if ((navigator as any).getBattery) {
+        (navigator as any).getBattery().then((battery: any) => {
+          this.telemetry.batteryLevel = Math.round(battery.level * 100);
+          this.telemetry.chargingStatus = battery.charging ? 'Fast Charging' : 'Discharging';
+          this.notify();
+
+          battery.addEventListener('levelchange', () => {
+            this.telemetry.batteryLevel = Math.round(battery.level * 100);
+            this.notify();
+          });
+          battery.addEventListener('chargingchange', () => {
+            this.telemetry.chargingStatus = battery.charging ? 'Fast Charging' : 'Discharging';
+            this.notify();
+          });
+        }).catch(() => {});
+      }
+
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then((est) => {
+          if (est.usage && est.quota) {
+            this.telemetry.storageUsedGb = parseFloat((est.usage / (1024 ** 3)).toFixed(1));
+            this.telemetry.storageTotalGb = parseFloat((est.quota / (1024 ** 3)).toFixed(1));
+            this.notify();
+          }
+        }).catch(() => {});
       }
     }
   }

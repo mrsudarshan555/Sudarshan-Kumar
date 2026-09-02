@@ -12,6 +12,7 @@ import { AnimatedCounter } from '../common/AnimatedCounter';
 import { SuccessConfettiToast } from '../common/SuccessConfettiToast';
 import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
 import { PullToRefresh } from '../common/PullToRefresh';
+import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
 
 interface MemoriesScreenProps {
   memories: MemoryItem[];
@@ -165,6 +166,8 @@ export const MemoriesScreen: React.FC<MemoriesScreenProps> = ({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#070312] text-slate-100 relative">
+      {/* Ambient Cosmic Flow Background */}
+      <HomeAtmosphereBackground status="READY" />
       
       {/* Micro-Delight Success Confetti Toast */}
       <SuccessConfettiToast
@@ -173,7 +176,7 @@ export const MemoriesScreen: React.FC<MemoriesScreenProps> = ({
       />
 
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#120626]/80 backdrop-blur-2xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="relative p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#120626]/70 backdrop-blur-2xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-400/30">
             <Brain className="w-4 h-4" />

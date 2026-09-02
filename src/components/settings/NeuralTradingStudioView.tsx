@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   TrendingUp, TrendingDown, Activity, DollarSign, Layers, 
   BarChart2, ShieldAlert, Sparkles, Plus, Play, CheckCircle2, 
-  BookOpen, ArrowLeft, RefreshCw, Zap, Target, Sliders, LineChart
+  BookOpen, ArrowLeft, RefreshCw, Zap, Target, Sliders, LineChart,
+  Send, Bot, User, Clock, ChevronRight, Volume2, Maximize2, 
+  Percent, ArrowUpRight, ArrowDownRight, AlertCircle, Sparkle
 } from 'lucide-react';
 import { NeuralTradingFinanceEngine, ChartLevel, TradingStrategy, TradeJournalEntry } from '../../services/finance/NeuralTradingFinanceEngine';
 import { Mouth } from '../../services/audio/mouth';
@@ -10,6 +12,14 @@ import { AutomationDialogueManager } from '../../services/automation/AutomationD
 
 interface NeuralTradingStudioViewProps {
   onBack: () => void;
+}
+
+interface ChatMessage {
+  id: string;
+  sender: 'user' | 'stonicx';
+  text: string;
+  time: string;
+  tag?: string;
 }
 
 export const NeuralTradingStudioView: React.FC<NeuralTradingStudioViewProps> = ({ onBack }) => {
@@ -23,6 +33,11 @@ export const NeuralTradingStudioView: React.FC<NeuralTradingStudioViewProps> = (
   const [strategies, setStrategies] = useState<TradingStrategy[]>(engine.getStrategies());
   const [signals] = useState(engine.getSignals());
   const [journal, setJournal] = useState<TradeJournalEntry[]>(engine.getJournal());
+
+  // Dynamic Price & Metrics State
+  const [currentPrice, setCurrentPrice] = useState(engine.getPrice());
+  const [currentChange, setCurrentChange] = useState(engine.getChange());
+  const [pcr, setPcr] = useState(engine.getPCR());
 
   // Calculator State
   const [capital, setCapital] = useState<number>(100000);
@@ -42,22 +57,61 @@ export const NeuralTradingStudioView: React.FC<NeuralTradingStudioViewProps> = (
   const [newQty, setNewQty] = useState(100);
   const [newStratTag, setNewStratTag] = useState('9:20 AM Range Breakout');
 
+  // Selected Timeline Trade for detail modal/drawer
+  const [selectedTrade, setSelectedTrade] = useState<TradeJournalEntry | null>(null);
+
+  // In-Dashboard Side Chat State
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 'msg_1',
+      sender: 'stonicx',
+      text: 'STONICX Neural Finance Core online. NIFTY 24,800 PE strong demand zone detected with 1.28 PCR. How can I assist your setup?',
+      time: '09:15',
+      tag: 'MARKET RADAR'
+    }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     return engine.subscribe(() => {
       setLevels([...engine.getLevels()]);
       setStrategies([...engine.getStrategies()]);
       setJournal([...engine.getJournal()]);
       setSymbol(engine.getSymbol());
+      setCurrentPrice(engine.getPrice());
+      setCurrentChange(engine.getChange());
+      setPcr(engine.getPCR());
     });
   }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, isTyping]);
 
   const handleRecalculateLevels = (sym: string) => {
     const newL = engine.autoDetectChartLevels(sym);
     setLevels(newL);
+    const symPrice = sym.includes('BANK') ? 53420.50 : sym.includes('FIN') ? 23890.20 : sym.includes('SENSEX') ? 81450.00 : 24850.75;
+    setCurrentPrice(symPrice);
+    
     const text = dialogManager.formatDialogue(
       `चार्ट के स्विंग पॉइंट्स स्कैन कर लिए हैं {Title}। ${sym} पर प्रमुख सपोर्ट ₹${newL[2].price} और रेजिस्टेंस ₹${newL[1].price} पर मार्क कर दिया गया है।`
     );
-    mouth.speak(text, { persona: 'MAYRA' });
+    mouth.speak(text, { persona: 'STONICX' });
+
+    // Add to chat stream
+    setChatMessages(prev => [
+      ...prev,
+      {
+        id: `chat_${Date.now()}`,
+        sender: 'stonicx',
+        text: `Switched to ${sym} (₹${symPrice.toLocaleString()}). Key Support: ₹${newL[2].price} | Key Resistance: ₹${newL[1].price}. SMC liquidity sweeps active.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        tag: 'LEVELS UPDATED'
+      }
+    ]);
   };
 
   const handleRunPositionCalc = () => {
@@ -66,7 +120,18 @@ export const NeuralTradingStudioView: React.FC<NeuralTradingStudioViewProps> = (
     const speech = dialogManager.formatDialogue(
       `{Title}, ₹${capital.toLocaleString()} की कैपिटल और 2% रिस्क के अनुसार आपका स्टॉपलॉस ₹${stopLossPrice} और 1:2 टारगेट ₹${res.target12} होगा। आप सुरक्षित रूप से ${res.recommendedQuantity} शेयर ले सकते हैं।`
     );
-    mouth.speak(speech, { persona: 'MAYRA' });
+    mouth.speak(speech, { persona: 'STONICX' });
+
+    setChatMessages(prev => [
+      ...prev,
+      {
+        id: `calc_${Date.now()}`,
+        sender: 'stonicx',
+        text: `Risk Calculation for Capital ₹${capital.toLocaleString()} (Risk: ${riskPercent}% = ₹${res.riskAmount}): Recommended Qty: ${res.recommendedQuantity} shares. Target 1:2: ₹${res.target12} | Target 1:3: ₹${res.target13}.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        tag: 'RISK SIZING'
+      }
+    ]);
   };
 
   const handleAddStrategy = (e: React.FormEvent) => {
@@ -75,7 +140,7 @@ export const NeuralTradingStudioView: React.FC<NeuralTradingStudioViewProps> = (
     engine.addStrategy(newStratName, [newStratRule]);
     setNewStratName('');
     setNewStratRule('');
-    mouth.speak(`आपकी नई ट्रेडिंग स्ट्रैटेजी सफलतापूर्वक रजिस्टर कर दी गई है {Title}। जैसे ही कंडीशन मैच होगी, मैं आपको तुरंत अलर्ट कर दूँगी।`);
+    mouth.speak(`आपकी नई ट्रेडिंग स्ट्रैटेजी सफलतापूर्वक रजिस्टर कर दी गई है {Title}। जैसे ही कंडीशन मैच होगी, मैं आपको तुरंत अलर्ट कर दूँगी।`, { persona: 'STONICX' });
   };
 
   const handleAddJournalEntry = (e: React.FormEvent) => {
@@ -91,408 +156,710 @@ export const NeuralTradingStudioView: React.FC<NeuralTradingStudioViewProps> = (
       quantity: newQty,
       pnl,
       strategy: newStratTag,
-      notes: 'Executed smoothly with Mayra voice assistant tracking.'
+      notes: 'Executed smoothly with STONICX voice assistant tracking.'
     });
     const speech = dialogManager.formatDialogue(
       `आज का ट्रेड डायरी में दर्ज कर दिया गया है {Title}। शुद्ध लाभ: +₹${pnl.toLocaleString()}।`
     );
-    mouth.speak(speech, { persona: 'MAYRA' });
+    mouth.speak(speech, { persona: 'STONICX' });
+  };
+
+  // Chat message submit handler
+  const handleSendChat = (customText?: string) => {
+    const textToSend = customText || chatInput;
+    if (!textToSend.trim()) return;
+
+    const userMsg: ChatMessage = {
+      id: `usr_${Date.now()}`,
+      sender: 'user',
+      text: textToSend,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setChatMessages(prev => [...prev, userMsg]);
+    if (!customText) setChatInput('');
+    setIsTyping(true);
+
+    setTimeout(() => {
+      let botResponse = '';
+      let tag = 'AI TRADING INSIGHT';
+      const lower = textToSend.toLowerCase();
+
+      if (lower.includes('support') || lower.includes('resistance') || lower.includes('level')) {
+        botResponse = `NIFTY Institutional Support rests firmly at ₹24,800.00 (0.618 Golden Fibonacci). Major overhead Call Resistance is pegged at ₹25,000.00.`;
+        tag = 'S&R SCANNER';
+      } else if (lower.includes('risk') || lower.includes('calc') || lower.includes('position')) {
+        botResponse = `Position Sizing Rule: With 2% Risk on ₹1,00,000, max drawdown per trade is capped at ₹2,000. For 50 pts StopLoss, take exactly 40 quantity.`;
+        tag = 'POSITION MATH';
+      } else if (lower.includes('candle') || lower.includes('hammer') || lower.includes('pattern')) {
+        botResponse = `15-Minute Bullish Hammer detected at 24,800 demand base with 96.5% AI confidence. Buyers aggressively absorbed the morning supply.`;
+        tag = 'CANDLESTICK AI';
+      } else if (lower.includes('pcr') || lower.includes('oi') || lower.includes('sentiment')) {
+        botResponse = `Current Put-Call Ratio (PCR) is 1.28 indicating strong Bullish Bias. Maximum Put writing at 24,800 (6.2M OI) acts as concrete floor.`;
+        tag = 'OPTION RADAR';
+      } else {
+        botResponse = `STONICX neural model confirms bullish momentum above 24,820. Trailing Stoploss recommended at 24,800 cost-basis.`;
+      }
+
+      setChatMessages(prev => [
+        ...prev,
+        {
+          id: `bot_${Date.now()}`,
+          sender: 'stonicx',
+          text: botResponse,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          tag
+        }
+      ]);
+      setIsTyping(false);
+      mouth.speak(botResponse, { persona: 'STONICX' });
+    }, 700);
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-[#070913] text-slate-200">
-      {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#070913]/95 backdrop-blur-md z-10">
+    <div className="flex-1 flex flex-col h-full bg-[#050711] text-slate-100 overflow-hidden select-none font-sans">
+      
+      {/* 1. TOP HEADER / APP BAR */}
+      <div className="px-4 py-2.5 bg-[#0A0D1D]/90 border-b border-white/10 backdrop-blur-md flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-1.5 bg-white/[0.06] hover:bg-white/[0.14] text-slate-300 hover:text-white rounded-xl border border-white/10 transition-all flex items-center justify-center active:scale-95"
+            className="p-2 bg-white/[0.05] hover:bg-white/[0.12] text-slate-300 hover:text-white rounded-xl border border-white/10 transition-all flex items-center justify-center active:scale-95"
+            title="Back to Settings"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-tr from-emerald-500 to-cyan-600 text-white rounded-lg shadow-md">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 text-white rounded-xl shadow-lg shadow-rose-950/50">
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                Neural Trading & Financial Chart Matrix
-              </h2>
-              <p className="text-[10px] text-slate-400 font-sans">
-                Auto Support/Resistance • Custom Strategy Radar • Position Sizing • Trade Journal
+              <div className="flex items-center gap-2">
+                <h1 className="text-xs font-mono font-black text-white tracking-wider uppercase">
+                  STONICX NEURAL TRADING MATRIX
+                </h1>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-mono font-bold tracking-tight">
+                  SIMULATED / PAPER DATA
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-mono">
+                Project Dashboard • Real-Time Flow • Multi-Timeframe Confluence
               </p>
             </div>
           </div>
         </div>
 
-        {/* Live Index Pill */}
-        <div className="flex items-center gap-2">
-          <div className="px-2.5 py-1 bg-emerald-950/60 border border-emerald-500/30 rounded-lg flex items-center gap-1.5 text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-white font-bold">{symbol}: 24,850.75</span>
-            <span className="text-emerald-400 text-[10px]">(+0.58%)</span>
-          </div>
+        {/* Live Index Selector Pills */}
+        <div className="flex items-center gap-1.5 bg-[#050711] p-1 rounded-xl border border-white/10">
+          {['NIFTY 50', 'BANKNIFTY', 'FINNIFTY', 'SENSEX'].map(sym => (
+            <button
+              key={sym}
+              onClick={() => handleRecalculateLevels(sym)}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all font-bold ${
+                symbol === sym
+                  ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {sym}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Navigation Sub-Tabs */}
-      <div className="flex border-b border-white/10 bg-[#0C1021] px-4 gap-2 overflow-x-auto">
-        {[
-          { id: 'levels', label: '1. S&R Auto-Levels', icon: LineChart },
-          { id: 'strategies', label: '2. User Strategy Tracker', icon: Zap },
-          { id: 'patterns', label: '3. Candlestick AI', icon: BarChart2 },
-          { id: 'calculator', label: '4. Risk-Reward Calc', icon: Target },
-          { id: 'journal', label: '5. P&L Trade Journal', icon: BookOpen }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 text-xs font-mono transition-all whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'border-emerald-400 text-emerald-300 font-bold bg-emerald-500/10'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <tab.icon className="w-3.5 h-3.5" />
-            {tab.label}
-          </button>
-        ))}
+      {/* Transparent Disclaimer Banner */}
+      <div className="px-4 py-1.5 bg-amber-950/30 border-b border-amber-500/20 flex items-center justify-between text-[10px] text-amber-200/90 font-mono shrink-0">
+        <div className="flex items-center gap-2 truncate">
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="truncate">
+            <strong>Simulation Benchmark:</strong> Educational paper trading matrix. Not direct broker execution or SEBI advice.
+          </span>
+        </div>
+        <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold shrink-0 ml-2">
+          ENGINE ACTIVE • 18ms
+        </span>
       </div>
 
-      {/* Tab Contents */}
-      <div className="p-4 space-y-4 pb-16">
-        {/* TAB 1: SUPPORT & RESISTANCE AUTO-LEVELS */}
-        {activeTab === 'levels' && (
-          <div className="space-y-4">
-            <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
+      {/* 2. MAIN SCROLLABLE DASHBOARD VIEW */}
+      <div className="flex-1 overflow-y-auto p-3.5 md:p-5 space-y-4">
+        
+        {/* ROW 1: BADE VIBRANT GRADIENT STAT-CARDS (Orange/Pink, Purple/Blue, Emerald/Teal) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          
+          {/* Card 1: Sunset Orange-to-Pink (Current Real-Time Price) */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-amber-500 via-rose-500 to-pink-600 text-white shadow-xl shadow-rose-950/40 border border-white/20 transition-all hover:scale-[1.01]">
+            <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-amber-100 flex items-center gap-1.5">
+                <DollarSign className="w-3.5 h-3.5 text-amber-200" />
+                {symbol} SPOT PRICE
+              </span>
+              <span className="px-2 py-0.5 rounded bg-black/30 backdrop-blur-sm text-white font-mono text-[9px] font-bold border border-white/20">
+                [SIMULATED]
+              </span>
+            </div>
+
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl md:text-3xl font-black font-mono tracking-tight text-white drop-shadow-sm">
+                ₹{currentPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-md text-emerald-200 font-bold">
+                <ArrowUpRight className="w-3.5 h-3.5" />
+                <span>+{currentChange} (+0.58%)</span>
+              </div>
+              <span className="text-[10px] text-amber-100 font-sans">
+                Day Range: 24,780 - 24,940
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: Cosmic Purple-to-Indigo (PCR & Open Interest Sentiment) */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-950/40 border border-white/20 transition-all hover:scale-[1.01]">
+            <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-purple-200 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-purple-200" />
+                OPTION CHAIN & PCR RADAR
+              </span>
+              <span className="px-2 py-0.5 rounded bg-emerald-400/20 text-emerald-200 font-mono text-[9px] font-bold border border-emerald-400/30">
+                BULLISH BIAS
+              </span>
+            </div>
+
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl md:text-3xl font-black font-mono tracking-tight text-white">
+                {pcr} PCR
+              </span>
+              <span className="text-xs font-mono text-purple-200">(6.2M PE / 4.8M CE)</span>
+            </div>
+
+            <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-xs font-mono">
+              <span className="text-[10px] text-purple-100">
+                Max Call Pain: <strong className="text-white">25,000</strong>
+              </span>
+              <span className="text-[10px] text-purple-100">
+                Max Put Support: <strong className="text-white">24,800</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Card 3: Emerald-to-Teal (SMC Liquidity & AI Confluence) */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white shadow-xl shadow-emerald-950/40 border border-white/20 transition-all hover:scale-[1.01]">
+            <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-emerald-100 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+                SMC ORDER BLOCK CONFLUENCE
+              </span>
+              <span className="px-2 py-0.5 rounded bg-black/30 text-emerald-200 font-mono text-[9px] font-bold border border-white/20">
+                96.5% WIN PROB
+              </span>
+            </div>
+
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl md:text-3xl font-black font-mono tracking-tight text-white">
+                ₹24,800 Zone
+              </span>
+            </div>
+
+            <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-xs font-mono">
+              <span className="text-[10px] text-emerald-100 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-300" /> 0.618 Fib Reversal Tap
+              </span>
+              <button 
+                onClick={() => handleSendChat('Analyze 0.618 Fib Reversal')}
+                className="text-[9px] bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-bold transition-all"
+              >
+                QUICK AUDIT
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 2: TIMELINE VIEW — TRADES & POSITIONS OF THE DAY (Project Management Gantt Style) */}
+        <div className="bg-[#0C1021] border border-white/10 rounded-2xl p-4 space-y-3 shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                  Timeline of Active Trades & Intraday Sessions
+                </h2>
+                <p className="text-[10px] text-slate-400 font-sans">
+                  Visual execution timeline across 09:15 AM to 03:30 PM market hours
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-slate-400">Total Day P&L:</span>
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono font-black text-xs">
+                +₹12,375.00 (+42.5%)
+              </span>
+            </div>
+          </div>
+
+          {/* Timeline Time Header Grid */}
+          <div className="bg-[#060813] p-3 rounded-xl border border-white/5 space-y-3 overflow-x-auto">
+            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 border-b border-white/10 pb-1.5 min-w-[500px]">
+              <span className="w-1/5 text-left font-bold text-amber-400">09:15 AM (Open)</span>
+              <span className="w-1/5 text-center">10:30 AM (Morning Flow)</span>
+              <span className="w-1/5 text-center">12:30 PM (Midday Range)</span>
+              <span className="w-1/5 text-center">02:00 PM (EU Confluence)</span>
+              <span className="w-1/5 text-right font-bold text-rose-400">03:30 PM (Close)</span>
+            </div>
+
+            {/* Stacked Interactive Timeline Bars */}
+            <div className="space-y-2.5 min-w-[500px]">
+              
+              {/* Timeline Bar 1: NIFTY 24800 CE */}
+              <div 
+                onClick={() => setSelectedTrade(journal[0] || null)}
+                className="group relative h-9 bg-white/[0.03] hover:bg-white/[0.06] rounded-xl flex items-center p-1 cursor-pointer transition-all border border-white/5 hover:border-emerald-500/40"
+              >
+                {/* Bar position (09:20 to 10:45) */}
+                <div 
+                  className="absolute left-[3%] w-[32%] h-7 rounded-lg bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-500 p-2 flex items-center justify-between text-white shadow-md shadow-emerald-950/30 transition-transform group-hover:scale-[1.01]"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                    <span className="text-[10px] font-mono font-bold truncate">NIFTY 24800 CE</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-black shrink-0 bg-black/30 px-1.5 py-0.5 rounded">
+                    +₹6,525 (+35%)
+                  </span>
+                </div>
+                <div className="ml-auto pr-2 text-[9px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Entry ₹124.50 • Exit ₹168.00 • Qty 150
+                </div>
+              </div>
+
+              {/* Timeline Bar 2: BANKNIFTY 53200 PE */}
+              <div 
+                onClick={() => setSelectedTrade(journal[1] || null)}
+                className="group relative h-9 bg-white/[0.03] hover:bg-white/[0.06] rounded-xl flex items-center p-1 cursor-pointer transition-all border border-white/5 hover:border-purple-500/40"
+              >
+                {/* Bar position (11:15 to 01:15) */}
+                <div 
+                  className="absolute left-[35%] w-[38%] h-7 rounded-lg bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-2 flex items-center justify-between text-white shadow-md shadow-indigo-950/30 transition-transform group-hover:scale-[1.01]"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-300"></span>
+                    <span className="text-[10px] font-mono font-bold truncate">BANKNIFTY 53200 PE</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-black shrink-0 bg-black/30 px-1.5 py-0.5 rounded">
+                    +₹5,850 (+23%)
+                  </span>
+                </div>
+                <div className="ml-auto pr-2 text-[9px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Entry ₹280.00 • Exit ₹345.00 • Qty 90
+                </div>
+              </div>
+
+              {/* Timeline Bar 3: FINNIFTY 23900 CE (Live Active/Scanning Bar) */}
+              <div className="relative h-9 bg-white/[0.03] rounded-xl flex items-center p-1 border border-white/5">
+                {/* Bar position (02:00 to 03:15) */}
+                <div 
+                  className="absolute left-[70%] w-[27%] h-7 rounded-lg bg-gradient-to-r from-cyan-600 to-teal-600 border border-cyan-400/50 p-2 flex items-center justify-between text-white shadow-md animate-pulse"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping"></span>
+                    <span className="text-[10px] font-mono font-bold truncate">FINNIFTY 23900 CE</span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold bg-black/30 px-1 py-0.5 rounded text-emerald-200">
+                    SCANNING
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 3: TWO-COLUMN WORKBENCH: [LEFT: MATRIX TOOLS & CHARTS] + [RIGHT: DIRECT STONICX CHAT PANEL] */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          
+          {/* LEFT 7-COLUMNS: MATRIX TABS & ENGINE WORKSPACE */}
+          <div className="lg:col-span-7 space-y-3">
+            
+            {/* Navigation Tabs Bar */}
+            <div className="flex border-b border-white/10 bg-[#0C1021] px-3 py-1 gap-1.5 rounded-xl overflow-x-auto">
+              {[
+                { id: 'levels', label: 'S&R Levels', icon: LineChart },
+                { id: 'strategies', label: 'Strategy Radar', icon: Zap },
+                { id: 'patterns', label: 'Candlestick AI', icon: BarChart2 },
+                { id: 'calculator', label: 'Risk Sizing', icon: Target },
+                { id: 'journal', label: 'P&L Journal', icon: BookOpen }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-mono transition-all whitespace-nowrap font-bold ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-amber-500/20 to-rose-500/20 text-rose-300 border border-rose-500/40'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                >
+                  <tab.icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* TAB CONTENT 1: S&R AUTO-LEVELS */}
+            {activeTab === 'levels' && (
+              <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3 shadow-lg">
+                <div className="flex items-center justify-between">
                   <h3 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-emerald-400" />
-                    Auto Support, Resistance & SMC Liquidity Levels
+                    Institutional Support, Resistance & SMC Zones
                   </h3>
-                  <p className="text-[11px] text-slate-400">
-                    Mayra scans high/low swing wicks and auto-marks institutional supply & demand zones.
-                  </p>
+                  <button
+                    onClick={() => handleRecalculateLevels(symbol)}
+                    className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-300 font-mono text-[10px] rounded-lg flex items-center gap-1 border border-white/10"
+                  >
+                    <RefreshCw className="w-3 h-3" /> RE-SCAN
+                  </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  {['NIFTY 50', 'BANKNIFTY', 'FINNIFTY', 'SENSEX'].map(sym => (
-                    <button
-                      key={sym}
-                      onClick={() => handleRecalculateLevels(sym)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-mono border transition-all ${
-                        symbol === sym
-                          ? 'bg-emerald-600 text-white border-emerald-400'
-                          : 'bg-white/5 text-slate-400 border-white/10 hover:text-white'
+
+                {/* Visual Chart Level Grid */}
+                <div className="h-44 bg-[#05070E] rounded-xl border border-white/10 p-3 relative flex flex-col justify-between overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(#1E293B_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
+                  {levels.map((lvl) => (
+                    <div
+                      key={lvl.id}
+                      className={`relative z-10 flex items-center justify-between py-1 px-2.5 rounded border text-[10px] font-mono ${
+                        lvl.type === 'resistance'
+                          ? 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                          : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
                       }`}
                     >
-                      {sym}
-                    </button>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">
+                          {lvl.type.toUpperCase()}: ₹{lvl.price.toLocaleString()}
+                        </span>
+                        <span className="text-[9px] text-slate-400">({lvl.label})</span>
+                      </div>
+                      <span className="px-1.5 py-0.5 bg-white/10 rounded text-[8px] uppercase tracking-wider font-bold">
+                        {lvl.timeframe} • {lvl.strength}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
+            )}
 
-              {/* Chart Visualizer Box */}
-              <div className="h-44 bg-[#05070E] rounded-xl border border-white/10 p-3 relative flex flex-col justify-between overflow-hidden">
-                {/* Visual Grid Lines */}
-                <div className="absolute inset-0 bg-[radial-gradient(#1E293B_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
-
-                {levels.map((lvl) => (
-                  <div
-                    key={lvl.id}
-                    className={`relative z-10 flex items-center justify-between py-1 px-2.5 rounded border text-[10px] font-mono ${
-                      lvl.type === 'resistance'
-                        ? 'bg-rose-950/40 border-rose-500/40 text-rose-300'
-                        : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">
-                        {lvl.type.toUpperCase()}: ₹{lvl.price.toLocaleString()}
-                      </span>
-                      <span className="text-[9px] text-slate-400">({lvl.label})</span>
-                    </div>
-                    <span className="px-1.5 py-0.2 bg-white/10 rounded text-[8px] uppercase tracking-wider">
-                      {lvl.timeframe} • {lvl.strength}
-                    </span>
+            {/* TAB CONTENT 2: STRATEGIES */}
+            {activeTab === 'strategies' && (
+              <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3 shadow-lg">
+                <form onSubmit={handleAddStrategy} className="p-3 bg-[#060813] border border-white/10 rounded-xl space-y-2">
+                  <h4 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                    Register Custom Strategy Radar
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={newStratName}
+                      onChange={(e) => setNewStratName(e.target.value)}
+                      placeholder="e.g. 15m Reversal + RSI 60"
+                      className="bg-[#0C1021] border border-white/15 rounded-lg px-2.5 py-1 text-xs text-white outline-none focus:border-cyan-400"
+                    />
+                    <input
+                      type="text"
+                      value={newStratRule}
+                      onChange={(e) => setNewStratRule(e.target.value)}
+                      placeholder="e.g. 9 EMA > 21 EMA + Supertrend"
+                      className="bg-[#0C1021] border border-white/15 rounded-lg px-2.5 py-1 text-xs text-white outline-none focus:border-cyan-400"
+                    />
                   </div>
-                ))}
-              </div>
+                  <button
+                    type="submit"
+                    className="w-full py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono text-xs rounded-lg font-bold"
+                  >
+                    + ACTIVATE STRATEGY RADAR
+                  </button>
+                </form>
 
-              <div className="flex justify-end">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {strategies.map((strat) => (
+                    <div key={strat.id} className="p-2.5 bg-[#060813] border border-white/10 rounded-xl flex items-center justify-between">
+                      <div>
+                        <span className="font-mono font-bold text-xs text-white block">{strat.name}</span>
+                        <span className="text-[10px] text-slate-400 font-sans">{strat.conditions[0]}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[9px] font-bold">
+                        {strat.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT 3: CANDLESTICK AI */}
+            {activeTab === 'patterns' && (
+              <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3 shadow-lg">
+                <h3 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
+                  <BarChart2 className="w-4 h-4 text-purple-400" />
+                  Real-Time Candlestick AI Recognition
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {signals.map((sig, idx) => (
+                    <div key={idx} className="p-3 bg-[#060813] border border-purple-500/20 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white text-xs font-mono">{sig.patternName}</span>
+                        <span className="px-1.5 py-0.5 bg-emerald-950 border border-emerald-500/30 text-emerald-300 font-mono text-[9px] rounded font-bold">
+                          {sig.bias} ({sig.confidence}%)
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300">{sig.description}</p>
+                      <button
+                        onClick={() => mouth.speak(`{Title}, 15 मिनट चार्ट पर ${sig.patternName} बना है। ${sig.description}`, { persona: 'STONICX' })}
+                        className="w-full py-1 bg-purple-950/40 hover:bg-purple-900 border border-purple-500/30 text-purple-300 font-mono text-[10px] rounded flex items-center justify-center gap-1"
+                      >
+                        <Volume2 className="w-3 h-3" /> VOICE BRIEFING
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT 4: RISK-REWARD & POSITION SIZING */}
+            {activeTab === 'calculator' && (
+              <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3 shadow-lg">
+                <h3 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
+                  <Target className="w-4 h-4 text-amber-400" />
+                  Risk-Reward & 2% Capital Position Calculator
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div>
+                    <label className="text-[9px] font-mono text-slate-400 block mb-0.5">Capital (₹):</label>
+                    <input
+                      type="number"
+                      value={capital}
+                      onChange={(e) => setCapital(Number(e.target.value))}
+                      className="w-full bg-[#060813] border border-white/15 rounded-lg px-2.5 py-1 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono text-slate-400 block mb-0.5">Risk (%):</label>
+                    <input
+                      type="number"
+                      value={riskPercent}
+                      onChange={(e) => setRiskPercent(Number(e.target.value))}
+                      className="w-full bg-[#060813] border border-white/15 rounded-lg px-2.5 py-1 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono text-slate-400 block mb-0.5">Entry (₹):</label>
+                    <input
+                      type="number"
+                      value={entryPrice}
+                      onChange={(e) => setEntryPrice(Number(e.target.value))}
+                      className="w-full bg-[#060813] border border-white/15 rounded-lg px-2.5 py-1 text-xs text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono text-slate-400 block mb-0.5">StopLoss (₹):</label>
+                    <input
+                      type="number"
+                      value={stopLossPrice}
+                      onChange={(e) => setStopLossPrice(Number(e.target.value))}
+                      className="w-full bg-[#060813] border border-white/15 rounded-lg px-2.5 py-1 text-xs text-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 bg-[#060813] border border-amber-500/30 rounded-xl grid grid-cols-3 gap-2 text-center">
+                  <div className="p-1.5 bg-white/5 rounded">
+                    <span className="text-[8px] font-mono text-slate-400 block">RISK BUDGET</span>
+                    <span className="text-xs font-bold font-mono text-rose-400">₹{calcResult.riskAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="p-1.5 bg-white/5 rounded">
+                    <span className="text-[8px] font-mono text-slate-400 block">MAX QTY</span>
+                    <span className="text-xs font-bold font-mono text-amber-300">{calcResult.recommendedQuantity} Shares</span>
+                  </div>
+                  <div className="p-1.5 bg-white/5 rounded">
+                    <span className="text-[8px] font-mono text-slate-400 block">1:2 TARGET</span>
+                    <span className="text-xs font-bold font-mono text-emerald-400">₹{calcResult.target12.toLocaleString()}</span>
+                  </div>
+                </div>
+
                 <button
-                  onClick={() => handleRecalculateLevels(symbol)}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-emerald-900/30"
+                  onClick={handleRunPositionCalc}
+                  className="w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs rounded-lg font-bold"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> RE-SCAN CHART LEVELS
+                  CALCULATE & DISPATCH TO STONICX
                 </button>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* TAB 2: USER STRATEGY TRACKER */}
-        {activeTab === 'strategies' && (
-          <div className="space-y-4">
-            {/* Add Custom Strategy Form */}
-            <form onSubmit={handleAddStrategy} className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3">
-              <h3 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
-                <Plus className="w-4 h-4 text-cyan-400" />
-                Teach Mayra a New Custom Trading Strategy (अपनी स्ट्रैटेजी सिखाएँ)
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">Strategy Name:</label>
-                  <input
-                    type="text"
-                    value={newStratName}
-                    onChange={(e) => setNewStratName(e.target.value)}
-                    placeholder="e.g. 15m Reversal + RSI 60 Breakout"
-                    className="w-full bg-[#070913] border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">Trigger Condition / Rules:</label>
-                  <input
-                    type="text"
-                    value={newStratRule}
-                    onChange={(e) => setNewStratRule(e.target.value)}
-                    placeholder="e.g. 9 EMA > 21 EMA + Supertrend Green"
-                    className="w-full bg-[#070913] border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-400"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs rounded-xl flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" /> SAVE & ACTIVATE STRATEGY RADAR
-              </button>
-            </form>
-
-            {/* Active Strategies List */}
-            <div className="space-y-3">
-              {strategies.map((strat) => (
-                <div key={strat.id} className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-amber-400" />
-                      <h4 className="font-bold text-white text-xs font-mono">{strat.name}</h4>
-                    </div>
-                    <span className="px-2 py-0.5 bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] rounded-md font-bold">
-                      {strat.status}
-                    </span>
+            {/* TAB CONTENT 5: JOURNAL */}
+            {activeTab === 'journal' && (
+              <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3 shadow-lg">
+                <form onSubmit={handleAddJournalEntry} className="p-3 bg-[#060813] border border-white/10 rounded-xl space-y-2">
+                  <h4 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                    Quick Log Trade to Auto-Journal
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <input
+                      type="text"
+                      value={newSymbol}
+                      onChange={(e) => setNewSymbol(e.target.value)}
+                      placeholder="Symbol"
+                      className="bg-[#0C1021] border border-white/15 rounded px-2 py-1 text-xs text-white font-mono"
+                    />
+                    <input
+                      type="number"
+                      value={newEntry}
+                      onChange={(e) => setNewEntry(Number(e.target.value))}
+                      placeholder="Entry"
+                      className="bg-[#0C1021] border border-white/15 rounded px-2 py-1 text-xs text-white font-mono"
+                    />
+                    <input
+                      type="number"
+                      value={newExit}
+                      onChange={(e) => setNewExit(Number(e.target.value))}
+                      placeholder="Exit"
+                      className="bg-[#0C1021] border border-white/15 rounded px-2 py-1 text-xs text-white font-mono"
+                    />
+                    <input
+                      type="number"
+                      value={newQty}
+                      onChange={(e) => setNewQty(Number(e.target.value))}
+                      placeholder="Qty"
+                      className="bg-[#0C1021] border border-white/15 rounded px-2 py-1 text-xs text-white font-mono"
+                    />
                   </div>
-
-                  <div className="p-2.5 bg-[#070913] rounded-xl border border-white/5 space-y-1">
-                    <span className="text-[9px] font-mono text-cyan-400 uppercase font-bold">Active Rules:</span>
-                    {strat.conditions.map((cond, cIdx) => (
-                      <div key={cIdx} className="text-[11px] text-slate-300 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                        <span>{cond}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1">
-                    <span>Status: {strat.lastTriggered}</span>
-                    <button
-                      onClick={() => mouth.speak(`आपकी स्ट्रैटेजी ${strat.name} लाइव स्कैन हो रही है {Title}। 3 में से 2 रूल्स मैच हो चुके हैं।`)}
-                      className="px-2 py-0.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded border border-white/10"
-                    >
-                      VOICE STATUS
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: CANDLESTICK RECOGNITION */}
-        {activeTab === 'patterns' && (
-          <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3">
-            <h3 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
-              <BarChart2 className="w-4 h-4 text-purple-400" />
-              Real-Time Candlestick AI Pattern Recognition
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {signals.map((sig, sIdx) => (
-                <div key={sIdx} className="p-3.5 bg-[#070913] border border-purple-500/20 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs font-mono">{sig.patternName}</span>
-                    <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-500/30 text-emerald-300 font-mono text-[9px] rounded font-bold">
-                      {sig.bias} ({sig.confidence}%)
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 font-sans">{sig.description}</p>
                   <button
-                    onClick={() => mouth.speak(`{Title}, 15 मिनट चार्ट पर सपोर्ट लेवल पर स्ट्रॉन्ग ${sig.patternName} बना है। ${sig.description}`)}
-                    className="w-full py-1 bg-purple-950/40 hover:bg-purple-900 border border-purple-500/30 text-purple-300 font-mono text-[10px] rounded-lg flex items-center justify-center gap-1"
+                    type="submit"
+                    className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs rounded-lg font-bold"
                   >
-                    <Play className="w-3 h-3 fill-purple-300" /> LISTEN PATTERN BRIEFING
+                    + SAVE TRADE RECORD
                   </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                </form>
 
-        {/* TAB 4: RISK-REWARD & POSITION SIZING */}
-        {activeTab === 'calculator' && (
-          <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-4">
-            <h3 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
-              <Target className="w-4 h-4 text-amber-400" />
-              Smart Risk-Reward & Position Sizing Calculator (1:2 & 1:3 Rules)
-            </h3>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <label className="text-[10px] font-mono text-slate-400 block mb-1">Total Capital (₹):</label>
-                <input
-                  type="number"
-                  value={capital}
-                  onChange={(e) => setCapital(Number(e.target.value))}
-                  className="w-full bg-[#070913] border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white font-mono outline-none focus:border-amber-400"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono text-slate-400 block mb-1">Max Risk Per Trade (%):</label>
-                <input
-                  type="number"
-                  value={riskPercent}
-                  onChange={(e) => setRiskPercent(Number(e.target.value))}
-                  className="w-full bg-[#070913] border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white font-mono outline-none focus:border-amber-400"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono text-slate-400 block mb-1">Entry Price (₹):</label>
-                <input
-                  type="number"
-                  value={entryPrice}
-                  onChange={(e) => setEntryPrice(Number(e.target.value))}
-                  className="w-full bg-[#070913] border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white font-mono outline-none focus:border-amber-400"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono text-slate-400 block mb-1">StopLoss Price (₹):</label>
-                <input
-                  type="number"
-                  value={stopLossPrice}
-                  onChange={(e) => setStopLossPrice(Number(e.target.value))}
-                  className="w-full bg-[#070913] border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white font-mono outline-none focus:border-amber-400"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={handleRunPositionCalc}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs rounded-xl flex items-center gap-2 transition-all shadow-md shadow-amber-950/40"
-            >
-              <Target className="w-4 h-4" /> CALCULATE POSITION & SPEAK
-            </button>
-
-            {/* Calculated Output Box */}
-            <div className="p-4 bg-[#070913] border border-amber-500/30 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-              <div className="p-2 bg-white/5 rounded-lg">
-                <span className="text-[9px] font-mono text-slate-400 block">MAX RISK AMOUNT</span>
-                <span className="text-sm font-bold font-mono text-rose-400">₹{calcResult.riskAmount.toLocaleString()}</span>
-              </div>
-              <div className="p-2 bg-white/5 rounded-lg">
-                <span className="text-[9px] font-mono text-slate-400 block">RECOMMENDED QTY</span>
-                <span className="text-sm font-bold font-mono text-amber-300">{calcResult.recommendedQuantity} Shares</span>
-              </div>
-              <div className="p-2 bg-white/5 rounded-lg">
-                <span className="text-[9px] font-mono text-slate-400 block">1:2 TARGET (50% Qty)</span>
-                <span className="text-sm font-bold font-mono text-emerald-400">₹{calcResult.target12.toLocaleString()}</span>
-              </div>
-              <div className="p-2 bg-white/5 rounded-lg">
-                <span className="text-[9px] font-mono text-slate-400 block">1:3 TARGET (Runner)</span>
-                <span className="text-sm font-bold font-mono text-cyan-400">₹{calcResult.target13.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: TRADE JOURNAL & P&L */}
-        {activeTab === 'journal' && (
-          <div className="space-y-4">
-            <form onSubmit={handleAddJournalEntry} className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3">
-              <h3 className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
-                <Plus className="w-4 h-4 text-emerald-400" />
-                Quick Log Trade to Auto-Journal (ट्रेड दर्ज करें)
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">Contract / Symbol:</label>
-                  <input
-                    type="text"
-                    value={newSymbol}
-                    onChange={(e) => setNewSymbol(e.target.value)}
-                    className="w-full bg-[#070913] border border-white/15 rounded-xl px-2.5 py-1 text-xs text-white font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">Entry (₹):</label>
-                  <input
-                    type="number"
-                    value={newEntry}
-                    onChange={(e) => setNewEntry(Number(e.target.value))}
-                    className="w-full bg-[#070913] border border-white/15 rounded-xl px-2.5 py-1 text-xs text-white font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">Exit (₹):</label>
-                  <input
-                    type="number"
-                    value={newExit}
-                    onChange={(e) => setNewExit(Number(e.target.value))}
-                    className="w-full bg-[#070913] border border-white/15 rounded-xl px-2.5 py-1 text-xs text-white font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-mono text-slate-400 block mb-1">Quantity:</label>
-                  <input
-                    type="number"
-                    value={newQty}
-                    onChange={(e) => setNewQty(Number(e.target.value))}
-                    className="w-full bg-[#070913] border border-white/15 rounded-xl px-2.5 py-1 text-xs text-white font-mono"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs rounded-xl flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" /> SAVE TRADE TO JOURNAL
-              </button>
-            </form>
-
-            <div className="space-y-2">
-              {journal.map((item) => (
-                <div key={item.id} className="p-3 bg-[#0C1021] border border-white/10 rounded-xl flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-xs font-mono">{item.symbol}</span>
-                      <span className="text-[10px] text-slate-400">({item.strategy})</span>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {journal.map((item) => (
+                    <div key={item.id} className="p-2.5 bg-[#060813] border border-white/10 rounded-xl flex items-center justify-between">
+                      <div>
+                        <span className="font-mono font-bold text-xs text-white block">{item.symbol}</span>
+                        <span className="text-[9px] text-slate-400">Entry: ₹{item.entryPrice} • Exit: ₹{item.exitPrice}</span>
+                      </div>
+                      <span className={`font-mono font-bold text-xs ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {item.pnl >= 0 ? `+₹${item.pnl.toLocaleString()}` : `-₹${Math.abs(item.pnl).toLocaleString()}`}
+                      </span>
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Entry: ₹{item.entryPrice} • Exit: ₹{item.exitPrice} • Qty: {item.quantity}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`text-xs font-bold font-mono ${item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {item.pnl >= 0 ? `+₹${item.pnl.toLocaleString()}` : `-₹${Math.abs(item.pnl).toLocaleString()}`}
-                    </span>
-                    <span className="block text-[9px] text-slate-500">{item.date}</span>
-                  </div>
+                  ))}
                 </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* RIGHT 5-COLUMNS: IN-DASHBOARD STONICX AI TRADING CHAT COPILOT */}
+          <div className="lg:col-span-5 flex flex-col bg-[#0C1021] border border-white/10 rounded-2xl overflow-hidden shadow-2xl h-[420px]">
+            
+            {/* Chat Header */}
+            <div className="px-3.5 py-2.5 bg-[#080B18] border-b border-white/10 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <div className="flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+                    STONICX AI COPILOT
+                  </span>
+                </div>
+              </div>
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300">
+                LIVE ASSIST
+              </span>
+            </div>
+
+            {/* Quick Prompt Chips */}
+            <div className="px-2.5 py-1.5 bg-[#050711] border-b border-white/5 flex gap-1.5 overflow-x-auto shrink-0">
+              {[
+                { label: '🔍 S&R Levels', text: 'Scan institutional support and resistance for NIFTY' },
+                { label: '📊 Candlestick', text: 'What candlestick pattern is active on 15m chart?' },
+                { label: '🎯 2% Risk', text: 'Calculate 2% risk on ₹100,000 capital' },
+                { label: '⚡ PCR Radar', text: 'Check current PCR open interest concentration' }
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSendChat(chip.text)}
+                  className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-mono text-slate-300 hover:text-white whitespace-nowrap transition-all"
+                >
+                  {chip.label}
+                </button>
               ))}
             </div>
+
+            {/* Chat Messages Stream */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs font-sans">
+              {chatMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                >
+                  {msg.tag && (
+                    <span className="text-[8px] font-mono font-bold text-amber-400 uppercase tracking-wider mb-0.5 px-1">
+                      {msg.tag}
+                    </span>
+                  )}
+                  <div
+                    className={`max-w-[88%] p-2.5 rounded-xl font-mono text-[11px] leading-relaxed ${
+                      msg.sender === 'user'
+                        ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-white rounded-br-none shadow-md'
+                        : 'bg-[#060813] border border-white/10 text-slate-200 rounded-bl-none'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                  <span className="text-[8px] font-mono text-slate-500 mt-0.5 px-1">{msg.time}</span>
+                </div>
+              ))}
+              
+              {isTyping && (
+                <div className="flex items-center gap-1.5 p-2 bg-[#060813] rounded-lg border border-white/10 w-fit">
+                  <Sparkle className="w-3 h-3 text-amber-400 animate-spin" />
+                  <span className="text-[10px] font-mono text-slate-400">Computing neural matrix response...</span>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Chat Input Box */}
+            <div className="p-2 bg-[#080B18] border-t border-white/10 flex items-center gap-2 shrink-0">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                placeholder="Ask STONICX about levels, risk, or SMC setups..."
+                className="flex-1 bg-[#050711] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-400 font-mono"
+              />
+              <button
+                onClick={() => handleSendChat()}
+                className="p-2 bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white rounded-xl shadow transition-transform active:scale-95"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
           </div>
-        )}
+
+        </div>
+
       </div>
+
     </div>
   );
 };
