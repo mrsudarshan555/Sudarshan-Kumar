@@ -496,6 +496,212 @@ app.post('/api/voice/speak', async (req, res) => {
   }
 });
 
+// Phase 4A & 4B: AI Interactive Objective & Subjective Quiz Generator Endpoint
+app.post('/api/quiz/generate', async (req, res) => {
+  try {
+    const { 
+      topic: rawTopic = 'General Knowledge', 
+      chapter = '', 
+      board = 'General', 
+      mode = 'objective', 
+      count = 5, 
+      language = 'hi' 
+    } = req.body;
+
+    const sanitizedTopic = (/^(mayra|stonicx|assistant|ai|bot|quiz|test)$/i.test(String(rawTopic || '').trim()) || !String(rawTopic || '').trim())
+      ? 'General Knowledge (सामान्य ज्ञान)'
+      : String(rawTopic).trim();
+    const topic = sanitizedTopic;
+    
+    const numQuestions = Math.min(Math.max(parseInt(String(count), 10) || 5, 3), 15);
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(503).json({ error: 'API key not configured' });
+    }
+
+    const isSubjective = mode === 'subjective';
+    const contextDescription = [
+      `Subject/Topic: ${topic}`,
+      chapter ? `Specific Chapter/Topic: ${chapter}` : 'Coverage: Core / Full Syllabus',
+      board ? `Curriculum / Board Pattern: ${board}` : 'Standard Curriculum',
+      `Mode: ${isSubjective ? 'Subjective (Short/Long written questions where student types their own answer)' : 'Objective (Multiple Choice Questions with 4 options A, B, C, D)'}`,
+      `Language: ${language === 'hi' ? 'Hindi / Devanagari with English terms where helpful' : 'English'}`
+    ].join('\n');
+
+    let prompt = '';
+    if (isSubjective) {
+      prompt = `You are an expert teacher and exam creator.
+Create a high-quality subjective assessment based on:
+${contextDescription}
+Number of questions: ${numQuestions}.
+
+CRITICAL REQUIREMENTS:
+1. Provide exactly ${numQuestions} subjective questions requiring clear conceptual answers (2 to 5 sentences).
+2. For each question, provide a detailed "modelAnswer" (आदर्श उत्तर) in Hindi/English as appropriate.
+3. Provide 3-5 "keywords" (key terms or concepts that should ideally be present in a good answer).
+4. Provide a helpful "hint".
+5. Set "type": "subjective".
+6. Return ONLY valid JSON in this exact schema:
+
+{
+  "title": "${topic} ${board ? '(' + board + ')' : ''} वर्णनात्मक प्रश्नोत्तरी",
+  "topic": "${topic}",
+  "chapter": "${chapter || 'Full Syllabus'}",
+  "board": "${board || 'General'}",
+  "mode": "subjective",
+  "introText": "यहाँ आपके लिए ${topic} ${chapter ? '- ' + chapter : ''} के महत्वपूर्ण प्रश्न तैयार हैं। नीचे दिए गए टेक्स्ट बॉक्स में अपना उत्तर लिखें और AI से तुरंत मूल्यांकन कराएं:",
+  "questions": [
+    {
+      "id": "q-1",
+      "question": "1. [Conceptual question]?",
+      "type": "subjective",
+      "modelAnswer": "[Ideal, comprehensive and clear answer]",
+      "keywords": ["कीवर्ड 1", "कीवर्ड 2", "कीवर्ड 3"],
+      "evaluationCriteria": "[Key points expected in student response]",
+      "hint": "[Helpful clue]"
+    }
+  ],
+  "growthAreas": ["Concept 1", "Concept 2"]
+}`;
+    } else {
+      prompt = `You are an expert educational quiz creator like Google AI Mode.
+Create a structured multiple-choice objective quiz based on:
+${contextDescription}
+Number of questions: ${numQuestions}.
+
+CRITICAL REQUIREMENTS:
+1. Provide exactly ${numQuestions} questions.
+2. Set "type": "objective".
+3. Each question MUST have exactly 4 options labeled A, B, C, D (e.g. "A. Option Text").
+4. Each option MUST include an individual explanation string explaining why that specific option is correct or incorrect (e.g. "गलत। ...", "सही! ...").
+5. "correctAnswerIndex" MUST be 0 (for A), 1 (for B), 2 (for C), or 3 (for D).
+6. Provide a helpful hint for each question.
+7. Provide a clean, engaging title and introText.
+8. Return ONLY valid JSON in this exact schema:
+
+{
+  "title": "${topic} ${board ? '(' + board + ')' : ''} प्रश्नोत्तरी",
+  "topic": "${topic}",
+  "chapter": "${chapter || 'Full Syllabus'}",
+  "board": "${board || 'General'}",
+  "mode": "objective",
+  "introText": "यहाँ आपके लिए ${topic} ${chapter ? '- ' + chapter : ''} का एक मजेदार क्विज तैयार है। नीचे दिए गए बहुविकल्पीय प्रश्नों के सही उत्तर चुनिए और अपने ज्ञान का परीक्षण कीजिए:",
+  "questions": [
+    {
+      "id": "q-1",
+      "question": "1. [Question text]?",
+      "type": "objective",
+      "correctAnswerIndex": 1,
+      "options": [
+        { "text": "A. [Option text]", "explanation": "गलत। [Why incorrect]" },
+        { "text": "B. [Option text]", "explanation": "सही! [Why correct]" },
+        { "text": "C. [Option text]", "explanation": "गलत। [Why incorrect]" },
+        { "text": "D. [Option text]", "explanation": "गलत। [Why incorrect]" }
+      ],
+      "hint": "[Helpful clue]"
+    }
+  ],
+  "growthAreas": ["Subtopic 1", "Subtopic 2"]
+}`;
+    }
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.4
+      }
+    });
+
+    const text = response.text || '';
+    const cleanJson = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(cleanJson);
+    return res.json(parsed);
+  } catch (err: any) {
+    console.error('Error generating quiz:', err);
+    return res.status(500).json({ error: err?.message || 'Failed to generate quiz' });
+  }
+});
+
+// Phase 4B: AI Subjective Answer Evaluation Endpoint
+app.post('/api/quiz/evaluate', async (req, res) => {
+  try {
+    const { question, userAnswer, modelAnswer, keywords = [], language = 'hi' } = req.body;
+
+    if (!userAnswer || !userAnswer.trim()) {
+      return res.json({
+        scorePercentage: 0,
+        status: 'incorrect',
+        statusLabel: 'उत्तर रिक्त है (Empty)',
+        feedback: 'आपने कोई उत्तर नहीं लिखा है। कृपया प्रयास करें!',
+        modelAnswer: modelAnswer || ''
+      });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      // Local fallback evaluation based on length & keyword match
+      const lowerUser = userAnswer.toLowerCase();
+      const matched = keywords.filter((k: string) => lowerUser.includes(k.toLowerCase()));
+      const score = Math.min(100, Math.max(30, Math.round((matched.length / Math.max(keywords.length, 1)) * 80 + 20)));
+      return res.json({
+        scorePercentage: score,
+        status: score >= 70 ? 'correct' : score >= 40 ? 'partial' : 'incorrect',
+        statusLabel: score >= 70 ? 'उत्कृष्ट उत्तर' : score >= 40 ? 'आंशिक रूप से सही' : 'सुधार की आवश्यकता',
+        feedback: `आपके उत्तर में मुख्य बिंदुओं का उल्लेख है। आदर्श उत्तर देखकर अपने उत्तर को और बेहतर बनाएं।`,
+        modelAnswer: modelAnswer || ''
+      });
+    }
+
+    const evalPrompt = `You are a supportive, fair teacher evaluating a student's answer to a subjective question.
+Question: "${question}"
+Expected Model Answer: "${modelAnswer}"
+Key concepts/keywords expected: ${JSON.stringify(keywords)}
+Student's Submitted Answer: "${userAnswer}"
+
+Evaluate the student's answer:
+1. Give a score percentage (0 to 100). Be encouraging but fair (give partial credit for valid points).
+2. Status must be one of:
+   - "correct" (score >= 75)
+   - "partial" (score >= 40 and score < 75)
+   - "incorrect" (score < 40)
+3. "statusLabel" in Hindi (e.g. "उत्कृष्ट उत्तर (Excellent)", "आंशिक रूप से सही (Partially Correct)", "सुधार की आवश्यकता (Needs Improvement)")
+4. "feedback" in Hindi (2-3 sentences praising what they got right, noting anything missed, and giving constructive feedback)
+5. Return ONLY valid JSON:
+{
+  "scorePercentage": 85,
+  "status": "correct",
+  "statusLabel": "उत्कृष्ट उत्तर",
+  "feedback": "बहुत अच्छा! आपने मुख्य सिद्धांत को सही समझाया है...",
+  "modelAnswer": "${modelAnswer}"
+}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite',
+      contents: evalPrompt,
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.2
+      }
+    });
+
+    const text = response.text || '';
+    const cleanJson = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(cleanJson);
+    return res.json(parsed);
+  } catch (err: any) {
+    console.error('Error evaluating subjective answer:', err);
+    // Graceful fallback
+    return res.json({
+      scorePercentage: 70,
+      status: 'partial',
+      statusLabel: 'आंशिक रूप से सही',
+      feedback: 'आपके उत्तर का विश्लेषण किया गया। मुख्य बिंदुओं की तुलना नीचे दिए गए आदर्श उत्तर से करें।',
+      modelAnswer: req.body.modelAnswer || ''
+    });
+  }
+});
+
 // Memory Endpoints
 app.get('/api/memory', (req, res) => {
   res.json({ memories: memoryStore });

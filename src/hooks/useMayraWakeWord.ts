@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AssistantStatus } from '../types';
+import { MayraNativeBridgeClient } from '../services/bridge/MayraNativeBridgeClient';
 
 interface UseMayraWakeWordProps {
   onWakeWordDetected?: (transcript?: string) => void;
@@ -102,13 +103,12 @@ function parseWakeAndCommand(rawText: string): { isWake: boolean; command: strin
  * useMayraWakeWord:
  * Always-Listening 2-Meter Far-Field Background Wake Word Engine (Hey Siri / Ok Google style)
  * 
- * Features:
- * 1. Works without manually pressing any mic button.
- * 2. High sensitivity Automatic Gain Control (AGC) for 2-meter far-field voice pickup.
- * 3. Auto-restarting continuous background SpeechRecognition loop.
- * 4. Recognizes "Hey Mayra", "Mayra", "हे मायरा", "Hey StonicX" instantly.
- * 5. Single-breath execution: "Hey Mayra weather kaisa hai" triggers command immediately.
- * 6. Plays an instant wake chime & awakens Mayra to handle the task.
+ * Pipeline:
+ * 1. Primary Engine: Android Native On-Device Speech Recognizer (EXTRA_PREFER_OFFLINE).
+ *    Works 100% offline without mobile data or Wi-Fi.
+ * 2. Fallback Engine: Web Speech Recognition API with AGC for browser preview environments.
+ * 3. Supports single-breath execution: "Hey Mayra weather kaisa hai" triggers command instantly.
+ * 4. Dual-tone wake chime on trigger.
  */
 export function useMayraWakeWord({
   onWakeWordDetected,
@@ -121,6 +121,7 @@ export function useMayraWakeWord({
   const [lastDetectedPhrase, setLastDetectedPhrase] = useState<string | null>(null);
   const [hasMicrophonePermission, setHasMicrophonePermission] = useState<boolean | null>(true);
   const [isSupported, setIsSupported] = useState<boolean>(true);
+  const [isNativeOfflineActive, setIsNativeOfflineActive] = useState<boolean>(false);
 
   const recognitionRef = useRef<any>(null);
   const isRunningRef = useRef<boolean>(false);
@@ -133,7 +134,7 @@ export function useMayraWakeWord({
 
   const lastTriggerTimeRef = useRef<number>(0);
 
-  // Far-field microphone stream pre-warming (unlocks high-gain AGC)
+  // Far-field microphone stream pre-warming (unlocks high-gain AGC for browser fallback)
   const ensureMicrophoneAccess = useCallback(async () => {
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -146,7 +147,7 @@ export function useMayraWakeWord({
           }
         });
         setHasMicrophonePermission(true);
-        // We keep the tracks alive briefly to establish permission
+        // Keep the tracks alive briefly to establish permission
         setTimeout(() => {
           stream.getTracks().forEach(track => track.stop());
         }, 1000);
@@ -158,15 +159,28 @@ export function useMayraWakeWord({
     return false;
   }, []);
 
-  const handleWakeSpotting = useCallback((transcript: string) => {
+  const handleWakeSpotting = useCallback((transcript: string, directCommand?: string) => {
     // Avoid double triggering within 2.5 seconds
     const now = Date.now();
     if (now - lastTriggerTimeRef.current < 2500) return;
 
+    if (directCommand !== undefined) {
+      // Direct trigger from native on-device offline recognition
+      lastTriggerTimeRef.current = now;
+      console.log('[Offline WakeWord Native] ✦ WAKE WORD TRIGGERED:', transcript, '| Command:', directCommand);
+      setLastDetectedPhrase(transcript);
+      playWakeChime();
+
+      if (callbacksRef.current.onWakeWordDetected) {
+        callbacksRef.current.onWakeWordDetected(directCommand);
+      }
+      return;
+    }
+
     const parsed = parseWakeAndCommand(transcript);
     if (parsed.isWake) {
       lastTriggerTimeRef.current = now;
-      console.log('[WakeWord Far-Field] ✦ WAKE WORD TRIGGERED:', parsed.matchedPhrase, '| Extracted Command:', parsed.command);
+      console.log('[WakeWord Engine] ✦ WAKE WORD TRIGGERED:', parsed.matchedPhrase, '| Extracted Command:', parsed.command);
 
       setLastDetectedPhrase(parsed.matchedPhrase);
       playWakeChime();
@@ -177,8 +191,8 @@ export function useMayraWakeWord({
     }
   }, []);
 
-  // Continuous background recognition engine
-  const startWakeWordEngine = useCallback(async () => {
+  // Web Speech Recognition Engine (Graceful Browser Preview Fallback)
+  const startWebWakeWordEngine = useCallback(async () => {
     if (!enabled) return;
 
     const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -201,11 +215,11 @@ export function useMayraWakeWord({
       recognition.onstart = () => {
         isRunningRef.current = true;
         setIsListeningForWakeWord(true);
-        console.log('[WakeWord Far-Field] Standby listening ACTIVE (Say "Hey Mayra" from 2m distance)');
+        console.log('[WakeWord Engine] Web standby listening ACTIVE (Say "Hey Mayra" from 2m distance)');
       };
 
       recognition.onresult = (event: any) => {
-        // If assistant is currently speaking or in active full listening turn, skip wake-word parsing
+        // If assistant is currently speaking, skip wake-word parsing
         if (statusRef.current === 'SPEAKING') {
           return;
         }
@@ -214,7 +228,7 @@ export function useMayraWakeWord({
           const res = event.results[i];
           const transcript = res[0]?.transcript || '';
 
-          // Test all alternatives for maximum 2m far-field accuracy
+          // Test all alternatives for maximum accuracy
           for (let a = 0; a < res.length; a++) {
             const altText = res[a]?.transcript;
             if (altText) {
@@ -231,7 +245,7 @@ export function useMayraWakeWord({
           setIsListeningForWakeWord(false);
           isRunningRef.current = false;
         } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
-          console.log('[WakeWord Far-Field] Passive info:', event.error);
+          console.log('[WakeWord Engine] Passive info:', event.error);
         }
       };
 
@@ -257,11 +271,11 @@ export function useMayraWakeWord({
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
-      console.log('[WakeWord Far-Field] Recognition init notice:', err);
+      console.log('[WakeWord Engine] Recognition init notice:', err);
     }
   }, [enabled, handleWakeSpotting]);
 
-  const stopWakeWordEngine = useCallback(() => {
+  const stopWebWakeWordEngine = useCallback(() => {
     clearTimeout(restartTimerRef.current);
     if (recognitionRef.current) {
       try {
@@ -275,6 +289,48 @@ export function useMayraWakeWord({
     isRunningRef.current = false;
     setIsListeningForWakeWord(false);
   }, []);
+
+  // Primary Start: Auto-routes to Native Android Offline Engine if available, or Web fallback
+  const startWakeWordEngine = useCallback(async () => {
+    if (!enabled) return;
+
+    const isNative = await MayraNativeBridgeClient.isNativeWakeWordSupported();
+    if (isNative) {
+      console.log('[WakeWord Engine] ✦ Android Native On-Device Offline Engine detected — Starting Foreground Wake Service');
+      const started = await MayraNativeBridgeClient.startOfflineWakeWord(true);
+      if (started) {
+        setIsNativeOfflineActive(true);
+        setIsListeningForWakeWord(true);
+        isRunningRef.current = true;
+        return;
+      }
+    }
+
+    // Fallback to Web Speech Recognition engine
+    setIsNativeOfflineActive(false);
+    startWebWakeWordEngine();
+  }, [enabled, startWebWakeWordEngine]);
+
+  const stopWakeWordEngine = useCallback(() => {
+    if (isNativeOfflineActive) {
+      MayraNativeBridgeClient.stopOfflineWakeWord();
+      setIsNativeOfflineActive(false);
+    }
+    stopWebWakeWordEngine();
+    isRunningRef.current = false;
+    setIsListeningForWakeWord(false);
+  }, [isNativeOfflineActive, stopWebWakeWordEngine]);
+
+  // Hook Native Android Wake Word event listener
+  useEffect(() => {
+    const unsubscribe = MayraNativeBridgeClient.onNativeWakeWord(({ phrase, command }) => {
+      handleWakeSpotting(phrase, command);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [handleWakeSpotting]);
 
   // Lifecycle control
   useEffect(() => {
@@ -304,29 +360,37 @@ export function useMayraWakeWord({
     };
   }, [enabled, startWakeWordEngine, stopWakeWordEngine, ensureMicrophoneAccess]);
 
-  // Pause background recognition when Mayra is speaking so she doesn't hear herself
+  // Pause background recognition when Mayra/StonicX is speaking so they don't hear themselves
   useEffect(() => {
     if (status === 'SPEAKING') {
+      if (isNativeOfflineActive) {
+        MayraNativeBridgeClient.pauseOfflineWakeWord();
+      }
       if (recognitionRef.current && isRunningRef.current) {
         try {
           recognitionRef.current.stop();
         } catch (e) {}
       }
     } else if (status === 'READY') {
-      if (enabled && !isRunningRef.current) {
-        clearTimeout(restartTimerRef.current);
-        restartTimerRef.current = setTimeout(() => {
-          startWakeWordEngine();
-        }, 400);
+      if (enabled) {
+        if (isNativeOfflineActive) {
+          MayraNativeBridgeClient.resumeOfflineWakeWord();
+        } else if (!isRunningRef.current) {
+          clearTimeout(restartTimerRef.current);
+          restartTimerRef.current = setTimeout(() => {
+            startWakeWordEngine();
+          }, 400);
+        }
       }
     }
-  }, [status, enabled, startWakeWordEngine]);
+  }, [status, enabled, isNativeOfflineActive, startWakeWordEngine]);
 
   return {
     isListeningForWakeWord,
     lastDetectedPhrase,
     hasMicrophonePermission,
     isSupported,
+    isNativeOfflineActive,
     startListening: startWakeWordEngine,
     stopListening: stopWakeWordEngine
   };

@@ -13,6 +13,7 @@ import { getDynamicSuggestions } from '../../utils/dynamicSuggestions';
 import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
 import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
 import { PullToRefresh } from '../common/PullToRefresh';
+import { InteractiveQuizWidget } from '../quiz/InteractiveQuizWidget';
 
 interface ChatScreenProps {
   messages: ChatMessage[];
@@ -413,7 +414,36 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                       <div className="whitespace-pre-wrap leading-relaxed">
                         {renderHighlightedText(msg.text, isMatch)}
                       </div>
+
+                      {/* Quiz Details Quick-Tap Chips */}
+                      {msg.quizConfigPrompt?.optionsChips && msg.quizConfigPrompt.optionsChips.length > 0 && (
+                        <div className="mt-3 pt-2 border-t border-white/10 flex flex-wrap gap-1.5">
+                          {msg.quizConfigPrompt.optionsChips.map((chip, chipIdx) => (
+                            <button
+                              key={chipIdx}
+                              type="button"
+                              onClick={() => onSubmitPrompt(chip.actionValue)}
+                              className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/10 hover:bg-white/20 border border-white/15 text-cyan-200 hover:text-white backdrop-blur-md transition-all shadow-sm active:scale-95 flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>{chip.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Interactive Objective (MCQ) Quiz Widget if attached to message */}
+                    {msg.quizData && (
+                      <div className="w-full max-w-[98%] mt-2 self-stretch">
+                        <InteractiveQuizWidget 
+                          quiz={msg.quizData}
+                          onSelectTopic={(topic) => onSubmitPrompt(`${topic} ka quiz banao`)}
+                          onExplainResults={(score) => {
+                            onSubmitPrompt(`Maine quiz me ${score.correct}/${score.total} score kiya. Meri galtiyan samjhao aur important concepts revise karao.`);
+                          }}
+                        />
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

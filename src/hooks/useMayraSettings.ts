@@ -51,7 +51,9 @@ const DEFAULT_PERSONAL_CONFIG: UserPersonalConfig = {
   greetingStyle: 'warm',
   geminiApiKey: '',
   geminiModel: 'gemini-3.1-flash-lite',
-  temperature: 0.7
+  temperature: 0.7,
+  favoriteMusicGenre: 'Lofi & Ambient Bollywood',
+  youtubeApiKey: ''
 };
 
 function getInitialPersonalConfig(): UserPersonalConfig {

@@ -24,6 +24,7 @@ import { ContinuousConversationEngine } from '../services/voice/continuousConver
 import { MayraAgentEngine } from '../services/agent/agentEngine';
 import { GestureVoiceBridge } from '../services/gestures/gestureVoiceBridge';
 import { DelegationRouter } from '../services/router/delegationRouter';
+import { QuizDataService, QuizConfig } from '../services/quiz/quizDataService';
 
 export interface UseMayraAssistantProps {
   personalConfig: UserPersonalConfig;
@@ -50,6 +51,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
 
   const continuousEngineRef = useRef<ContinuousConversationEngine | null>(null);
   const agentEngineRef = useRef<MayraAgentEngine | null>(null);
+  const pendingQuizConfigRef = useRef<Partial<QuizConfig> | null>(null);
 
   const userName = personalConfig.preferredName || personalConfig.fullName || 'Zafer';
   const initialGreeting = useRef(getDynamicGreeting(userName, getSavedLanguage())).current;
@@ -425,6 +427,109 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     activeModelMsgIdRef.current = null;
 
     const lower = (trimmed || '').toLowerCase();
+
+    // 0.0 INTERACTIVE QUIZ TRIGGER WITH MISSING DETAILS PROMPT FLOW (GOOGLE AI MODE STYLE)
+    if (!image && trimmed) {
+      const quizAnalysis = QuizDataService.getInstance().parseQuizIntentOrDetails(
+        trimmed, 
+        pendingQuizConfigRef.current || undefined
+      );
+
+      if (quizAnalysis.isQuizIntent) {
+        // If some required details (Subject, Chapter, Mode, Board) are missing:
+        if (!quizAnalysis.isComplete) {
+          pendingQuizConfigRef.current = quizAnalysis.config;
+          const configPromptMsg: ChatMessage = {
+            id: `msg-m-quiz-cfg-${Date.now()}`,
+            sender: 'mayra',
+            text: quizAnalysis.promptMessage,
+            timestamp: Date.now(),
+            quizConfigPrompt: {
+              missingFields: quizAnalysis.missingFields,
+              currentConfig: quizAnalysis.config,
+              optionsChips: quizAnalysis.chips
+            }
+          };
+
+          setMessages((prev) => [...prev, configPromptMsg]);
+          setStatus('READY');
+          speakText(quizAnalysis.promptMessage, detected, handleSpeechStart, handleSpeechEnd);
+          return;
+        }
+
+        // All details are confirmed/provided: Generate the Quiz!
+        const finalConfig = quizAnalysis.config;
+        pendingQuizConfigRef.current = null; // Reset pending state
+
+        const quizIntroSpeech = finalConfig.mode === 'subjective'
+          ? `यहाँ आपके लिए ${finalConfig.subject || 'विषय'} (${finalConfig.chapter || 'पूरा सिलेबस'}) का वर्णनात्मक (Subjective) टेस्ट तैयार है। नीचे बॉक्स में अपना विस्तृत उत्तर लिखें:`
+          : `यहाँ आपके लिए ${finalConfig.subject || 'विषय'} (${finalConfig.chapter || 'पूरा सिलेबस'}) का इंटरैक्टिव क्विज तैयार है। सही विकल्प चुनिए:`;
+
+        const quizMessageId = `msg-m-quiz-${Date.now()}`;
+        
+        // 1. First render message in loading state
+        const initialQuizMsg: ChatMessage = {
+          id: quizMessageId,
+          sender: 'mayra',
+          text: quizIntroSpeech,
+          timestamp: Date.now(),
+          quizData: {
+            id: `loading-quiz-${Date.now()}`,
+            title: `${finalConfig.subject || 'क्विज'} प्रश्नोत्तरी`,
+            topic: finalConfig.subject || 'General Knowledge',
+            chapter: finalConfig.chapter,
+            board: finalConfig.board,
+            mode: finalConfig.mode,
+            questions: [],
+            isLoading: true
+          }
+        };
+
+        setMessages((prev) => [...prev, initialQuizMsg]);
+        setStatus('SPEAKING');
+
+        // Broadcast to Home screen floating card if user is on Home screen
+        window.dispatchEvent(new CustomEvent('mayra_active_quiz_triggered', {
+          detail: initialQuizMsg.quizData
+        }));
+
+        // Voice feedback in background
+        speakText(quizIntroSpeech, detected, handleSpeechStart, undefined);
+
+        // 2. Fetch or generate the full rich quiz (Objective or Subjective)
+        QuizDataService.getInstance().getQuiz({
+          topic: finalConfig.subject || 'General Knowledge',
+          chapter: finalConfig.chapter,
+          board: finalConfig.board,
+          mode: finalConfig.mode,
+          count: finalConfig.questionCount || 5,
+          language: finalConfig.language || 'hi'
+        }).then((fullQuiz) => {
+          setMessages((prev) => prev.map((m) => m.id === quizMessageId ? {
+            ...m,
+            quizData: {
+              ...fullQuiz,
+              isLoading: false
+            }
+          } : m));
+
+          // Notify Home Screen floating card with loaded quiz
+          window.dispatchEvent(new CustomEvent('mayra_active_quiz_updated', {
+            detail: {
+              ...fullQuiz,
+              isLoading: false
+            }
+          }));
+
+          setStatus('READY');
+        }).catch((err) => {
+          console.error('[useMayraAssistant] Error generating quiz:', err);
+          setStatus('READY');
+        });
+
+        return;
+      }
+    }
 
     // 0. MAYRA <-> STONICX Autonomous Task Delegation & Direct Switch Router
     if (!image && trimmed) {

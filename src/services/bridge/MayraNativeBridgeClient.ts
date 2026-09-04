@@ -507,6 +507,138 @@ class MayraNativeBridgeClientClass {
   }
 
   /**
+   * Check if Native Android offline wake-word detection is supported on this device.
+   */
+  async isNativeWakeWordSupported(): Promise<boolean> {
+    if (typeof window === 'undefined' || !window.MayraNativeLLM) {
+      return false;
+    }
+    try {
+      if (window.MayraNativeLLM.isNativeWakeWordSupported) {
+        return await Promise.resolve(window.MayraNativeLLM.isNativeWakeWordSupported());
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Start native on-device offline continuous wake-word detection via MayraMicrophoneForegroundService.
+   */
+  async startOfflineWakeWord(continuous = true): Promise<boolean> {
+    if (typeof window === 'undefined' || !window.MayraNativeLLM) {
+      return false;
+    }
+    try {
+      if (window.MayraNativeLLM.startOfflineWakeWord) {
+        return await Promise.resolve(window.MayraNativeLLM.startOfflineWakeWord(continuous));
+      }
+      return false;
+    } catch (e) {
+      console.warn('[MayraNativeBridgeClient] startOfflineWakeWord note:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Stop native on-device offline wake-word detection.
+   */
+  async stopOfflineWakeWord(): Promise<boolean> {
+    if (typeof window === 'undefined' || !window.MayraNativeLLM) {
+      return false;
+    }
+    try {
+      if (window.MayraNativeLLM.stopOfflineWakeWord) {
+        return await Promise.resolve(window.MayraNativeLLM.stopOfflineWakeWord());
+      }
+      return false;
+    } catch (e) {
+      console.warn('[MayraNativeBridgeClient] stopOfflineWakeWord note:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Pause native offline wake-word recognizer (e.g. while Assistant is speaking).
+   */
+  async pauseOfflineWakeWord(): Promise<boolean> {
+    if (typeof window === 'undefined' || !window.MayraNativeLLM) {
+      return false;
+    }
+    try {
+      if (window.MayraNativeLLM.pauseOfflineWakeWord) {
+        return await Promise.resolve(window.MayraNativeLLM.pauseOfflineWakeWord());
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Resume native offline wake-word recognizer.
+   */
+  async resumeOfflineWakeWord(): Promise<boolean> {
+    if (typeof window === 'undefined' || !window.MayraNativeLLM) {
+      return false;
+    }
+    try {
+      if (window.MayraNativeLLM.resumeOfflineWakeWord) {
+        return await Promise.resolve(window.MayraNativeLLM.resumeOfflineWakeWord());
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Query if native offline wake-word engine is active.
+   */
+  async isOfflineWakeWordActive(): Promise<boolean> {
+    if (typeof window === 'undefined' || !window.MayraNativeLLM) {
+      return false;
+    }
+    try {
+      if (window.MayraNativeLLM.isOfflineWakeWordActive) {
+        return await Promise.resolve(window.MayraNativeLLM.isOfflineWakeWordActive());
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Register a listener for native on-device wake-word detection triggers.
+   */
+  onNativeWakeWord(callback: (event: { phrase: string; command: string }) => void): () => void {
+    const handleCustomEvent = (e: any) => {
+      const detail = e.detail || { phrase: 'Mayra', command: '' };
+      callback({ phrase: detail.phrase || 'Mayra', command: detail.command || '' });
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('mayra_native_wakeword', handleCustomEvent);
+      window.addEventListener('mayra:native:wakeword', handleCustomEvent);
+      
+      const prevGlobal = window.__mayra_native_on_wakeword;
+      window.__mayra_native_on_wakeword = (phrase: string, command: string) => {
+        callback({ phrase, command });
+        if (prevGlobal) prevGlobal(phrase, command);
+      };
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('mayra_native_wakeword', handleCustomEvent);
+        window.removeEventListener('mayra:native:wakeword', handleCustomEvent);
+      }
+    };
+  }
+
+  /**
    * Synthesize text to speech using Piper TTS on-device.
    */
   async synthesizeOfflineSpeech(text: string, voice = 'lessac'): Promise<{ audioBase64: string; sampleRate: number; durationMs: number }> {

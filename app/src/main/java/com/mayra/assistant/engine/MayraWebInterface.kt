@@ -3,6 +3,7 @@ package com.mayra.assistant.engine
 import android.content.Context
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import com.mayra.assistant.services.MayraMicrophoneForegroundService
 import kotlinx.coroutines.*
 import org.json.JSONObject
 
@@ -15,6 +16,22 @@ class MayraWebInterface(
 ) {
     private val bridge = MayraNativeLLMBridge.getInstance(context)
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    init {
+        // Wire foreground offline wake-word detection callback to WebView JS layer
+        MayraMicrophoneForegroundService.onWakeWordDetectedListener = { phrase, command ->
+            dispatchJsWakeWord(phrase, command)
+        }
+    }
+
+    private fun dispatchJsWakeWord(phrase: String, command: String) {
+        webView?.post {
+            val escPhrase = JSONObject.quote(phrase)
+            val escCommand = JSONObject.quote(command)
+            val js = "if (window.__mayra_native_on_wakeword) { window.__mayra_native_on_wakeword($escPhrase, $escCommand); } else { window.dispatchEvent(new CustomEvent('mayra_native_wakeword', { detail: { phrase: $escPhrase, command: $escCommand } })); }"
+            webView.evaluateJavascript(js, null)
+        }
+    }
 
     @JavascriptInterface
     fun isAvailable(): Boolean {
@@ -187,5 +204,55 @@ class MayraWebInterface(
     @JavascriptInterface
     fun cancelGeneration(): Boolean {
         return bridge.cancelGeneration()
+    }
+
+    @JavascriptInterface
+    fun isNativeWakeWordSupported(): Boolean {
+        return true
+    }
+
+    @JavascriptInterface
+    fun startOfflineWakeWord(continuous: Boolean): Boolean {
+        try {
+            MayraMicrophoneForegroundService.start(context, continuous)
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    @JavascriptInterface
+    fun stopOfflineWakeWord(): Boolean {
+        try {
+            MayraMicrophoneForegroundService.stop(context)
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    @JavascriptInterface
+    fun pauseOfflineWakeWord(): Boolean {
+        try {
+            MayraMicrophoneForegroundService.pause(context)
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    @JavascriptInterface
+    fun resumeOfflineWakeWord(): Boolean {
+        try {
+            MayraMicrophoneForegroundService.resume(context)
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    @JavascriptInterface
+    fun isOfflineWakeWordActive(): Boolean {
+        return MayraMicrophoneForegroundService.isWakeWordActive
     }
 }

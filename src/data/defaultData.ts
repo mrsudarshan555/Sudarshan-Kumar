@@ -213,6 +213,30 @@ export const INITIAL_INTEGRATIONS: IntegrationItem[] = [
     category: 'Developer',
     status: 'configured',
     icon: 'Webhook'
+  },
+  {
+    id: 'integ-github',
+    name: 'GitHub Repository & CI Bridge',
+    description: 'Synchronizes code repos, issues, pull requests, and automated builds.',
+    category: 'Developer',
+    status: 'configured',
+    icon: 'Github'
+  },
+  {
+    id: 'integ-notion',
+    name: 'Notion Knowledge Base',
+    description: 'Bridges documents, sprint roadmaps, and personal database notes.',
+    category: 'Productivity',
+    status: 'configured',
+    icon: 'Building'
+  },
+  {
+    id: 'integ-telegram',
+    name: 'Telegram Bot & Channel Relay',
+    description: 'Dispatches voice summaries and syncs notifications with private Telegram groups.',
+    category: 'Messaging',
+    status: 'configured',
+    icon: 'Radio'
   }
 ];
 

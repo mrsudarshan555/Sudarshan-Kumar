@@ -31,6 +31,8 @@ import { RoutinesModal } from './routines/RoutinesModal';
 import { HomeScreenWidgetModal } from './widgets/HomeScreenWidgetModal';
 import { GlassAuthModal } from './auth/GlassAuthModal';
 import { AccountSyncService } from '../services/auth/accountSyncService';
+import { FloatingHomeQuizModal } from './quiz/FloatingHomeQuizModal';
+import { QuizPayload } from '../types';
 
 interface AndroidPhoneFrameProps {
   activeTab: ActiveTab;
@@ -132,6 +134,28 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
   // Active sync account
   const authService = AccountSyncService.getInstance();
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(authService.getCurrentUser());
+
+  // Interactive Objective Quiz Modal for Home Screen ("Google dabba/varg jaisa compact box")
+  const [activeHomeQuiz, setActiveHomeQuiz] = useState<QuizPayload | null>(null);
+
+  useEffect(() => {
+    const handleQuizTriggered = (e: any) => {
+      if (e.detail) {
+        setActiveHomeQuiz(e.detail);
+      }
+    };
+    const handleQuizUpdated = (e: any) => {
+      if (e.detail) {
+        setActiveHomeQuiz(e.detail);
+      }
+    };
+    window.addEventListener('mayra_active_quiz_triggered', handleQuizTriggered);
+    window.addEventListener('mayra_active_quiz_updated', handleQuizUpdated);
+    return () => {
+      window.removeEventListener('mayra_active_quiz_triggered', handleQuizTriggered);
+      window.removeEventListener('mayra_active_quiz_updated', handleQuizUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     const unsubscribe = authService.subscribe((user) => {
@@ -290,7 +314,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
               whileTap={{ scale: 0.9 }}
               onClick={handleOpenSettingsWithSpring}
               className="p-1.5 text-purple-300 hover:text-white bg-purple-950/40 hover:bg-purple-900/50 rounded-full border border-purple-400/30 backdrop-blur-xl shadow-[0_0_10px_rgba(168,85,247,0.25)] transition-all shrink-0 group cursor-pointer"
-              title="Settings"
+              title="Dashboard"
             >
               <SettingsIcon className={`w-3.5 h-3.5 text-purple-300 stroke-[1.8] transition-transform duration-300 ${isGearRotating ? 'rotate-180 scale-110' : 'animate-[spin_10s_linear_infinite]'}`} />
             </motion.button>
@@ -665,6 +689,21 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
         onOpenSettings={() => {
           setIsSettingsOpen(true);
           setCurrentSubScreen('advanced');
+        }}
+      />
+
+      {/* Phase 4A: Home Screen Floating Interactive Objective Quiz Modal (Google AI Mode style compact dabba with cut button) */}
+      <FloatingHomeQuizModal
+        quiz={activeHomeQuiz}
+        isOpen={Boolean(activeHomeQuiz) && activeTab === 'home' && !isSettingsOpen}
+        onClose={() => setActiveHomeQuiz(null)}
+        onSelectTopic={(topic) => {
+          onSubmitPrompt(`${topic} ka quiz banao`);
+        }}
+        onExplainResults={(score) => {
+          setActiveHomeQuiz(null);
+          handleTabSwitch('chat');
+          onSubmitPrompt(`Maine quiz me ${score.correct}/${score.total} score kiya. Meri galtiyan samjhao aur important concepts explain karo.`);
         }}
       />
 

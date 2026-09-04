@@ -36,6 +36,7 @@ import { DeepAutomationMatrixView } from './DeepAutomationMatrixView';
 import { QuantumMemoryVisionView } from './QuantumMemoryVisionView';
 import { AutomationDialogueStudioView } from './AutomationDialogueStudioView';
 import { NeuralTradingStudioView } from './NeuralTradingStudioView';
+import { SettingsTopWidgetCarousel } from './SettingsTopWidgetCarousel';
 import { WhiteboardTool } from '../tools/WhiteboardTool';
 import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
 import { MayraLogo } from '../common/MayraLogo';
@@ -150,6 +151,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
+  const [cameFromAdvanced, setCameFromAdvanced] = useState(false);
   const isDark = appearanceConfig?.darkMode ?? true;
 
   // --- LIVE ENGINE SUBSCRIPTIONS FOR ANDROID WIDGET STACK ---
@@ -295,7 +297,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         <PermissionsCenterView
           permissions={permissions}
           setPermissions={setPermissions}
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -356,7 +358,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         <CountryCodeView
           selectedDialCode={personalConfig.countryDialCode}
           onSelectCountry={handleSelectCountry}
-          onBack={() => setCurrentSubScreen('personal')}
+          onBack={() => setCurrentSubScreen('root')}
         />
       </div>
     );
@@ -377,7 +379,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <TouchSecurityVaultView
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -387,7 +389,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <SystemUnlockAutomationView
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -397,7 +399,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <EmergencySOSView
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -407,7 +409,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <DrivingModeStudioView
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -427,7 +429,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <AIToolkitScannerView
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -447,7 +449,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <DeepAutomationMatrixView
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -467,7 +469,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <AutomationDialogueStudioView
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -501,7 +503,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         <VoiceGuardianView
           config={voiceGuardianConfig}
           onChange={(updated) => setVoiceGuardianConfig(prev => ({ ...prev, ...updated }))}
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
         />
       </div>
     );
@@ -546,12 +548,31 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
   }
 
   if (currentSubScreen === 'advanced') {
+    const isChargingNow = telemetryLive.chargingStatus?.toLowerCase().includes('charging') && !telemetryLive.chargingStatus?.toLowerCase().includes('not');
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <AdvancedSettingsView
           config={advancedConfig}
           onChange={(updated) => setAdvancedConfig(prev => ({ ...prev, ...updated }))}
-          onBack={() => setCurrentSubScreen('root')}
+          onBack={() => {
+            setCameFromAdvanced(false);
+            setCurrentSubScreen('root');
+          }}
+          onNavigateSubScreen={(screen) => {
+            setCameFromAdvanced(true);
+            setCurrentSubScreen(screen);
+          }}
+          telemetryLive={{
+            cpuTemp: telemetryLive.cpuTempCelsius ?? 38,
+            cpuLoad: telemetryLive.cpuUsage ?? 24,
+            ramAllocatedMb: Math.round((telemetryLive.ramUsedGb ?? 2.4) * 1024),
+            batteryLevel: telemetryLive.batteryLevel ?? 88,
+            batteryHealth: telemetryLive.batteryHealth || 'Good (98%)',
+            chargingStatus: isChargingNow ? 'Charging' : 'Discharging'
+          }}
+          permissions={permissions}
+          voiceGuardianConfig={voiceGuardianConfig}
+          appLockConfig={appLockConfig}
         />
       </div>
     );
@@ -572,7 +593,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <PrivacyView 
-          onBack={() => setCurrentSubScreen('root')} 
+          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')} 
           permissions={permissions}
           setPermissions={setPermissions}
           memories={memories}
@@ -646,57 +667,27 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
 
   const settingSections: SettingCategorySection[] = [
     {
-      category: 'APPEARANCE & PERSONALIZATION',
-      items: [
-        {
-          id: 'orb_customization' as SettingsSubScreen,
-          title: 'Orb Customization Studio',
-          subtitle: `Rendering physics • Rainbow hue spectrum • Voice visualizer & aura edge`,
-          badge: 'STUDIO',
-          icon: <AppIconTile icon={Sparkles} color="cyan" size="md" />
-        },
-        {
-          id: 'appearance' as SettingsSubScreen,
-          title: 'Appearance & Display',
-          subtitle: `${isDark ? 'Dark Mode' : 'Light Mode'} • ${currentOrbStyleName} • Theme Presets`,
-          badge: isDark ? 'DARK' : 'LIGHT',
-          icon: <AppIconTile icon={Palette} color="purple" size="md" />
-        }
-      ]
-    },
-    {
-      category: 'PERMISSIONS & SYSTEM ACCESS',
-      items: [
-        {
-          id: 'native_integration' as SettingsSubScreen,
-          title: 'Android System Integration',
-          subtitle: 'Calls • Direct SMS • WhatsApp auto-tap • Notifications',
-          badge: 'KOTLIN',
-          icon: <AppIconTile icon={Smartphone} color="blue" size="md" />
-        },
-        {
-          id: 'permissions' as SettingsSubScreen,
-          title: 'Permissions Center',
-          subtitle: `${grantedPermissionsCount} of ${permissions.length} active • Assistant, Screen, Mic, Overlay`,
-          badge: `${grantedPermissionsCount}/${permissions.length}`,
-          icon: <AppIconTile icon={Shield} color="emerald" size="md" />
-        }
-      ]
-    },
-    {
       category: 'ACCOUNT',
       items: [
         {
           id: 'personal' as SettingsSubScreen,
-          title: 'Account',
-          subtitle: `${personalConfig.preferredName || personalConfig.fullName || 'Zafer'}${personalConfig.profession ? ` • ${personalConfig.profession}` : ''} • Profile & AI Config`,
+          title: 'Personal',
+          subtitle: 'Your name, music, Gemini & YouTube keys',
+          badge: 'PROFILE',
           icon: <AppIconTile icon={User} color="indigo" size="md" />
         },
         {
           id: 'country_code' as SettingsSubScreen,
           title: 'Country Code',
-          subtitle: `${personalConfig.countryName} (${personalConfig.countryDialCode})`,
-          icon: <AppIconTile icon={Globe} color="teal" size="md" />
+          subtitle: `${personalConfig.countryName || 'India'} (${personalConfig.countryDialCode || '+91'}) • Dial code & region`,
+          badge: personalConfig.countryDialCode || '+91',
+          icon: <AppIconTile icon={Globe} color="teal" size="md" />,
+          oneLineSummary: {
+            text: `🌐 Region: ${personalConfig.countryName || 'India'} • Telecom Code (${personalConfig.countryDialCode || '+91'})`,
+            chipLabel: personalConfig.countryDialCode || '+91',
+            chipTone: 'cyan',
+            isLive: true
+          }
         }
       ]
     },
@@ -704,156 +695,56 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
       category: 'ASSISTANT',
       items: [
         {
-          id: 'persona_voice_studio' as SettingsSubScreen,
-          title: 'Persona & Voice Studio',
-          subtitle: 'STONICX, Friday, Venom • 15 Regional Indian Dialects • High-Emotion',
-          badge: 'STUDIO',
-          icon: <AppIconTile icon={Bot} color="purple" size="md" />
-        },
-        {
           id: 'assistant' as SettingsSubScreen,
-          title: 'AI Assistant Core Engine',
-          subtitle: assistantConfig.activeMode === 'stonicx' 
-            ? 'STONICX Active • Living Circuit • Quantum Terminal' 
-            : `MAYRA Active • ${assistantConfig.personaTone.toUpperCase()} • 3D Avatar`,
+          title: 'MAYRA / STONICX Persona',
+          subtitle: 'Persona mode, girlfriend tone, voice responsiveness & language',
           badge: assistantConfig.activeMode === 'stonicx' ? '⚡ STONICX' : '⭐ MAYRA',
           icon: <AppIconTile icon={Sparkles} color={assistantConfig.activeMode === 'stonicx' ? 'amber' : 'purple'} size="md" />
         },
         {
-          id: 'offline_models' as SettingsSubScreen,
-          title: 'Offline AI Models',
-          subtitle: 'Local GGUF models • LFM 2.5, Qwen, SmolLM2, Llama',
-          badge: 'GGUF',
-          icon: <AppIconTile icon={HardDrive} color="slate" size="md" />
+          id: 'persona_voice_studio' as SettingsSubScreen,
+          title: 'Persona & Voice Studio',
+          subtitle: '15 Regional Indian dialects, voice actors & high-emotion tuner',
+          badge: 'STUDIO',
+          icon: <AppIconTile icon={Bot} color="purple" size="md" />
         },
         {
           id: 'skills' as SettingsSubScreen,
           title: 'Skills',
-          subtitle: `${skills.filter(s => s.enabled).length} of ${skills.length} active`,
+          subtitle: 'Installed features, domain abilities & smart tools',
+          badge: `${skills.filter(s => s.enabled).length}/${skills.length}`,
           icon: <AppIconTile icon={Wrench} color="amber" size="md" />
         },
         {
           id: 'sub_agents' as SettingsSubScreen,
           title: 'Sub-agents',
-          subtitle: `${subAgents.filter(a => a.enabled).length} active agents`,
+          subtitle: 'Coding models, research engines & background agents',
+          badge: `${subAgents.filter(a => a.enabled).length} ACTIVE`,
           icon: <AppIconTile icon={Bot} color="pink" size="md" />
+        },
+        {
+          id: 'offline_models' as SettingsSubScreen,
+          title: 'Offline AI Models',
+          subtitle: 'Local on-device GGUF models (LFM 2.5, Qwen, SmolLM2, Llama)',
+          badge: 'GGUF',
+          icon: <AppIconTile icon={HardDrive} color="slate" size="md" />
         }
       ]
     },
     {
-      category: 'SECURITY & HARDWARE GUARDIAN',
+      category: 'WORK & MESSAGES',
       items: [
         {
-          id: 'touch_security_vault' as SettingsSubScreen,
-          title: 'Touch Guard & Anti-Theft Vault',
-          subtitle: 'Motion Alarm • 105dB Siren • Intruder Camera Capture • God Mode',
-          badge: 'SECURITY',
-          icon: <AppIconTile icon={ShieldAlert} color="rose" size="md" />,
-          oneLineSummary: {
-            text: touchLive.isAlarmSounding 
-              ? '🚨 SIREN SOUNDING • Intruder Alert Active!' 
-              : touchLive.isArmed 
-              ? '🛡️ ARMED • Motion Guard & Camera Armed' 
-              : '🛡️ Standby • 105dB Siren & Motion Ready',
-            chipLabel: touchLive.isArmed ? 'ARMED' : 'STANDBY',
-            chipTone: touchLive.isArmed ? 'rose' : 'slate',
-            isLive: true
-          }
-        },
-        {
-          id: 'emergency_sos' as SettingsSubScreen,
-          title: 'Emergency SOS & Escalation',
-          subtitle: 'Voice SOS • Live GPS SMS • 5 Priority Contacts Auto-Dialer',
-          badge: 'SOS',
-          icon: <AppIconTile icon={AlertOctagon} color="rose" size="md" />,
-          oneLineSummary: {
-            text: `🆘 Demo Mode • ${emergencyLive.contactsCount} Contacts Set • 112 Ready`,
-            chipLabel: 'DEMO MODE',
-            chipTone: 'rose',
-            isLive: true,
-            isSimulated: true
-          }
-        },
-        {
-          id: 'voice_guardian' as SettingsSubScreen,
-          title: 'Voice Guardian',
-          subtitle: voiceGuardianConfig.enabled ? 'ACTIVE • Owner Only' : 'DISABLED',
-          badge: voiceGuardianConfig.enabled ? 'SHIELD ON' : 'OFF',
-          icon: <AppIconTile icon={ShieldCheck} color="cyan" size="md" />,
-          oneLineSummary: {
-            text: voiceGuardianConfig.enabled 
-              ? '🎙️ Voice Guardian Shield: Active (Owner Passcode Locked)' 
-              : '🎙️ Voice Guardian Shield: Disabled',
-            chipLabel: voiceGuardianConfig.enabled ? 'ACTIVE' : 'OFF',
-            chipTone: voiceGuardianConfig.enabled ? 'cyan' : 'slate',
-            isLive: true
-          }
-        }
-      ]
-    },
-    {
-      category: 'AUTOMATION & INTELLIGENCE (ANDROID WIDGET STACK)',
-      items: [
-        {
-          id: 'neural_trading_matrix' as SettingsSubScreen,
-          title: 'Neural Trading & Chart Finance Engine',
-          subtitle: 'Auto Support/Resistance • Strategy Radar • Risk Calculator',
-          badge: 'FINANCE AI',
-          icon: <AppIconTile icon={TrendingUp} color="emerald" size="md" />,
-          oneLineSummary: {
-            text: `📈 ${tradingLive.symbol} ₹${tradingLive.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${changeArrow}${Math.abs(tradingLive.change).toFixed(2)} (${changeSign}${changePct}%) • PCR ${tradingLive.pcr.toFixed(2)}`,
-            chipLabel: '[SIMULATED]',
-            chipTone: isTradePositive ? 'emerald' : 'rose',
-            isLive: true,
-            isSimulated: true
-          }
-        },
-        {
-          id: 'deep_automation_matrix' as SettingsSubScreen,
-          title: 'Deep Automation & Hardware Telemetry',
-          subtitle: 'Voice Macros • Air Gestures • Hardware Telemetry • Kernel Terminal',
-          badge: 'DEV PRO',
-          icon: <AppIconTile icon={Terminal} color="cyan" size="md" />,
-          oneLineSummary: {
-            text: `🔋 ${telemetryLive.batteryLevel}% • CPU ${telemetryLive.cpuUsage}% (${telemetryLive.cpuCores} Cores) • ${isCharging ? 'Charging' : 'Discharging'}`,
-            chipLabel: '[HYBRID]',
-            chipTone: telemetryLive.batteryLevel > 30 ? 'cyan' : 'amber',
-            isLive: true
-          }
-        },
-        {
-          id: 'driving_mode_studio' as SettingsSubScreen,
-          title: 'Driving Mode Studio',
-          subtitle: 'Auto-Reject Calls • Driving SMS • Caller Name Announcement',
-          badge: 'AUTO',
-          icon: <AppIconTile icon={Car} color="amber" size="md" />,
-          oneLineSummary: {
-            text: emergencyLive.driving?.isEnabled 
-              ? '🚗 Driving Mode Active • Auto-Reject ON • Voice Announce' 
-              : '🚗 Driving Mode: Off (Standby)',
-            chipLabel: emergencyLive.driving?.isEnabled ? 'ACTIVE' : 'OFF',
-            chipTone: emergencyLive.driving?.isEnabled ? 'amber' : 'slate',
-            isLive: true
-          }
-        },
-        {
-          id: 'system_unlock_automation' as SettingsSubScreen,
-          title: 'System Unlock Automation',
-          subtitle: 'Voice Screen Unlock • PIN & Pattern Path Calibration • Auto-Lock',
-          badge: 'AUTO',
-          icon: <AppIconTile icon={KeyRound} color="cyan" size="md" />,
-          oneLineSummary: {
-            text: `🔓 ${emergencyLive.unlock?.unlockType.toUpperCase()} Mode • Voice Screen Unlock ${emergencyLive.unlock?.isVoiceUnlockEnabled ? 'Ready' : 'Off'}`,
-            chipLabel: '[SIMULATION]',
-            chipTone: 'cyan',
-            isLive: true,
-            isSimulated: true
-          }
+          id: 'native_integration' as SettingsSubScreen,
+          title: 'Email',
+          subtitle: 'Email dispatch, direct SMS, call relay & notification bridge',
+          badge: 'KOTLIN',
+          icon: <AppIconTile icon={Smartphone} color="blue" size="md" />
         },
         {
           id: 'unified_app_hub' as SettingsSubScreen,
-          title: 'All-In-One Unified App Hub',
-          subtitle: 'WhatsApp • Telegram • Truecaller Spam Radar • Gallery • Alarms',
+          title: 'WhatsApp groups & reports',
+          subtitle: 'WhatsApp groups, automated daily reports & message templates',
           badge: 'HUB',
           icon: <AppIconTile icon={MessageSquare} color="emerald" size="md" />,
           oneLineSummary: {
@@ -865,8 +756,8 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         },
         {
           id: 'smart_lifestyle_iot' as SettingsSubScreen,
-          title: 'Smart Lifestyle, Media & IoT Hub',
-          subtitle: 'Spotify/YouTube • Smart Home • Cricket Radar • Fitness & Cabs',
+          title: 'Social media',
+          subtitle: 'Instagram, YouTube, Spotify playback & smart lifestyle controls',
           badge: 'IOT PRO',
           icon: <AppIconTile icon={Zap} color="indigo" size="md" />,
           oneLineSummary: {
@@ -878,70 +769,37 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
           }
         },
         {
-          id: 'quantum_memory_vision' as SettingsSubScreen,
-          title: 'Quantum Memory & Neural Vision Brain',
-          subtitle: 'Semantic Memory Vault • Multi-Modal Lens • Doc AI • Voice Memos',
-          badge: 'BRAIN AI',
-          icon: <AppIconTile icon={Brain} color="purple" size="md" />,
+          id: 'neural_trading_matrix' as SettingsSubScreen,
+          title: 'Neural Trading & Finance',
+          subtitle: 'Auto support/resistance, strategy radar & risk calculator',
+          badge: 'FINANCE AI',
+          icon: <AppIconTile icon={TrendingUp} color="emerald" size="md" />,
           oneLineSummary: {
-            text: `🧠 Semantic Memory Vault • Multi-Modal Vision Brain Active`,
-            chipLabel: '[NEURAL]',
-            chipTone: 'purple',
-            isLive: true
-          }
-        },
-        {
-          id: 'automation_dialogue_matrix' as SettingsSubScreen,
-          title: 'Automation Voice Dialogue Matrix',
-          subtitle: '55 Trigger Speech Rules • Action, Success & Failure Dialogues',
-          badge: '55 RULES',
-          icon: <AppIconTile icon={Volume2} color="emerald" size="md" />,
-          oneLineSummary: {
-            text: `🎙️ 55 Trigger Voice Dialogue Rules Configured & Active`,
-            chipLabel: '55 RULES',
-            chipTone: 'emerald',
-            isLive: true
+            text: `📈 ${tradingLive.symbol} ₹${tradingLive.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${changeArrow}${Math.abs(tradingLive.change).toFixed(2)} (${changeSign}${changePct}%) • PCR ${tradingLive.pcr.toFixed(2)}`,
+            chipLabel: '[SIMULATED]',
+            chipTone: isTradePositive ? 'emerald' : 'rose',
+            isLive: true,
+            isSimulated: true
           }
         }
       ]
     },
     {
-      category: 'MULTI-DEVICE & CREATIVE TOOLS',
+      category: 'CONNECTED ACCOUNTS',
       items: [
+        {
+          id: 'optional_integrations' as SettingsSubScreen,
+          title: 'Connectors',
+          subtitle: 'GitHub, Notion, Telegram, Google Workspace, Maps & Webhooks',
+          badge: `${integrations.filter(i => i.status === 'configured' || i.status === 'enabled').length} ACTIVE`,
+          icon: <AppIconTile icon={Boxes} color="orange" size="md" />
+        },
         {
           id: 'linked_devices' as SettingsSubScreen,
           title: 'Linked Devices & Sync',
-          subtitle: '4 connected • Pixel Watch, Tablet, MacBook relay',
+          subtitle: 'Sync with MacBook, Pixel Watch, tablet & desktop relays',
           badge: 'MESH ON',
           icon: <AppIconTile icon={Smartphone} color="blue" size="md" />
-        },
-        {
-          id: 'whiteboard' as SettingsSubScreen,
-          title: 'Interactive Whiteboard',
-          subtitle: 'Canvas drawing, wireframing & Vision AI analysis',
-          badge: 'NEW',
-          icon: <AppIconTile icon={PenTool} color="rose" size="md" />
-        },
-        {
-          id: 'ai_toolkit_scanner' as SettingsSubScreen,
-          title: 'All-In-One AI Toolkit & Scanner',
-          subtitle: 'OCR Doc Scanner • QR Studio • Live Translator • Converter',
-          badge: 'AI PRO',
-          icon: <AppIconTile icon={ScanText} color="purple" size="md" />,
-          oneLineSummary: {
-            text: `🔍 OCR Doc Scanner • QR Studio • Live Multi-Language Translator`,
-            chipLabel: '[AI ENGINE]',
-            chipTone: 'purple',
-            isLive: true
-          }
-        },
-        {
-          id: 'widget_guide' as SettingsSubScreen,
-          title: 'Home Screen Widget',
-          subtitle: 'Android 4x2 Launcher Quick Widget • 1-tap Voice & Scan',
-          badge: 'PREVIEW',
-          icon: <AppIconTile icon={Smartphone} color="cyan" size="md" />,
-          onClick: () => setIsWidgetModalOpen(true)
         }
       ]
     },
@@ -951,36 +809,53 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         {
           id: 'backup' as SettingsSubScreen,
           title: 'Backup & Storage',
-          subtitle: `${memories.length} memories • Export / Reset`,
+          subtitle: 'Export and restore memories, chats & configuration archives',
+          badge: `${memories.length} MEMS`,
           icon: <AppIconTile icon={Database} color="blue" size="md" />
+        },
+        {
+          id: 'quantum_memory_vision' as SettingsSubScreen,
+          title: 'Quantum Memory Vault',
+          subtitle: 'Semantic vector memory vault, multi-modal vision logs & doc AI',
+          badge: 'BRAIN AI',
+          icon: <AppIconTile icon={Brain} color="purple" size="md" />,
+          oneLineSummary: {
+            text: '🧠 Semantic Memory Vault • Multi-Modal Vision Brain Active',
+            chipLabel: '[NEURAL]',
+            chipTone: 'purple',
+            isLive: true
+          }
         }
       ]
     },
     {
-      category: 'SYSTEM & INTEGRATIONS',
+      category: 'SYSTEM',
       items: [
         {
           id: 'advanced' as SettingsSubScreen,
-          title: 'Advanced Settings',
-          subtitle: 'Safety filters • Debug logs • Background tasks',
-          icon: <AppIconTile icon={Cpu} color="slate" size="md" />
+          title: 'Advanced',
+          subtitle: 'Security shields, telemetry, permissions & kernel controls',
+          badge: 'SYSTEM PRO',
+          icon: <AppIconTile icon={Cpu} color="cyan" size="md" />,
+          oneLineSummary: {
+            text: '🛡️ Security Shields • ⚡ Telemetry • ⚙️ Permissions Hub',
+            chipLabel: 'ADVANCED',
+            chipTone: 'cyan',
+            isLive: true
+          }
         },
         {
-          id: 'optional_integrations' as SettingsSubScreen,
-          title: 'Optional Integrations',
-          subtitle: `${integrations.filter(i => i.status === 'configured').length} configured • Workspace, Maps, IoT`,
-          icon: <AppIconTile icon={Boxes} color="orange" size="md" />
-        },
-        {
-          id: 'privacy' as SettingsSubScreen,
-          title: 'Privacy & Security',
-          subtitle: 'Zero data sales • On-device biometric shield',
-          icon: <AppIconTile icon={Lock} color="rose" size="md" />
+          id: 'appearance' as SettingsSubScreen,
+          title: 'Appearance & Orb Studio',
+          subtitle: `Dark/light mode, 3D Orb customization, colors & visualizer`,
+          badge: isDark ? 'DARK' : 'LIGHT',
+          icon: <AppIconTile icon={Palette} color="purple" size="md" />
         },
         {
           id: 'about' as SettingsSubScreen,
           title: 'About MAYRA',
           subtitle: 'v2.4.0 • Android Jetpack Compose Architecture',
+          badge: 'v2.4.0',
           icon: <AppIconTile icon={Info} color="slate" size="md" />
         }
       ]
@@ -1015,7 +890,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
 
           <div className="flex items-center gap-2">
             <h1 className="text-base font-bold font-sans tracking-tight text-white">
-              Settings
+              Dashboard
             </h1>
           </div>
         </div>
@@ -1047,7 +922,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search settings..."
+            placeholder="Search in Dashboard..."
             className="w-full pl-9 pr-8 py-2 border border-white/20 rounded-2xl text-xs bg-[#160b29]/60 focus:bg-[#200e3b]/80 text-white placeholder:text-purple-300/40 focus:border-purple-400/70 focus:outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] font-sans"
           />
           {searchQuery && (
@@ -1062,12 +937,28 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
       </div>
 
       {/* Main Settings List - Frosted Liquid Glass Cards */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/20">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-5 scrollbar-thin scrollbar-thumb-purple-500/20">
+        {/* Top Glance & Live Widgets Carousel (Watchlist, Alarms, Telemetry, Security) */}
+        {!searchQuery && (
+          <SettingsTopWidgetCarousel
+            onNavigateSubScreen={(screen) => setCurrentSubScreen(screen)}
+            assistantConfig={assistantConfig}
+            voiceGuardianConfig={voiceGuardianConfig}
+            personalConfig={personalConfig}
+            permissions={permissions}
+            appLockConfig={appLockConfig}
+          />
+        )}
+
         {filteredSections.map((section, sIdx) => (
-          <div key={`section-${section.category}-${sIdx}`} className="space-y-1.5">
-            <h3 className="text-[10px] font-sans font-bold tracking-widest px-2.5 uppercase text-purple-300/80">
-              {section.category}
-            </h3>
+          <div key={`section-${section.category}-${sIdx}`} className="space-y-2">
+            <div className="flex items-center gap-2 px-1 pt-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+              <h3 className="text-[11px] font-sans font-bold tracking-wider uppercase text-purple-300/90">
+                {section.category}
+              </h3>
+              <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-500/30 via-purple-500/10 to-transparent" />
+            </div>
 
             <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-[#160b29]/50 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               {section.items.map((item, itemIdx) => (
@@ -1080,9 +971,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                       setCurrentSubScreen(item.id);
                     }
                   }}
-                  className={`w-full p-3.5 flex flex-col justify-center active:scale-[0.99] transition-all text-left group hover:bg-white/[0.06] cursor-pointer ${
-                    item.oneLineSummary ? 'gap-1.5' : ''
-                  }`}
+                  className="w-full p-3.5 flex flex-col justify-center active:scale-[0.99] transition-all text-left group hover:bg-white/[0.06] cursor-pointer gap-1.5"
                 >
                   <div className="w-full flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0 pr-2">
@@ -1116,11 +1005,9 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                             </span>
                           )}
                         </div>
-                        {!item.oneLineSummary && (
-                          <p className="text-[10px] font-normal font-sans line-clamp-1 mt-0.5 text-purple-300/60">
-                            {item.subtitle}
-                          </p>
-                        )}
+                        <p className="text-[11px] font-normal font-sans line-clamp-1 mt-0.5 text-purple-200/60 leading-tight">
+                          {item.subtitle}
+                        </p>
                       </div>
                     </div>
 

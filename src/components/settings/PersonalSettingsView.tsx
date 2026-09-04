@@ -4,7 +4,8 @@ import { AccountSyncService } from '../../services/auth/accountSyncService';
 import { UserAccount } from '../../types/auth';
 import { 
   User, Mail, Globe, Sparkles, Key, Briefcase, FileText,
-  Eye, EyeOff, Check, Cpu, Lock, ShieldCheck, ChevronRight, ArrowLeft, LogOut, CheckCircle2
+  Eye, EyeOff, Check, Cpu, Lock, ShieldCheck, ChevronRight, ArrowLeft, LogOut, CheckCircle2,
+  Music, Youtube
 } from 'lucide-react';
 
 interface PersonalSettingsProps {
@@ -21,6 +22,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
   onBack
 }) => {
   const [showKey, setShowKey] = useState(false);
+  const [showYoutubeKey, setShowYoutubeKey] = useState(false);
   const [savedBadge, setSavedBadge] = useState(false);
   
   const authService = AccountSyncService.getInstance();
@@ -52,7 +54,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
           <button
             onClick={onBack}
             className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
-            title="Back to Settings"
+            title="Back to Dashboard"
           >
             <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
@@ -220,8 +222,8 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
             >
               <div className="flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-purple-300" />
-                <span className="text-white font-medium">{config.countryName}</span>
-                <span className="text-purple-300 font-sans font-bold text-[11px]">{config.countryDialCode}</span>
+                <span className="text-white font-medium">{config.countryName || 'India'}</span>
+                <span className="text-purple-300 font-sans font-bold text-[11px]">{config.countryDialCode || '+91'}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-purple-300/50" />
             </button>
@@ -259,11 +261,60 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
           </div>
         </div>
 
+        {/* Music & Audio Entertainment Preferences */}
+        <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
+              <Music className="w-3.5 h-3.5" /> Music & Playback Preferences
+            </div>
+            <span className="text-[9px] font-sans text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2.5 py-0.5 rounded-full shadow-sm">
+              YouTube & Spotify
+            </span>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[10px] font-sans text-purple-300/80 uppercase block">Favorite Genre / Mood</label>
+              <span className="text-[9px] text-purple-300/50">Used for auto-play commands</span>
+            </div>
+            <input
+              type="text"
+              value={config.favoriteMusicGenre || ''}
+              onChange={(e) => {
+                onChange({ favoriteMusicGenre: e.target.value });
+                triggerSaveNotification();
+              }}
+              placeholder="e.g. Lofi & Ambient Bollywood, Synthwave, Classical..."
+              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {['Lofi Bollywood', 'Acoustic Hindi', 'Cyberpunk Synth', 'Classical Ghazals', 'Deep Focus'].map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => {
+                  onChange({ favoriteMusicGenre: tag });
+                  triggerSaveNotification();
+                }}
+                className={`text-[9px] px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+                  config.favoriteMusicGenre === tag
+                    ? 'bg-purple-600/30 border-purple-400 text-purple-200'
+                    : 'bg-[#1c0d36]/40 border-white/10 text-purple-300/70 hover:text-white'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* AI Provider & API Key Configuration */}
         <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-purple-500/30 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5" /> AI Engine Configuration
+              <Key className="w-3.5 h-3.5" /> API Keys & AI Engine
             </div>
             <span className="text-[9px] font-sans text-emerald-300 bg-emerald-950/60 border border-emerald-400/30 px-2.5 py-0.5 rounded-full shadow-sm">
               Secure Cloud / Local
@@ -271,7 +322,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
           </div>
 
           <p className="text-[10px] text-purple-300/70 leading-relaxed font-sans">
-            API keys and credentials are safe and masked. You can also customize temperature and target model.
+            API keys and credentials are safe and masked. Gemini handles reasoning while YouTube powers music & video commands.
           </p>
 
           <div>
@@ -293,6 +344,34 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 className="absolute right-3 top-2.5 text-purple-300/70 hover:text-white cursor-pointer"
               >
                 {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-sans text-purple-300/70 uppercase flex items-center gap-1">
+                <Youtube className="w-3 h-3 text-red-400" /> YouTube Data API Key (Optional)
+              </label>
+              <span className="text-[9px] text-purple-300/50">For direct video search</span>
+            </div>
+            <div className="relative">
+              <input
+                type={showYoutubeKey ? 'text' : 'password'}
+                value={config.youtubeApiKey || ''}
+                onChange={(e) => {
+                  onChange({ youtubeApiKey: e.target.value });
+                  triggerSaveNotification();
+                }}
+                placeholder="AIzaSy... (Direct YouTube Data API v3 key)"
+                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-3.5 pr-9 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+              />
+              <button
+                type="button"
+                onClick={() => setShowYoutubeKey(!showYoutubeKey)}
+                className="absolute right-3 top-2.5 text-purple-300/70 hover:text-white cursor-pointer"
+              >
+                {showYoutubeKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>

@@ -15,6 +15,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.mayra.assistant.engine.MayraSmsHandler
 import com.mayra.assistant.engine.MayraTelecomHandler
 import com.mayra.assistant.services.MayraAccessibilityService
+import com.mayra.assistant.services.MayraMicrophoneForegroundService
 import com.mayra.assistant.services.MayraNotificationService
 import java.net.URLEncoder
 
@@ -50,6 +51,17 @@ class MayraNativeIntegrationPlugin : Plugin() {
                 put("isCall", data.isCall)
             }
             notifyListeners("onIncomingNotification", event)
+        }
+
+        // Bind offline wake word listener to JavaScript bridge
+        MayraMicrophoneForegroundService.onWakeWordDetectedListener = { phrase, command ->
+            val event = JSObject().apply {
+                put("phrase", phrase)
+                put("command", command)
+                put("timestamp", System.currentTimeMillis())
+                put("isOffline", true)
+            }
+            notifyListeners("onWakeWordDetected", event)
         }
     }
 
@@ -261,5 +273,55 @@ class MayraNativeIntegrationPlugin : Plugin() {
                 call.reject("Tap gesture cancelled or failed")
             }
         }
+    }
+
+    @PluginMethod
+    fun startOfflineWakeWord(call: PluginCall) {
+        val continuous = call.getBoolean("continuous", true) ?: true
+        try {
+            MayraMicrophoneForegroundService.start(context, continuous)
+            call.resolve(JSObject().put("success", true).put("active", true))
+        } catch (e: Exception) {
+            call.reject("Failed to start offline wake-word service: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun stopOfflineWakeWord(call: PluginCall) {
+        try {
+            MayraMicrophoneForegroundService.stop(context)
+            call.resolve(JSObject().put("success", true).put("active", false))
+        } catch (e: Exception) {
+            call.reject("Failed to stop offline wake-word service: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun pauseOfflineWakeWord(call: PluginCall) {
+        try {
+            MayraMicrophoneForegroundService.pause(context)
+            call.resolve(JSObject().put("success", true))
+        } catch (e: Exception) {
+            call.reject("Failed to pause offline wake-word: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun resumeOfflineWakeWord(call: PluginCall) {
+        try {
+            MayraMicrophoneForegroundService.resume(context)
+            call.resolve(JSObject().put("success", true))
+        } catch (e: Exception) {
+            call.reject("Failed to resume offline wake-word: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun checkWakeWordStatus(call: PluginCall) {
+        call.resolve(JSObject().apply {
+            put("isRunning", MayraMicrophoneForegroundService.isServiceRunning)
+            put("isWakeWordActive", MayraMicrophoneForegroundService.isWakeWordActive)
+            put("isNativeOfflineSupported", true)
+        })
     }
 }

@@ -77,6 +77,49 @@ export interface PermissionItem {
   isRequired?: boolean;
 }
 
+export interface QuizOption {
+  text: string;
+  explanation: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  type?: 'objective' | 'subjective';
+  options?: QuizOption[];
+  correctAnswerIndex?: number;
+  hint?: string;
+  // Subjective quiz fields
+  modelAnswer?: string;
+  keywords?: string[];
+  evaluationCriteria?: string;
+}
+
+export interface QuizPayload {
+  id: string;
+  title: string;
+  topic: string;
+  chapter?: string;
+  board?: string;
+  mode?: 'objective' | 'subjective';
+  introText?: string;
+  questions: QuizQuestion[];
+  growthAreas?: string[];
+  suggestedTopics?: string[];
+  isLoading?: boolean;
+}
+
+export interface QuizConfigPrompt {
+  missingFields: ('subject' | 'chapter' | 'mode' | 'board')[];
+  currentConfig: {
+    subject?: string;
+    chapter?: string;
+    mode?: 'objective' | 'subjective';
+    board?: string;
+  };
+  optionsChips?: { label: string; actionValue: string }[];
+}
+
 export interface ChatMessage {
   id: string;
   sender?: 'user' | 'mayra';
@@ -98,6 +141,8 @@ export interface ChatMessage {
     icon?: string;
     role?: string;
   };
+  quizData?: QuizPayload;
+  quizConfigPrompt?: QuizConfigPrompt;
 }
 
 export type MemoryCategory = 'preference' | 'personal' | 'system' | 'task' | 'general' | 'project' | 'episodic';
@@ -222,6 +267,8 @@ export interface UserPersonalConfig {
   geminiApiKey: string;
   geminiModel: string;
   temperature: number;
+  favoriteMusicGenre?: string;
+  youtubeApiKey?: string;
 }
 
 export type AssistantMode = 'mayra' | 'stonicx';

@@ -159,6 +159,14 @@ export interface MayraNativeLLMInterface {
   isTTSLoaded?(): Promise<boolean> | boolean;
   synthesizeSpeech?(text: string, voice?: string): Promise<string | OfflineSpeechSynthesisResult>;
   streamSynthesizeSpeech?(text: string): Promise<void>;
+
+  // Offline Continuous Wake-Word Engine methods (Android Native On-Device Recognizer)
+  isNativeWakeWordSupported?(): Promise<boolean> | boolean;
+  startOfflineWakeWord?(continuous?: boolean): Promise<boolean> | boolean;
+  stopOfflineWakeWord?(): Promise<boolean> | boolean;
+  pauseOfflineWakeWord?(): Promise<boolean> | boolean;
+  resumeOfflineWakeWord?(): Promise<boolean> | boolean;
+  isOfflineWakeWordActive?(): Promise<boolean> | boolean;
 }
 
 declare global {
@@ -169,6 +177,7 @@ declare global {
     __mayra_native_on_error?: (errorMessage: string) => void;
     __mayra_native_on_tts_chunk?: (audioBase64Pcm: string, isFinished: boolean) => void;
     __mayra_native_on_stt_result?: (text: string, isFinal: boolean) => void;
+    __mayra_native_on_wakeword?: (phrase: string, command: string) => void;
   }
 }
 
