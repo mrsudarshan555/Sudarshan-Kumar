@@ -300,24 +300,24 @@ export const GesturePracticeModal: React.FC<GesturePracticeModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-lg bg-[#080C1E] border border-cyan-500/50 rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.95)] flex flex-col text-slate-200"
+          className="w-full max-w-lg bg-black/65 backdrop-blur-3xl border border-white/20 rounded-3xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] flex flex-col text-slate-200"
         >
-          {/* Header Bar with Sandbox Badge */}
-          <div className="px-5 py-3.5 bg-gradient-to-r from-purple-950/80 via-slate-900 to-cyan-950/80 border-b border-white/10 flex items-center justify-between">
+          {/* Header Bar with Sandbox Badge - Magnifying Glass */}
+          <div className="px-5 py-3.5 bg-black/40 backdrop-blur-xl border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/40">
                 <Flame className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-white tracking-wide uppercase">
+                  <span className="text-xs font-sans font-bold text-white tracking-wide uppercase">
                     Gesture Test & Practice Sandbox
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-purple-900/80 text-purple-200 text-[8px] font-mono font-bold">
+                  <span className="px-1.5 py-0.5 rounded bg-purple-900/80 text-purple-200 text-[8px] font-sans font-bold border border-purple-400/30">
                     ZERO RISK
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-sans">Practice gestures safely without triggering real phone actions</p>
+                <p className="text-[10px] text-purple-300/70 font-sans">Practice gestures safely without triggering real phone actions</p>
               </div>
             </div>
 
@@ -671,15 +671,15 @@ export const GesturePracticeModal: React.FC<GesturePracticeModalProps> = ({
 
           </div>
 
-          {/* Footer Bar */}
-          <div className="px-5 py-3.5 bg-slate-950/90 border-t border-white/10 flex items-center justify-between">
-            <span className="text-[10px] text-slate-400 font-mono">
+          {/* Footer Bar - Magnifying Glass */}
+          <div className="px-5 py-3.5 bg-black/40 backdrop-blur-xl border-t border-white/10 flex items-center justify-between">
+            <span className="text-[10px] text-purple-300/70 font-sans">
               Completed {Object.values(completedTargets).filter(Boolean).length}/5 Targets
             </span>
 
             <button
               onClick={onClose}
-              className="px-5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-[0_0_16px_rgba(6,182,212,0.4)] active:scale-95 transition-all"
+              className="px-5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-[0_0_16px_rgba(168,85,247,0.4)] active:scale-95 transition-all cursor-pointer"
             >
               Done Testing
             </button>

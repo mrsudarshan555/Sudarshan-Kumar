@@ -136,7 +136,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
       setTempName(personalConfig.preferredName || personalConfig.fullName || 'Zafer');
       setTempLanguage(assistantConfig.language || 'en');
     }
-  }, [isOpen, personalConfig, assistantConfig]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -271,13 +271,13 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
         />
       </div>
 
-      {/* Main Glassmorphic Container Card */}
+      {/* Main Glassmorphic Container Card (Magnifying Glass Effect) */}
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 16 }}
         transition={{ type: 'spring', damping: 26, stiffness: 340 }}
-        className="relative w-full max-w-md bg-[#090D24]/95 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-[0_24px_70px_rgba(0,0,0,0.85),0_0_35px_rgba(6,182,212,0.15)] flex flex-col justify-between z-10 max-h-[92vh] overflow-hidden"
+        className="relative w-full max-w-md bg-black/40 backdrop-blur-3xl border border-white/20 rounded-[32px] p-5 sm:p-6 shadow-[0_24px_70px_rgba(0,0,0,0.85),0_0_40px_rgba(255,255,255,0.08)] flex flex-col justify-between z-10 max-h-[92vh] overflow-hidden"
       >
         {/* Top Header & 6-Step Progress Indicators */}
         <div className="w-full flex items-center justify-between pb-3 border-b border-white/10 shrink-0">

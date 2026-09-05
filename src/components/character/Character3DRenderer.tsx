@@ -218,22 +218,22 @@ export const Character3DRenderer: React.FC<Character3DRendererProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 1.55;
     rendererRef.current = renderer;
 
-    // 4. Cyberpunk Lighting Setup
-    const ambientLight = new THREE.AmbientLight(0x0f172a, 2.0);
+    // 4. Cyberpunk Lighting Setup (+15% boosted vividness)
+    const ambientLight = new THREE.AmbientLight(0x0f172a, 2.35);
     scene.add(ambientLight);
 
-    const cyanKeyLight = new THREE.DirectionalLight(0x06b6d4, 4.0);
+    const cyanKeyLight = new THREE.DirectionalLight(0x06b6d4, 4.6);
     cyanKeyLight.position.set(3, 4, 3);
     scene.add(cyanKeyLight);
 
-    const violetRimLight = new THREE.DirectionalLight(0x8b5cf6, 3.5);
+    const violetRimLight = new THREE.DirectionalLight(0x8b5cf6, 4.1);
     violetRimLight.position.set(-3, 2, -2);
     scene.add(violetRimLight);
 
-    const softFillLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    const softFillLight = new THREE.DirectionalLight(0xffffff, 1.8);
     softFillLight.position.set(0, 1, 3);
     scene.add(softFillLight);
 

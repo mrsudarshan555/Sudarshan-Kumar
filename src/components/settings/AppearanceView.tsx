@@ -134,12 +134,10 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
   const currentSelectedStyleDef = ORB_STYLES.find(s => s.id === currentNormalizedStyle) || ORB_STYLES[0];
 
   return (
-    <div className={`flex-1 flex flex-col h-full overflow-hidden select-none transition-colors duration-200 ${
-      isDark ? 'bg-[#070312] text-slate-100' : 'bg-slate-900 text-slate-100'
-    }`}>
+    <div className="flex-1 flex flex-col h-full overflow-hidden select-none transition-colors duration-200 bg-transparent text-slate-100">
       
-      {/* Top App Bar */}
-      <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-[#120626]/80 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      {/* Top App Bar - Liquid Magnifying Glass */}
+      <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-black/30 backdrop-blur-3xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}

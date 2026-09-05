@@ -472,10 +472,12 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
         </MayraErrorBoundary>
       </div>
 
-      {/* iPhone Frosted Liquid Glass Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar */}
       {!isSettingsOpen && (
-        <div className="h-16 px-3 z-20 shrink-0 grid grid-cols-5 items-center bg-[#130728]/60 backdrop-blur-3xl border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)]">
-          
+        <div className="h-16 px-3 z-20 shrink-0 grid grid-cols-5 items-center bg-white/[0.07] backdrop-blur-2xl border-t border-white/15 shadow-[0_-8px_32px_rgba(0,0,0,0.4),inset_0_1px_2px_rgba(255,255,255,0.25)] relative">
+          {/* Magnifying Glass Top Specular Sheen (Matching Mayra Chat Box Glass) */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+
           {/* Tab 1: Home */}
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -601,7 +603,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       )}
 
       {/* iPhone Home Indicator Line */}
-      <div className="h-4 flex items-center justify-center shrink-0 bg-[#130728]/80">
+      <div className="h-4 flex items-center justify-center shrink-0 bg-white/[0.05] backdrop-blur-2xl border-t border-white/5">
         <div className="w-32 h-1 rounded-full bg-white/25"></div>
       </div>
 

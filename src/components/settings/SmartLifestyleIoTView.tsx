@@ -103,26 +103,26 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-[#070913] text-slate-200">
-      {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#070913]/95 backdrop-blur-md z-10">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
+      {/* Header - Liquid Magnifying Glass */}
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-1.5 bg-white/[0.06] hover:bg-white/[0.14] text-slate-300 hover:text-white rounded-xl border border-white/10 transition-all flex items-center justify-center active:scale-95"
+            className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
             title="Back to Settings"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-tr from-emerald-600 to-indigo-600 text-white rounded-lg shadow-md">
+            <div className="p-1.5 bg-gradient-to-tr from-emerald-600 to-indigo-600 text-white rounded-xl shadow-md border border-white/15">
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+              <h2 className="text-xs font-sans font-bold text-white uppercase tracking-wider">
                 Smart Lifestyle, Media & IoT Hub
               </h2>
-              <p className="text-[10px] text-slate-400 font-sans">
+              <p className="text-[10px] text-purple-300/70 font-sans">
                 Spotify/YouTube • Smart Home • Cricket Radar • Fitness & Cabs
               </p>
             </div>
@@ -130,8 +130,8 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
         </div>
       </div>
 
-      {/* Navigation Sub-Tabs */}
-      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-[#0C1021]/50 overflow-x-auto">
+      {/* Navigation Sub-Tabs - Liquid Frosted Glass */}
+      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-black/25 backdrop-blur-xl overflow-x-auto">
         {[
           { id: 'media', label: 'Music & Video', icon: Music },
           { id: 'iot', label: 'Smart Home IoT', icon: Tv },
@@ -142,10 +142,10 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id as any)}
-            className={`pb-2.5 px-3 flex items-center gap-1.5 text-xs font-mono font-bold whitespace-nowrap transition-all border-b-2 ${
+            className={`pb-2.5 px-3 flex items-center gap-1.5 text-xs font-sans font-bold whitespace-nowrap transition-all border-b-2 cursor-pointer ${
               activeTab === t.id
                 ? 'text-cyan-400 border-cyan-400'
-                : 'text-slate-400 border-transparent hover:text-slate-200'
+                : 'text-purple-200/60 border-transparent hover:text-white'
             }`}
           >
             <t.icon className="w-3.5 h-3.5" />
@@ -155,7 +155,7 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
       </div>
 
       {notification && (
-        <div className="mx-4 mt-3 p-3 bg-cyan-950/80 border border-cyan-500/40 rounded-xl text-cyan-300 font-mono text-xs flex items-center gap-2">
+        <div className="mx-4 mt-3 p-3 bg-cyan-950/80 border border-cyan-500/40 rounded-2xl text-cyan-300 font-sans text-xs flex items-center gap-2 backdrop-blur-xl shadow-[0_4px_16px_rgba(6,182,212,0.2)]">
           <Check className="w-4 h-4" />
           <span>{notification}</span>
         </div>
@@ -165,8 +165,8 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
         {/* TAB 1: MUSIC & YOUTUBE PLAYER */}
         {activeTab === 'media' && (
           <div className="space-y-4">
-            <div className="p-4 bg-[#0C1021] border border-cyan-500/20 rounded-2xl space-y-3">
-              <span className="text-[11px] font-mono font-bold text-cyan-400 uppercase flex items-center gap-1.5">
+            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <span className="text-[11px] font-sans font-bold text-cyan-400 uppercase flex items-center gap-1.5">
                 <Music className="w-3.5 h-3.5" /> Voice Stream Search (Spotify & YouTube)
               </span>
 
@@ -176,17 +176,17 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
                   value={searchSong}
                   onChange={(e) => setSearchSong(e.target.value)}
                   placeholder="Song name or artist..."
-                  className="flex-1 bg-[#070913] border border-white/10 rounded-xl px-3 py-2 text-white font-sans text-xs outline-none focus:border-cyan-500"
+                  className="flex-1 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-cyan-500 transition-all"
                 />
                 <button
                   onClick={() => handlePlayCustom('spotify')}
-                  className="px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-mono text-[10px] rounded-xl"
+                  className="px-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold font-sans text-[10px] rounded-2xl transition-all shadow-md active:scale-95 cursor-pointer"
                 >
                   SPOTIFY
                 </button>
                 <button
                   onClick={() => handlePlayCustom('youtube')}
-                  className="px-3 bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-[10px] rounded-xl"
+                  className="px-3.5 bg-rose-600 hover:bg-rose-500 text-white font-bold font-sans text-[10px] rounded-2xl transition-all shadow-md active:scale-95 cursor-pointer"
                 >
                   YOUTUBE
                 </button>
@@ -194,14 +194,14 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
             </div>
 
             {/* Live Media Player Card */}
-            <div className="p-5 bg-gradient-to-b from-[#0C1021] to-[#070913] border border-white/10 rounded-2xl space-y-4 text-center">
-              <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center shadow-lg">
+            <div className="p-5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-4 text-center shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center shadow-lg border border-white/15">
                 <Music className={`w-10 h-10 text-white ${media.isPlaying ? 'animate-bounce' : ''}`} />
               </div>
 
               <div>
-                <h3 className="font-bold text-sm text-white">{media.title}</h3>
-                <p className="text-[11px] text-slate-400 font-mono mt-0.5">{media.artist} • {media.platform.toUpperCase()}</p>
+                <h3 className="font-bold text-sm text-white font-sans">{media.title}</h3>
+                <p className="text-[11px] text-purple-200/70 font-sans mt-0.5">{media.artist} • {media.platform.toUpperCase()}</p>
               </div>
 
               {/* Progress Bar */}
@@ -210,16 +210,16 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
               </div>
 
               <div className="flex items-center justify-center gap-4 pt-1">
-                <button className="p-2 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full">
+                <button className="p-2.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 rounded-full border border-white/10 transition-all active:scale-95 cursor-pointer">
                   <SkipBack className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleTogglePlay}
-                  className="p-3.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full shadow-lg active:scale-95 transition-all"
+                  className="p-3.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full shadow-lg active:scale-95 transition-all cursor-pointer"
                 >
                   {media.isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-white" />}
                 </button>
-                <button className="p-2 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full">
+                <button className="p-2.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 rounded-full border border-white/10 transition-all active:scale-95 cursor-pointer">
                   <SkipForward className="w-4 h-4" />
                 </button>
               </div>
@@ -231,9 +231,9 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
         {activeTab === 'iot' && (
           <div className="space-y-4">
             {/* Quick Scenes */}
-            <div className="p-4 bg-[#0C1021] border border-white/10 rounded-2xl space-y-3">
-              <span className="text-[11px] font-mono font-bold text-indigo-400 uppercase">Ambient Cyber Scenes</span>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <span className="text-[11px] font-sans font-bold text-indigo-400 uppercase">Ambient Cyber Scenes</span>
+              <div className="grid grid-cols-3 gap-2.5">
                 {[
                   { id: 'cinema', label: 'Cinema Mode', icon: Tv },
                   { id: 'work', label: 'Focus Lab', icon: Lightbulb },
@@ -242,7 +242,7 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
                   <button
                     key={s.id}
                     onClick={() => handleScene(s.id as any)}
-                    className="p-2.5 bg-[#070913] hover:bg-indigo-950/40 border border-white/10 hover:border-indigo-500/40 rounded-xl flex flex-col items-center gap-1 font-mono text-[10px] text-slate-300"
+                    className="p-3 bg-black/30 hover:bg-indigo-950/40 border border-white/10 hover:border-indigo-500/40 rounded-2xl flex flex-col items-center gap-1.5 font-sans text-[10px] text-slate-200 transition-all backdrop-blur-xl cursor-pointer"
                   >
                     <s.icon className="w-4 h-4 text-indigo-400" />
                     <span>{s.label}</span>
@@ -256,28 +256,28 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
               {devices.map(d => (
                 <div
                   key={d.id}
-                  className={`p-3.5 rounded-2xl border transition-all ${
-                    d.state ? 'bg-[#0C1021] border-cyan-500/30' : 'bg-[#070913] border-white/10'
+                  className={`p-4 rounded-3xl border transition-all backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
+                    d.state ? 'bg-black/40 border-cyan-500/40' : 'bg-black/30 border-white/10'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-xl ${d.state ? 'bg-cyan-600 text-white' : 'bg-white/5 text-slate-400'}`}>
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-2.5 rounded-2xl border ${d.state ? 'bg-cyan-600 text-white border-cyan-400/40 shadow-[0_0_12px_rgba(6,182,212,0.4)]' : 'bg-white/[0.08] text-purple-200 border-white/10'}`}>
                         {d.category === 'light' && <Lightbulb className="w-4 h-4" />}
                         {d.category === 'ac' && <Thermometer className="w-4 h-4" />}
                         {d.category === 'fan' && <Wind className="w-4 h-4" />}
                         {d.category === 'tv' && <Tv className="w-4 h-4" />}
                       </div>
                       <div>
-                        <div className="font-bold text-white text-xs">{d.name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{d.room}</div>
+                        <div className="font-bold text-white text-xs font-sans">{d.name}</div>
+                        <div className="text-[10px] text-purple-200/60 font-sans">{d.room}</div>
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleToggleDevice(d)}
-                      className={`p-2 rounded-xl transition-all ${
-                        d.state ? 'bg-cyan-600 text-white shadow-md' : 'bg-white/10 text-slate-400'
+                      className={`p-2.5 rounded-2xl transition-all cursor-pointer ${
+                        d.state ? 'bg-cyan-600 text-white shadow-md' : 'bg-white/[0.08] hover:bg-white/[0.14] text-purple-200 border border-white/10'
                       }`}
                     >
                       <Power className="w-4 h-4" />
@@ -285,7 +285,7 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
                   </div>
 
                   {d.value !== undefined && d.state && (
-                    <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-cyan-300">
+                    <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px] font-sans text-cyan-300">
                       <span>Value Level:</span>
                       <span className="font-bold">{d.value} {d.category === 'ac' ? '°C' : '%'}</span>
                     </div>
@@ -299,41 +299,41 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
         {/* TAB 3: CRICKET RADAR */}
         {activeTab === 'cricket' && (
           <div className="space-y-4">
-            <div className="p-5 bg-gradient-to-b from-[#0C1021] to-[#070913] border border-amber-500/30 rounded-2xl space-y-4">
+            <div className="p-5 bg-black/35 backdrop-blur-2xl border border-amber-500/30 rounded-3xl space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono font-bold text-amber-400 uppercase flex items-center gap-1.5">
+                <span className="text-[11px] font-sans font-bold text-amber-400 uppercase flex items-center gap-1.5">
                   <Trophy className="w-3.5 h-3.5" /> Live International Match
                 </span>
-                <span className="px-2 py-0.5 bg-rose-600 text-white font-mono text-[9px] font-bold rounded-full animate-pulse">
+                <span className="px-2.5 py-0.5 bg-rose-600 text-white font-sans text-[9px] font-bold rounded-full animate-pulse shadow-md">
                   LIVE
                 </span>
               </div>
 
               <div className="flex items-center justify-between px-2">
                 <div className="text-center">
-                  <div className="text-sm font-bold text-white">{cricket.teamA}</div>
+                  <div className="text-sm font-bold text-white font-sans">{cricket.teamA}</div>
                   <div className="text-lg font-mono font-black text-amber-400">{cricket.teamAScore}</div>
                 </div>
-                <span className="text-slate-500 font-mono font-bold text-xs">VS</span>
+                <span className="text-purple-300/60 font-sans font-bold text-xs">VS</span>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-white">{cricket.teamB}</div>
+                  <div className="text-sm font-bold text-white font-sans">{cricket.teamB}</div>
                   <div className="text-lg font-mono font-black text-cyan-400">{cricket.teamBScore}</div>
                 </div>
               </div>
 
-              <div className="p-3 bg-[#070913] rounded-xl border border-white/10 space-y-1 text-center">
-                <div className="text-[11px] text-white font-medium">{cricket.status}</div>
-                <div className="text-[10px] font-mono text-slate-400">{cricket.headline}</div>
+              <div className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 space-y-1 text-center">
+                <div className="text-[11px] text-white font-medium font-sans">{cricket.status}</div>
+                <div className="text-[10px] font-sans text-purple-200/70">{cricket.headline}</div>
               </div>
 
               {/* Recent Balls */}
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1">
+              <div className="flex items-center justify-between text-[10px] font-sans text-purple-200/70 pt-1">
                 <span>Recent Over:</span>
                 <div className="flex gap-1.5">
                   {cricket.recentBalls.map((b, i) => (
                     <span
                       key={i}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                      className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shadow-sm ${
                         b === 'W' ? 'bg-rose-600 text-white' :
                         b === '6' || b === '4' ? 'bg-amber-600 text-white' :
                         'bg-white/10 text-slate-200'
@@ -347,7 +347,7 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
 
               <button
                 onClick={handleAnnounceScore}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold font-mono text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md"
+                className="w-full py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold font-sans text-xs rounded-2xl flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Volume2 className="w-3.5 h-3.5" /> VOICE COMMENTARY READOUT
               </button>
@@ -360,32 +360,32 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               {/* Steps Card */}
-              <div className="p-4 bg-[#0C1021] border border-cyan-500/20 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between text-cyan-400 font-mono text-[10px]">
+              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                <div className="flex items-center justify-between text-cyan-400 font-sans text-[10px]">
                   <span className="flex items-center gap-1"><Footprints className="w-3.5 h-3.5" /> Daily Steps</span>
                   <span>{Math.round((fitness.steps / fitness.stepGoal) * 100)}%</span>
                 </div>
                 <div className="text-xl font-mono font-black text-white">{fitness.steps.toLocaleString()}</div>
-                <p className="text-[10px] text-slate-400 font-mono">Goal: {fitness.stepGoal.toLocaleString()} • {fitness.distanceKm} km</p>
+                <p className="text-[10px] text-purple-200/70 font-sans">Goal: {fitness.stepGoal.toLocaleString()} • {fitness.distanceKm} km</p>
                 <button
                   onClick={handleAddSteps}
-                  className="w-full py-1.5 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/30 text-cyan-300 font-mono text-[10px] rounded-lg mt-1"
+                  className="w-full py-1.5 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/30 text-cyan-300 font-sans text-[10px] rounded-xl mt-1 active:scale-95 transition-all cursor-pointer"
                 >
                   +500 Steps Sync
                 </button>
               </div>
 
               {/* Water Card */}
-              <div className="p-4 bg-[#0C1021] border border-sky-500/20 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between text-sky-400 font-mono text-[10px]">
+              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                <div className="flex items-center justify-between text-sky-400 font-sans text-[10px]">
                   <span className="flex items-center gap-1"><Droplets className="w-3.5 h-3.5" /> Hydration</span>
                   <span>{fitness.waterGlasses}/{fitness.waterGoalGlasses}</span>
                 </div>
                 <div className="text-xl font-mono font-black text-white">{fitness.waterGlasses * 250} ml</div>
-                <p className="text-[10px] text-slate-400 font-mono">Daily Target: 2,000 ml</p>
+                <p className="text-[10px] text-purple-200/70 font-sans">Daily Target: 2,000 ml</p>
                 <button
                   onClick={handleLogWater}
-                  className="w-full py-1.5 bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 text-sky-300 font-mono text-[10px] rounded-lg mt-1"
+                  className="w-full py-1.5 bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 text-sky-300 font-sans text-[10px] rounded-xl mt-1 active:scale-95 transition-all cursor-pointer"
                 >
                   +1 Glass (250ml)
                 </button>
@@ -393,14 +393,14 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
             </div>
 
             {/* Calorie Burn Card */}
-            <div className="p-4 bg-[#0C1021] border border-rose-500/20 rounded-2xl flex items-center justify-between">
+            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-rose-950/60 border border-rose-500/40 text-rose-400 rounded-xl">
+                <div className="p-3 bg-rose-950/60 border border-rose-500/40 text-rose-400 rounded-2xl shadow-sm">
                   <Flame className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold text-white text-xs">Active Calories Burned</div>
-                  <div className="text-[10px] text-slate-400 font-mono">{fitness.activeMinutes} minutes active today</div>
+                  <div className="font-bold text-white text-xs font-sans">Active Calories Burned</div>
+                  <div className="text-[10px] text-purple-200/70 font-sans">{fitness.activeMinutes} minutes active today</div>
                 </div>
               </div>
               <div className="text-lg font-mono font-black text-rose-400">{fitness.caloriesBurned} kcal</div>
@@ -412,8 +412,8 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
         {activeTab === 'food_cab' && (
           <div className="space-y-4">
             {/* Food Delivery Quick Dispatch */}
-            <div className="p-4 bg-[#0C1021] border border-orange-500/20 rounded-2xl space-y-3">
-              <span className="text-[11px] font-mono font-bold text-orange-400 uppercase flex items-center gap-1.5">
+            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <span className="text-[11px] font-sans font-bold text-orange-400 uppercase flex items-center gap-1.5">
                 <Utensils className="w-3.5 h-3.5" /> Food Delivery Quick Dispatch
               </span>
               <input
@@ -421,18 +421,18 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
                 value={foodItem}
                 onChange={(e) => setFoodItem(e.target.value)}
                 placeholder="Dish or meal name..."
-                className="w-full bg-[#070913] border border-white/10 rounded-xl px-3 py-2 text-white font-sans text-xs outline-none focus:border-orange-500"
+                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-orange-500 transition-all"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={() => handleDispatchFood('Zomato')}
-                  className="py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-xs rounded-xl"
+                  className="py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold font-sans text-xs rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer"
                 >
                   ORDER ON ZOMATO
                 </button>
                 <button
                   onClick={() => handleDispatchFood('Swiggy')}
-                  className="py-2 bg-orange-600 hover:bg-orange-500 text-white font-bold font-mono text-xs rounded-xl"
+                  className="py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold font-sans text-xs rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer"
                 >
                   ORDER ON SWIGGY
                 </button>
@@ -440,8 +440,8 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
             </div>
 
             {/* Cab Ride Dispatcher */}
-            <div className="p-4 bg-[#0C1021] border border-yellow-500/20 rounded-2xl space-y-3">
-              <span className="text-[11px] font-mono font-bold text-yellow-400 uppercase flex items-center gap-1.5">
+            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <span className="text-[11px] font-sans font-bold text-yellow-400 uppercase flex items-center gap-1.5">
                 <Car className="w-3.5 h-3.5" /> Instant Cab & Travel Booking
               </span>
               <input
@@ -449,18 +449,18 @@ export const SmartLifestyleIoTView: React.FC<SmartLifestyleIoTViewProps> = ({ on
                 value={cabDestination}
                 onChange={(e) => setCabDestination(e.target.value)}
                 placeholder="Where to? (Destination address)"
-                className="w-full bg-[#070913] border border-white/10 rounded-xl px-3 py-2 text-white font-sans text-xs outline-none focus:border-yellow-500"
+                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-yellow-500 transition-all"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={() => handleBookRide('Uber')}
-                  className="py-2 bg-black border border-white/20 hover:bg-neutral-900 text-white font-bold font-mono text-xs rounded-xl"
+                  className="py-2.5 bg-white/[0.08] border border-white/20 hover:bg-white/[0.14] text-white font-bold font-sans text-xs rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer"
                 >
                   ESTIMATE UBER
                 </button>
                 <button
                   onClick={() => handleBookRide('Ola')}
-                  className="py-2 bg-lime-600 hover:bg-lime-500 text-black font-bold font-mono text-xs rounded-xl"
+                  className="py-2.5 bg-lime-600 hover:bg-lime-500 text-black font-bold font-sans text-xs rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer"
                 >
                   BOOK OLA CAB
                 </button>

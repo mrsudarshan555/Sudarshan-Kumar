@@ -29,37 +29,37 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-[#070913] text-slate-200">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
-      {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#070913]/95 backdrop-blur-md z-10">
+      {/* Header - Liquid Magnifying Glass */}
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-1.5 bg-white/[0.06] hover:bg-white/[0.14] text-slate-300 hover:text-white rounded-xl border border-white/10 transition-all flex items-center justify-center active:scale-95"
+            className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
             title="Back to Settings"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-lg">
+            <div className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/30 shadow-md">
               <Bot className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">Sub-Agents</h2>
-              <p className="text-[10px] text-slate-400 font-sans">Multi-Agent Task Orchestration</p>
+              <h2 className="text-xs font-sans font-bold text-white uppercase tracking-wider">Sub-Agents</h2>
+              <p className="text-[10px] text-purple-300/70 font-sans">Multi-Agent Task Orchestration</p>
             </div>
           </div>
         </div>
 
-        <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-2 py-0.5 rounded-full">
+        <span className="text-[9px] font-sans text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
           Architecture Ready
         </span>
       </div>
 
       <div className="p-4 space-y-4 text-xs font-sans pb-8">
         
-        <p className="text-[11px] text-slate-400 leading-relaxed">
+        <p className="text-[11px] text-purple-200/70 leading-relaxed font-sans">
           MAYRA delegates specialized background tasks, code refactoring, and multi-query research to dedicated sub-agents.
         </p>
 
@@ -68,20 +68,20 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
           {subAgents.map((agent) => (
             <div
               key={agent.id}
-              className={`p-3.5 bg-[#0C1021] border rounded-2xl transition-colors space-y-3 ${
-                agent.enabled ? 'border-indigo-500/30' : 'border-white/5 opacity-60'
+              className={`p-4 bg-black/35 backdrop-blur-2xl border rounded-3xl transition-all space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
+                agent.enabled ? 'border-indigo-500/40 ring-1 ring-indigo-500/20' : 'border-white/10 opacity-60'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-[#070913] rounded-xl border border-white/10">
+                  <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
                     {getAgentIcon(agent.id)}
                   </div>
                   <div>
-                    <div className="text-white font-bold text-xs flex items-center gap-1.5">
+                    <div className="text-white font-bold text-xs flex items-center gap-1.5 font-sans">
                       {agent.name}
                     </div>
-                    <div className="text-[9px] font-mono text-indigo-400">{agent.role}</div>
+                    <div className="text-[9px] font-sans text-indigo-400">{agent.role}</div>
                   </div>
                 </div>
 
@@ -89,22 +89,22 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
                   type="checkbox"
                   checked={agent.enabled}
                   onChange={() => onToggleAgent(agent.id)}
-                  className="w-4 h-4 accent-indigo-500 rounded mt-1"
+                  className="w-4 h-4 accent-indigo-500 rounded mt-1 cursor-pointer"
                 />
               </div>
 
-              <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+              <p className="text-[11px] text-purple-100/90 leading-relaxed font-sans">
                 {agent.description}
               </p>
 
               {/* Capabilities & Sandbox Status */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[9px] font-mono">
-                <div className="flex items-center gap-1 text-slate-400">
+              <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[9px] font-sans">
+                <div className="flex items-center gap-1 text-purple-200/70">
                   <Lock className="w-3 h-3 text-emerald-400" />
                   <span>Sandboxed Execution</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Priority:</span>
+                  <span className="text-purple-300/50">Priority:</span>
                   <span className={`uppercase font-bold ${
                     agent.priority === 'high' ? 'text-purple-400' : 'text-blue-400'
                   }`}>
@@ -113,11 +113,11 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {agent.capabilities.map((cap) => (
                   <span
                     key={cap}
-                    className="text-[8px] font-mono text-slate-300 bg-[#070913] border border-white/5 px-2 py-0.5 rounded-full"
+                    className="text-[8px] font-sans text-purple-200/80 bg-black/30 backdrop-blur-xl border border-white/10 px-2.5 py-0.5 rounded-full"
                   >
                     • {cap}
                   </span>

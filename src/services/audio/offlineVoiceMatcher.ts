@@ -237,86 +237,11 @@ export class OfflineVoiceMatcher {
    * Speaks using calibrated On-Device Voice synthesis with character-accurate pitch and rate modulation
    */
   public static speakOffline(text: string, options: VoiceMatchOptions = {}): boolean {
-    if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
-      if (options.onEnd) options.onEnd();
-      return false;
+    // User mandate: Stay silent on voice failure; do not speak using robotic browser speech synthesis
+    if (options.onEnd) {
+      options.onEnd();
     }
-
-    const persona = options.persona || 'MAYRA';
-    const lang = options.language || 'en';
-    const clean = this.cleanTextForSpeech(text);
-    if (!clean) {
-      if (options.onEnd) options.onEnd();
-      return false;
-    }
-
-    try {
-      window.speechSynthesis.cancel();
-      this.activeUtteranceQueue = [];
-
-      const sentences = this.splitSentences(clean, 200);
-      if (sentences.length === 0) {
-        if (options.onEnd) options.onEnd();
-        return false;
-      }
-
-      const maleVoiceList = ['charon', 'fenrir', 'puck', 'gacrux', 'zephyr', 'sulafat', 'laomedeia'];
-      const isMaleVoice = options.voiceName
-        ? maleVoiceList.includes(options.voiceName.toLowerCase())
-        : (persona === 'STONICX');
-
-      const matchedVoice = this.findBestVoice(isMaleVoice ? 'STONICX' : 'MAYRA', lang);
-      let started = false;
-
-      sentences.forEach((sentenceText, idx) => {
-        const utterance = new SpeechSynthesisUtterance(sentenceText);
-        if (matchedVoice) {
-          utterance.voice = matchedVoice;
-          utterance.lang = matchedVoice.lang;
-        }
-
-        if (isMaleVoice) {
-          // Deep, authoritative, confident baritone male pace
-          utterance.pitch = 0.82;
-          utterance.rate = 0.98;
-          utterance.volume = 1.0;
-        } else {
-          // Soft, warm, melodic, natural feminine pace
-          utterance.pitch = 1.06;
-          utterance.rate = 0.98;
-          utterance.volume = 1.0;
-        }
-
-        if (idx === 0) {
-          utterance.onstart = () => {
-            if (!started) {
-              started = true;
-              if (options.onStart) options.onStart();
-            }
-          };
-        }
-
-        if (idx === sentences.length - 1) {
-          utterance.onend = () => {
-            this.activeUtteranceQueue = [];
-            if (options.onEnd) options.onEnd();
-          };
-          utterance.onerror = () => {
-            this.activeUtteranceQueue = [];
-            if (options.onEnd) options.onEnd();
-          };
-        }
-
-        this.activeUtteranceQueue.push(utterance);
-        window.speechSynthesis.speak(utterance);
-      });
-
-      return true;
-    } catch (err) {
-      console.warn('[OfflineVoiceMatcher] SpeechSynthesis error:', err);
-      if (options.onEnd) options.onEnd();
-      return false;
-    }
+    return false;
   }
 
   /**

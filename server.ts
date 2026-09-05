@@ -411,7 +411,7 @@ let ttsQuotaExhaustedUntil: number = 0;
  * Uses 'Charon' (Deep Authoritative Male) for STONICX and 'Aoede' for MAYRA.
  * Gracefully handles 429 quota limitations with a circuit-breaker without failing or logging error dumps.
  */
-async function generateGeminiVoiceAudio(text: string, language?: string, voiceName: string = 'Charon'): Promise<{ audioBase64: string; mimeType: string } | null> {
+async function generateGeminiVoiceAudio(text: string, language?: string, voiceName: string = 'Aoede'): Promise<{ audioBase64: string; mimeType: string } | null> {
   if (!process.env.GEMINI_API_KEY || !text || text.trim().length === 0) {
     return null;
   }
@@ -430,7 +430,7 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
   if (!cleanText) return null;
 
   try {
-    const targetVoice = voiceName || 'Charon';
+    const targetVoice = voiceName || 'Aoede';
     const callPromise = ai.models.generateContent({
       model: 'gemini-3.1-flash-tts-preview',
       contents: cleanText,
@@ -1465,7 +1465,7 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
-    const isStonicx = req.body.assistant === 'stonicx' || req.body.persona === 'technical' || (typeof req.body.contextPrompt === 'string' && req.body.contextPrompt.includes('STONICX'));
+    const isStonicx = req.body.assistant === 'stonicx';
     const effectiveVoice = req.body.voiceName || (isStonicx ? 'Charon' : 'Aoede');
 
     // Creator / Identity check

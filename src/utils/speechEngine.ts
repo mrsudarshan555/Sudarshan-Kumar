@@ -775,17 +775,7 @@ export async function speakText(
     // Network or timeout notice
   }
 
-  // 5. Offline & On-Device Persona Voice Matching
-  const spokeOffline = OfflineVoiceMatcher.speakOffline(cleanText, {
-    persona: 'MAYRA',
-    voiceName: effectiveVoice,
-    language: lang,
-    onStart,
-    onEnd
-  });
-
-  if (spokeOffline) return;
-
+  // If direct natural voice audio is unavailable or fails, stay silent per user mandate (no robotic browser voice)
   if (onEnd) {
     onEnd();
   }

@@ -71,15 +71,15 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
 
   return (
     <div className="space-y-4 font-sans">
-      {/* Target Assistant Switcher (MAYRA vs STONICX) */}
-      <div className="p-1 bg-black/40 border border-white/10 rounded-2xl flex items-center gap-1 backdrop-blur-md">
+      {/* Target Assistant Switcher (MAYRA vs STONICX) - Liquid Magnifying Glass */}
+      <div className="p-1.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl flex items-center gap-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
         <button
           type="button"
           onClick={() => setTargetAssistant('mayra')}
-          className={`flex-1 py-2 px-3 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2.5 px-3.5 rounded-2xl font-sans text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             targetAssistant === 'mayra'
               ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 border border-white/20'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
+              : 'text-purple-200/60 hover:text-white hover:bg-white/5'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 text-pink-300" />
@@ -90,10 +90,10 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
         <button
           type="button"
           onClick={() => setTargetAssistant('stonicx')}
-          className={`flex-1 py-2 px-3 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2.5 px-3.5 rounded-2xl font-sans text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             targetAssistant === 'stonicx'
               ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/25 border border-white/20'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
+              : 'text-purple-200/60 hover:text-white hover:bg-white/5'
           }`}
         >
           <Radio className="w-3.5 h-3.5 text-cyan-300" />
@@ -104,7 +104,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
 
       {/* Gender Filters (All, Female, Male) - Inspired by MT Manager file classification */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 p-1 bg-black/30 rounded-xl border border-white/5">
+        <div className="flex items-center gap-1.5 p-1 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
           {(['All', 'Female', 'Male'] as const).map((filter) => {
             const count =
               filter === 'All'
@@ -116,10 +116,10 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
                 key={filter}
                 type="button"
                 onClick={() => setGenderFilter(filter)}
-                className={`px-3 py-1 rounded-lg text-[11px] font-mono font-medium transition-all ${
+                className={`px-3 py-1 rounded-xl text-[11px] font-sans font-medium transition-all cursor-pointer ${
                   isActive
                     ? 'bg-white/20 text-white shadow-sm border border-white/20'
-                    : 'text-slate-400 hover:text-slate-200'
+                    : 'text-purple-200/60 hover:text-white'
                 }`}
               >
                 {filter === 'Female' && '🌸 '}
@@ -130,14 +130,14 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
           })}
         </div>
 
-        <div className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
-          <Volume2 className="w-3 h-3 text-cyan-400" />
+        <div className="text-[10px] font-sans text-purple-200/70 flex items-center gap-1">
+          <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
           <span>16 Neural Voices</span>
         </div>
       </div>
 
       {/* Voice Cards List (MT Manager UI / Sound Selector Inspired) */}
-      <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+      <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
         {filteredVoices.map((v) => {
           const isSelected = selectedVoiceId.toLowerCase() === v.id.toLowerCase();
           const isPlaying = previewingVoiceId === v.id;
@@ -147,22 +147,22 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
             <div
               key={v.id}
               onClick={() => handleSelectVoice(v.id)}
-              className={`p-3 rounded-2xl border transition-all cursor-pointer relative overflow-hidden backdrop-blur-md ${
+              className={`p-3.5 rounded-3xl border transition-all cursor-pointer relative overflow-hidden backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
                 isSelected
                   ? targetAssistant === 'mayra'
                     ? 'bg-purple-950/40 border-purple-400/60 shadow-lg shadow-purple-900/30'
                     : 'bg-cyan-950/40 border-cyan-400/60 shadow-lg shadow-cyan-900/30'
-                  : 'bg-black/30 border-white/5 hover:border-white/20 hover:bg-white/[0.04]'
+                  : 'bg-black/30 border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
               }`}
             >
               {/* Top Row: Name, Badges, MT Manager File Reference */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white text-sm tracking-wide">{v.name}</span>
+                  <span className="font-bold text-white text-sm tracking-wide font-sans">{v.name}</span>
                   
                   {/* Gender Badge */}
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider ${
+                    className={`px-2.5 py-0.5 rounded-full text-[9px] font-sans font-bold uppercase tracking-wider ${
                       v.gender === 'Female'
                         ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
                         : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
@@ -172,34 +172,34 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
                   </span>
 
                   {v.badge && (
-                    <span className="px-1.5 py-0.2 rounded text-[8px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-sans bg-amber-500/20 text-amber-300 border border-amber-500/30">
                       {v.badge}
                     </span>
                   )}
                 </div>
 
                 {/* MT Manager Filename Tag */}
-                <div className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                <div className="text-[10px] font-mono text-purple-200/70 bg-black/30 px-2.5 py-0.5 rounded-xl border border-white/10">
                   📁 {mtFile}
                 </div>
               </div>
 
               {/* Tone & Description */}
-              <div className="mt-1 flex items-center justify-between text-[11px] text-slate-300">
+              <div className="mt-1 flex items-center justify-between text-[11px] text-purple-200/90 font-sans">
                 <span className="text-cyan-300/90 font-medium">{v.tone}</span>
-                <span className="text-[10px] text-slate-400">{v.category}</span>
+                <span className="text-[10px] text-purple-300/60">{v.category}</span>
               </div>
-              <p className="mt-0.5 text-[10px] text-slate-400 line-clamp-1">{v.description}</p>
+              <p className="mt-0.5 text-[10px] text-purple-200/60 line-clamp-1 font-sans">{v.description}</p>
 
               {/* Action Bar: Test Preview Button + Select Checkmark */}
-              <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between">
+              <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={(e) => handlePlayPreview(v, e)}
-                  className={`px-3 py-1 rounded-xl text-[11px] font-mono font-semibold flex items-center gap-1.5 transition-all ${
+                  className={`px-3 py-1.5 rounded-2xl text-[11px] font-sans font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                     isPlaying
                       ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                      : 'bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white'
+                      : 'bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white border border-white/10'
                   }`}
                 >
                   {isPlaying ? (
@@ -223,7 +223,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
                 {/* Selection State */}
                 <div className="flex items-center gap-2">
                   {isSelected ? (
-                    <span className="flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-400">
+                    <span className="flex items-center gap-1 text-[11px] font-sans font-bold text-emerald-400">
                       <Check className="w-3.5 h-3.5" />
                       <span>Active for {targetAssistant === 'mayra' ? 'Mayra' : 'Stonicx'}</span>
                     </span>
@@ -234,7 +234,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
                         e.stopPropagation();
                         handleSelectVoice(v.id);
                       }}
-                      className="text-[10px] font-mono text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5"
+                      className="text-[10px] font-sans text-purple-200/70 hover:text-white px-3 py-1 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] border border-white/10 cursor-pointer transition-all"
                     >
                       Choose
                     </button>

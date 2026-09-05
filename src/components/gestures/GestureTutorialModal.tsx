@@ -116,19 +116,19 @@ export const GestureTutorialModal: React.FC<GestureTutorialModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-md bg-[#090D20] border border-cyan-500/40 rounded-3xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9)] flex flex-col text-slate-200"
+          className="w-full max-w-md bg-black/65 backdrop-blur-3xl border border-white/20 rounded-3xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2)] flex flex-col text-slate-200"
         >
-          {/* Top Bar with Badge & Close */}
-          <div className="px-5 py-3.5 bg-gradient-to-r from-cyan-950/80 via-slate-900 to-indigo-950/80 border-b border-white/10 flex items-center justify-between">
+          {/* Top Bar with Badge & Close - Magnifying Glass */}
+          <div className="px-5 py-3.5 bg-black/40 backdrop-blur-xl border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-400/40">
+              <div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/40">
                 <Hand className="w-4 h-4 stroke-[1.8]" />
               </div>
               <div>
-                <span className="text-xs font-mono font-bold text-white tracking-wide uppercase">
+                <span className="text-xs font-sans font-bold text-white tracking-wide uppercase">
                   Hand-Gesture Navigation Guide
                 </span>
-                <p className="text-[10px] text-cyan-300 font-sans">Touchless Phone Control Tutorial</p>
+                <p className="text-[10px] text-purple-300 font-sans">Touchless Phone Control Tutorial</p>
               </div>
             </div>
 
@@ -339,14 +339,14 @@ export const GestureTutorialModal: React.FC<GestureTutorialModalProps> = ({
 
           </div>
 
-          {/* Footer Actions */}
-          <div className="px-5 py-3.5 bg-slate-950/80 border-t border-white/10 flex items-center justify-between gap-2">
+          {/* Footer Actions - Magnifying Glass */}
+          <div className="px-5 py-3.5 bg-black/40 backdrop-blur-xl border-t border-white/10 flex items-center justify-between gap-2">
             {/* Left Action: Prev or Practice */}
             <div className="flex items-center gap-1.5">
               {currentStepIndex > 0 ? (
                 <button
                   onClick={handlePrev}
-                  className="px-3 py-1.5 bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white rounded-xl text-xs font-medium flex items-center gap-1 transition-all"
+                  className="px-3 py-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-xl text-xs font-medium flex items-center gap-1 transition-all cursor-pointer"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span>Previous</span>
@@ -354,7 +354,7 @@ export const GestureTutorialModal: React.FC<GestureTutorialModalProps> = ({
               ) : (
                 <button
                   onClick={handleFinish}
-                  className="px-3 py-1.5 text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                 >
                   Skip
                 </button>
@@ -364,7 +364,7 @@ export const GestureTutorialModal: React.FC<GestureTutorialModalProps> = ({
               {onOpenPracticeMode && (
                 <button
                   onClick={handleLaunchPractice}
-                  className="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-mono flex items-center gap-1 transition-all"
+                  className="px-2.5 py-1.5 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-sans flex items-center gap-1 transition-all cursor-pointer"
                   title="Practice in Sandbox"
                 >
                   <PlayCircle className="w-3.5 h-3.5" />
@@ -376,7 +376,7 @@ export const GestureTutorialModal: React.FC<GestureTutorialModalProps> = ({
             {/* Right Action: Next or Get Started */}
             <button
               onClick={handleNext}
-              className="px-4 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-[0_0_16px_rgba(6,182,212,0.4)] active:scale-95 transition-all"
+              className="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-[0_0_16px_rgba(168,85,247,0.4)] active:scale-95 transition-all cursor-pointer"
             >
               <span>{currentStepIndex === steps.length - 1 ? 'Got it, Let\'s Go!' : 'Next'}</span>
               <ChevronRight className="w-3.5 h-3.5" />

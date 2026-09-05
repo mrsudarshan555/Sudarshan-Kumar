@@ -81,10 +81,10 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#070312] text-slate-100 relative select-none">
+    <div className="flex-1 flex flex-col h-full bg-transparent text-slate-100 relative select-none">
       
       {/* Top Header matching iPhone Liquid Frosted Glass */}
-      <div className="h-14 px-4 bg-[#120626]/80 backdrop-blur-2xl border-b border-white/10 flex items-center justify-between z-20 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="h-14 px-4 bg-black/30 backdrop-blur-3xl border-b border-white/10 flex items-center justify-between z-20 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -137,7 +137,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
           return (
             <div
               key={perm.id}
-              className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 rounded-3xl flex items-center justify-between gap-3 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]"
+              className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 rounded-3xl flex items-center justify-between gap-3 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]"
             >
               {/* Left Details */}
               <div className="flex-1 pr-1 space-y-1">
@@ -202,10 +202,10 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
 
       {/* 1. Android Floating Windows / Display Over Other Apps Settings Screen */}
       {activeSystemModal === 'floating_windows' && (
-        <div className="absolute inset-0 bg-white text-slate-900 z-50 flex flex-col animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-3xl text-white z-50 flex flex-col animate-in fade-in duration-200">
           
-          {/* Android System Top Bar */}
-          <div className="h-14 px-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+          {/* Android System Top Bar - Liquid Magnifying Glass */}
+          <div className="h-14 px-4 bg-black/40 backdrop-blur-2xl border-b border-white/10 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
@@ -215,26 +215,26 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
                     setActiveSystemModal(null);
                   }
                 }}
-                className="p-2 -ml-2 text-slate-700 hover:text-black rounded-full"
+                className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 active:scale-95 transition-all cursor-pointer"
               >
-                <ArrowLeft className="w-5 h-5 text-emerald-600" />
+                <ArrowLeft className="w-4 h-4 stroke-[2]" />
               </button>
-              <h2 className="text-base font-medium text-slate-900">Floating Windows</h2>
+              <h2 className="text-sm font-bold font-sans text-white">Floating Windows</h2>
             </div>
           </div>
 
-          <div className="px-4 py-2 text-[11px] text-slate-500 border-b border-slate-100 bg-slate-50">
-            14 turned on. Turning these on may generate popup ads.
+          <div className="px-4 py-2 text-[11px] text-purple-300/80 border-b border-white/10 bg-black/20 backdrop-blur-md">
+            14 turned on. Allows overlaying assistant UI above active applications.
           </div>
 
-          {/* App List (Matches Reference Video at 00:08) */}
+          {/* App List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 font-sans text-xs">
             
             {/* Airtel */}
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-red-600 text-white font-black text-xs flex items-center justify-center">airtel</div>
-                <span className="font-medium text-slate-800 text-sm">Airtel</span>
+                <div className="w-8 h-8 rounded-xl bg-red-600 text-white font-black text-xs flex items-center justify-center shadow-sm">airtel</div>
+                <span className="font-medium text-white text-sm">Airtel</span>
               </div>
               <div className="w-9 h-5 bg-emerald-500 rounded-full flex items-center justify-end p-0.5">
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
@@ -242,41 +242,41 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
 
             {/* CapCut */}
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-black text-white font-bold text-xs flex items-center justify-center">CC</div>
-                <span className="font-medium text-slate-800 text-sm">CapCut</span>
+                <div className="w-8 h-8 rounded-xl bg-slate-800 text-white font-bold text-xs flex items-center justify-center shadow-sm">CC</div>
+                <span className="font-medium text-white text-sm">CapCut</span>
               </div>
-              <div className="w-9 h-5 bg-slate-300 rounded-full flex items-center justify-start p-0.5">
+              <div className="w-9 h-5 bg-white/20 rounded-full flex items-center justify-start p-0.5">
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
               </div>
             </div>
 
             {/* Instagram */}
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center">IG</div>
-                <span className="font-medium text-slate-800 text-sm">Instagram</span>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">IG</div>
+                <span className="font-medium text-white text-sm">Instagram</span>
               </div>
-              <div className="w-9 h-5 bg-slate-300 rounded-full flex items-center justify-start p-0.5">
+              <div className="w-9 h-5 bg-white/20 rounded-full flex items-center justify-start p-0.5">
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
               </div>
             </div>
 
             {/* MAYRA (Highlight item) */}
-            <div className="flex items-center justify-between py-2 px-2 bg-blue-50/70 border border-blue-200 rounded-xl">
+            <div className="flex items-center justify-between py-2 px-3 bg-purple-500/20 border border-purple-400/40 rounded-2xl shadow-[0_0_14px_rgba(168,85,247,0.2)]">
               <div className="flex items-center gap-3">
                 <MayraLogo size={32} showGlow={false} />
                 <div>
-                  <span className="font-bold text-slate-900 text-sm">Mayra</span>
-                  <div className="text-[10px] text-blue-600">Allows overlaying assistant UI</div>
+                  <span className="font-bold text-white text-sm">Mayra</span>
+                  <div className="text-[10px] text-purple-300">Allows overlaying assistant UI</div>
                 </div>
               </div>
 
               <button
                 onClick={() => setFloatingWindowToggle(!floatingWindowToggle)}
-                className={`w-10 h-6 rounded-full flex items-center transition-colors p-0.5 ${
-                  floatingWindowToggle ? 'bg-emerald-500 justify-end' : 'bg-slate-300 justify-start'
+                className={`w-10 h-6 rounded-full flex items-center transition-colors p-0.5 cursor-pointer ${
+                  floatingWindowToggle ? 'bg-purple-500 justify-end' : 'bg-white/20 justify-start'
                 }`}
               >
                 <div className="w-5 h-5 bg-white rounded-full shadow-md" />
@@ -284,21 +284,21 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
 
             {/* Meesho */}
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-pink-700 text-white font-bold text-xs flex items-center justify-center">m</div>
-                <span className="font-medium text-slate-800 text-sm">Meesho</span>
+                <div className="w-8 h-8 rounded-xl bg-pink-700 text-white font-bold text-xs flex items-center justify-center shadow-sm">m</div>
+                <span className="font-medium text-white text-sm">Meesho</span>
               </div>
-              <div className="w-9 h-5 bg-slate-300 rounded-full flex items-center justify-start p-0.5">
+              <div className="w-9 h-5 bg-white/20 rounded-full flex items-center justify-start p-0.5">
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
               </div>
             </div>
 
             {/* Telegram */}
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-sky-500 text-white font-bold text-xs flex items-center justify-center">TG</div>
-                <span className="font-medium text-slate-800 text-sm">Telegram</span>
+                <div className="w-8 h-8 rounded-xl bg-sky-500 text-white font-bold text-xs flex items-center justify-center shadow-sm">TG</div>
+                <span className="font-medium text-white text-sm">Telegram</span>
               </div>
               <div className="w-9 h-5 bg-emerald-500 rounded-full flex items-center justify-end p-0.5">
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
@@ -307,7 +307,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
 
           </div>
 
-          <div className="p-4 bg-slate-50 border-t border-slate-200">
+          <div className="p-4 bg-black/40 backdrop-blur-2xl border-t border-white/10">
             <button
               onClick={() => {
                 if (floatingWindowToggle) {
@@ -316,7 +316,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
                   setActiveSystemModal(null);
                 }
               }}
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-xs transition-colors"
+              className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl font-bold text-xs shadow-lg transition-all cursor-pointer"
             >
               {floatingWindowToggle ? 'Save & Return to MAYRA' : 'Close Settings'}
             </button>
@@ -325,15 +325,15 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
         </div>
       )}
 
-      {/* 2. Android Native Screen Capture Consent Prompt (Matches Video at 00:15) */}
+      {/* 2. Android Native Screen Capture Consent Prompt - Magnifying Glass */}
       {activeSystemModal === 'screen_capture_dialog' && (
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-[320px] bg-[#171A2E] text-white rounded-3xl p-5 border border-white/10 shadow-2xl space-y-4 font-sans">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-[320px] bg-black/60 backdrop-blur-3xl text-white rounded-3xl p-5 border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)] space-y-4 font-sans">
             
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <MayraLogo size={24} showGlow={false} />
-                <span className="text-xs font-bold text-slate-300">Screen Share Request</span>
+                <span className="text-xs font-bold text-purple-300">Screen Share Request</span>
               </div>
 
               <p className="text-sm font-semibold text-white leading-snug">
@@ -342,12 +342,12 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
 
             {/* Checkbox "Do not show again" */}
-            <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-xs text-purple-200 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={screenCaptureRemember}
                 onChange={(e) => setScreenCaptureRemember(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 bg-slate-800 border-white/20 focus:ring-0"
+                className="w-4 h-4 rounded text-purple-600 bg-black/50 border-white/20 focus:ring-0"
               />
               <span>Do not show again</span>
             </label>
@@ -356,14 +356,14 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setActiveSystemModal(null)}
-                className="px-4 py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 rounded-xl hover:bg-white/5 transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
 
               <button
                 onClick={() => handleGrantPermission('screen_capture')}
-                className="px-5 py-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 rounded-xl hover:bg-emerald-950/40 transition-colors"
+                className="px-5 py-2 text-xs font-bold text-emerald-300 hover:text-emerald-200 bg-emerald-500/20 border border-emerald-400/40 rounded-xl transition-all cursor-pointer"
               >
                 Allow
               </button>
@@ -373,18 +373,18 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
         </div>
       )}
 
-      {/* 3. Android Default Digital Assistant Picker */}
+      {/* 3. Android Default Digital Assistant Picker - Magnifying Glass */}
       {activeSystemModal === 'default_assistant_picker' && (
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-[320px] bg-[#121528] text-white rounded-3xl p-5 border border-white/10 shadow-2xl space-y-4 font-sans">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-[320px] bg-black/60 backdrop-blur-3xl text-white rounded-3xl p-5 border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)] space-y-4 font-sans">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white">Default digital assistant app</h3>
-              <button onClick={() => setActiveSystemModal(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setActiveSystemModal(null)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-purple-200/80 leading-relaxed">
               Select which application handles the long-press power and corner swipe assistant gestures.
             </p>
 
@@ -399,16 +399,16 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
                   onClick={() => setSelectedDefaultAssistant(item.id)}
                   className={`flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-colors ${
                     selectedDefaultAssistant === item.id
-                      ? 'bg-blue-600/20 border-blue-500 text-white'
-                      : 'bg-[#0A0D1F] border-white/5 text-slate-300'
+                      ? 'bg-purple-600/30 border-purple-400 text-white shadow-[0_0_14px_rgba(168,85,247,0.3)]'
+                      : 'bg-black/30 border-white/10 text-slate-300 hover:bg-black/50'
                   }`}
                 >
                   <div>
                     <div className="text-xs font-bold">{item.label}</div>
-                    <div className="text-[10px] text-slate-400">{item.desc}</div>
+                    <div className="text-[10px] text-purple-300/70">{item.desc}</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                    selectedDefaultAssistant === item.id ? 'border-blue-400 bg-blue-500' : 'border-white/20'
+                    selectedDefaultAssistant === item.id ? 'border-purple-400 bg-purple-500' : 'border-white/20'
                   }`}>
                     {selectedDefaultAssistant === item.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </div>
@@ -419,13 +419,13 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setActiveSystemModal(null)}
-                className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                className="px-4 py-2 text-xs text-slate-300 hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleGrantPermission('default_assistant')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md"
               >
                 Apply Selection
               </button>
@@ -434,24 +434,24 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
         </div>
       )}
 
-      {/* 4. Android Battery Optimization Exemption */}
+      {/* 4. Android Battery Optimization Exemption - Magnifying Glass */}
       {activeSystemModal === 'battery_dialog' && (
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-[320px] bg-[#121528] text-white rounded-3xl p-5 border border-white/10 shadow-2xl space-y-4 font-sans">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-[320px] bg-black/60 backdrop-blur-3xl text-white rounded-3xl p-5 border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)] space-y-4 font-sans">
             <h3 className="text-sm font-bold text-white">Let app always run in background?</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Allowing <span className="font-bold text-blue-400">MAYRA</span> to always run in the background reduces battery life, but ensures wake-words, routines, and voice guardian shields operate continuously with screen off.
+            <p className="text-xs text-purple-200/80 leading-relaxed">
+              Allowing <span className="font-bold text-purple-300">MAYRA</span> to always run in the background reduces battery life, but ensures wake-words, routines, and voice guardian shields operate continuously with screen off.
             </p>
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setActiveSystemModal(null)}
-                className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                className="px-4 py-2 text-xs text-slate-300 hover:text-white cursor-pointer"
               >
                 Deny
               </button>
               <button
                 onClick={() => handleGrantPermission('battery_optimization')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 Allow
               </button>
@@ -460,27 +460,27 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
         </div>
       )}
 
-      {/* 5. Android Accessibility Service Dialog */}
+      {/* 5. Android Accessibility Service Dialog - Magnifying Glass */}
       {activeSystemModal === 'accessibility_dialog' && (
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-[320px] bg-[#121528] text-white rounded-3xl p-5 border border-white/10 shadow-2xl space-y-4 font-sans">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-[320px] bg-black/60 backdrop-blur-3xl text-white rounded-3xl p-5 border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)] space-y-4 font-sans">
             <h3 className="text-sm font-bold text-white">Enable MAYRA Accessibility Service</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-purple-200/80 leading-relaxed">
               To automate app workflows (e.g. sending messages on WhatsApp or YouTube playback controls), Android requires explicit user consent in Accessibility settings.
             </p>
-            <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl text-[11px] text-amber-200">
+            <div className="p-3 bg-amber-950/40 border border-amber-500/30 rounded-2xl text-[11px] text-amber-200">
               Note: MAYRA uses Accessibility solely for user-requested on-device task execution and never collects sensitive passwords.
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setActiveSystemModal(null)}
-                className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                className="px-4 py-2 text-xs text-slate-300 hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleGrantPermission('accessibility_service')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 Enable in Settings
               </button>
@@ -489,27 +489,27 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
         </div>
       )}
 
-      {/* 6. Android Notification Listener Service Dialog */}
+      {/* 6. Android Notification Listener Service Dialog - Magnifying Glass */}
       {activeSystemModal === 'notification_dialog' && (
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-[320px] bg-[#121528] text-white rounded-3xl p-5 border border-white/10 shadow-2xl space-y-4 font-sans">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-[320px] bg-black/60 backdrop-blur-3xl text-white rounded-3xl p-5 border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)] space-y-4 font-sans">
             <h3 className="text-sm font-bold text-white">Allow Notification Access?</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Allowing <span className="font-bold text-purple-400">MAYRA</span> to read device notifications lets her announce incoming WhatsApp/SMS messages and caller names hands-free.
+            <p className="text-xs text-purple-200/80 leading-relaxed">
+              Allowing <span className="font-bold text-purple-300">MAYRA</span> to read device notifications lets her announce incoming WhatsApp/SMS messages and caller names hands-free.
             </p>
-            <div className="p-3 bg-indigo-950/30 border border-indigo-500/30 rounded-xl text-[11px] text-indigo-200">
+            <div className="p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl text-[11px] text-indigo-200">
               Android will open Special App Access settings for you to toggle MAYRA on.
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setActiveSystemModal(null)}
-                className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                className="px-4 py-2 text-xs text-slate-300 hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleGrantPermission('notification_access')}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 Open Settings
               </button>

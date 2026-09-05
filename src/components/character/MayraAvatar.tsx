@@ -551,7 +551,7 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
             camera.lookAt(...cameraConfig.target);
             gl.outputColorSpace = THREE.SRGBColorSpace;
             gl.toneMapping = THREE.LinearToneMapping;
-            gl.toneMappingExposure = 1.0;
+            gl.toneMappingExposure = 1.18;
           }}
           gl={{
             antialias: true,
@@ -560,14 +560,14 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
           }}
         >
           {/* Reference Soft Lighting Rig: Natural Ambient & Hemisphere base + gentle front-top key */}
-          {/* 1. Base Soft Ambient Light (warm natural illumination for character) */}
-          <ambientLight intensity={0.68} color="#fff8f2" />
+          {/* 1. Base Soft Ambient Light (warm natural illumination for character +18% brightness) */}
+          <ambientLight intensity={0.80} color="#fff8f2" />
 
           {/* 2. Soft Sky/Ground Hemisphere Light (natural gentle warmth, zero harsh contrast) */}
-          <hemisphereLight color="#fff3ea" groundColor="#403632" intensity={0.38} />
+          <hemisphereLight color="#fff4ec" groundColor="#3a302a" intensity={0.44} />
 
           {/* 3. Single Gentle Front-Top Key Light (natural under-nose shadow and subtle chin depth, zero hot spots) */}
-          <directionalLight position={[0.2, 1.8, 2.2]} intensity={0.44} color="#fffcf7" />
+          <directionalLight position={[0.2, 1.8, 2.2]} intensity={0.52} color="#fffcf7" />
 
           <ModelRenderer 
             modelScene={modelScene} 

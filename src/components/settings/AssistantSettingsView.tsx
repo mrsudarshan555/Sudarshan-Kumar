@@ -34,25 +34,25 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-[#070913] text-slate-200">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
-      {/* Header with Top-Left Back Arrow */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#070913]/95 backdrop-blur-md z-10">
+      {/* Header with Top-Left Back Arrow - Liquid Magnifying Glass */}
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-1.5 bg-white/[0.06] hover:bg-white/[0.14] text-slate-300 hover:text-white rounded-xl border border-white/10 transition-all flex items-center justify-center active:scale-95"
+            className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
             title="Back to Settings"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg">
+            <div className="p-1.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-400/30">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider">MAYRA Assistant</h2>
-              <p className="text-[10px] text-slate-400 font-sans">Persona, 3D Character & Voice Settings</p>
+              <h2 className="text-xs font-sans font-bold text-white uppercase tracking-wider">MAYRA Assistant</h2>
+              <p className="text-[10px] text-purple-300/70 font-sans">Persona, 3D Character & Voice Settings</p>
             </div>
           </div>
         </div>
@@ -60,13 +60,13 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
 
       <div className="p-4 space-y-4 text-xs font-sans pb-8">
         
-        {/* AI Assistant Core Engine Selector (MAYRA vs STONICX) */}
-        <div className="p-3.5 bg-gradient-to-br from-[#121028] via-[#0E1528] to-[#0A0E1A] border border-purple-500/30 rounded-2xl space-y-3 shadow-lg">
+        {/* AI Assistant Core Engine Selector (MAYRA vs STONICX) - Magnifying Glass */}
+        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-mono font-bold text-purple-300 uppercase flex items-center gap-1.5">
+            <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" /> AI Assistant Core Engine
             </div>
-            <span className="text-[9px] font-mono text-purple-300 font-bold uppercase bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[9px] font-sans text-purple-300 font-bold uppercase bg-purple-950/60 border border-purple-500/30 px-2.5 py-0.5 rounded-full">
               Full Shell Switch
             </span>
           </div>
@@ -119,9 +119,9 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         </div>
 
         {/* Assistant Persona Tone */}
-        <div className="p-3.5 bg-[#0C1021] border border-purple-500/20 rounded-2xl space-y-3">
-          <div className="text-[11px] font-mono font-bold text-purple-400 uppercase flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> Persona & Personality
+        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+          <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-purple-300" /> Persona & Personality
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -134,43 +134,43 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
               <button
                 key={item.id}
                 onClick={() => onChange({ personaTone: item.id as any })}
-                className={`p-2.5 rounded-xl border text-left transition-colors ${
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                   config.personaTone === item.id
-                    ? 'bg-purple-600/20 border-purple-500 text-purple-200'
-                    : 'bg-[#070913] border-white/5 text-slate-400 hover:text-slate-200'
+                    ? 'bg-purple-600/30 border-purple-400 text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.3)]'
+                    : 'bg-black/30 border-white/10 text-purple-300/70 hover:text-white hover:bg-black/50'
                 }`}
               >
                 <div className="font-semibold text-white">{item.title}</div>
-                <div className="text-[9px] text-slate-400 leading-tight mt-0.5">{item.desc}</div>
+                <div className="text-[9px] text-purple-300/60 leading-tight mt-0.5">{item.desc}</div>
               </button>
             ))}
           </div>
         </div>
 
         {/* 3D Character Skin Tone Slider (ONLY Skin Tone Slider per design spec) */}
-        <div className="p-3.5 bg-[#0C1021] border border-amber-500/20 rounded-2xl space-y-4">
+        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-mono font-bold text-amber-400 uppercase flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5" /> Character Complexion
+            <div className="text-[11px] font-sans font-bold text-amber-300 uppercase flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-amber-300" /> Character Complexion
             </div>
-            <span className="text-[9px] font-mono text-amber-300 font-bold uppercase bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[9px] font-sans text-amber-300 font-bold uppercase bg-amber-950/60 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
               Live Shader
             </span>
           </div>
 
           {/* Character Skin Tone Slider */}
-          <div className="p-3 bg-[#070913] rounded-xl border border-white/5 space-y-2">
+          <div className="p-3 bg-black/40 rounded-2xl border border-white/10 space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5 text-amber-400" />
                 <span className="text-white font-medium text-xs">Character Skin Tone</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-amber-400 font-bold">{config.characterSkinTone ?? 50}%</span>
-                <span className="text-[9px] font-mono text-slate-400">({getSkinToneLabel(config.characterSkinTone ?? 50)})</span>
+                <span className="text-[10px] font-sans text-amber-400 font-bold">{config.characterSkinTone ?? 50}%</span>
+                <span className="text-[9px] font-sans text-slate-400">({getSkinToneLabel(config.characterSkinTone ?? 50)})</span>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[10px] text-purple-300/70">
               Adjust complexion from Fair (Gora) to Dark (Kala). Default is Medium (50%).
             </p>
             <input
@@ -182,9 +182,9 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
               onChange={(e) => onChange({ characterSkinTone: parseInt(e.target.value, 10) })}
               className="w-full accent-amber-500 cursor-pointer"
             />
-            <div className="flex justify-between text-[9px] font-mono text-slate-500">
-              <span className="text-amber-700">Dusky (Kala)</span>
-              <span className="text-amber-400 font-bold">Medium (Natural 50%)</span>
+            <div className="flex justify-between text-[9px] font-sans text-slate-400">
+              <span className="text-amber-600">Dusky (Kala)</span>
+              <span className="text-amber-300 font-bold">Medium (Natural 50%)</span>
               <span className="text-amber-200">Fair (Gora)</span>
             </div>
           </div>

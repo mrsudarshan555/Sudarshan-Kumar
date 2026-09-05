@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AppLockConfig } from '../security/useAppLock';
 import { HomeScreenWidgetModal } from '../widgets/HomeScreenWidgetModal';
 import { 
@@ -74,6 +75,66 @@ interface SettingCategoryItem {
     isSimulated?: boolean;
   };
 }
+
+interface CategoryDetails {
+  name: string;
+  subtitle: string;
+  icon: any;
+  color: 'indigo' | 'purple' | 'emerald' | 'orange' | 'cyan' | 'blue';
+  countBadge: string;
+  tagline: string;
+}
+
+export const CATEGORY_DETAILS: Record<string, CategoryDetails> = {
+  'ACCOUNT': {
+    name: 'Account & Identity',
+    subtitle: 'Personal profile, Gemini & YouTube API keys, country code',
+    icon: User,
+    color: 'indigo',
+    countBadge: '2 Settings',
+    tagline: 'Manage user credentials, personal keys & telecom region'
+  },
+  'ASSISTANT': {
+    name: 'Assistant & Voice Studio',
+    subtitle: 'MAYRA/STONICX, 15 regional dialects, skills, sub-agents & offline AI',
+    icon: Sparkles,
+    color: 'purple',
+    countBadge: '5 Settings',
+    tagline: 'Personalize persona speech, dial-in accents & autonomous tools'
+  },
+  'WORK & MESSAGES': {
+    name: 'Work, Messaging & Finance',
+    subtitle: 'Email, WhatsApp Hub, Smart IoT & Neural Trading',
+    icon: MessageSquare,
+    color: 'emerald',
+    countBadge: '4 Settings',
+    tagline: 'Automate communications, smart home & financial market radar'
+  },
+  'CONNECTED ACCOUNTS': {
+    name: 'Connected Accounts & Sync',
+    subtitle: 'GitHub, Notion, Telegram, Workspace & device mesh',
+    icon: Boxes,
+    color: 'orange',
+    countBadge: '2 Settings',
+    tagline: 'Cloud integrations, productivity accounts & linked devices'
+  },
+  'MEMORY & DATA': {
+    name: 'Memory & Data Vault',
+    subtitle: 'Backup & restore, multi-AI failover & quantum memory',
+    icon: Brain,
+    color: 'purple',
+    countBadge: '3 Settings',
+    tagline: 'Semantic brain vault, vision memory logs & cloud backups'
+  },
+  'SYSTEM': {
+    name: 'System, Security & Appearance',
+    subtitle: 'Advanced telemetry, security shields, 3D Orb studio & about info',
+    icon: Cpu,
+    color: 'cyan',
+    countBadge: '3 Settings',
+    tagline: 'Hardware diagnostics, locks, themes & version specs'
+  }
+};
 
 interface SettingCategorySection {
   category: string;
@@ -151,6 +212,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
   onLaunchRoutine
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
   const [cameFromAdvanced, setCameFromAdvanced] = useState(false);
   const isDark = appearanceConfig?.darkMode ?? true;
@@ -291,378 +353,327 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     setMemories(restored);
   };
 
-  // Sub-screen routing
-  if (currentSubScreen === 'permissions') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <PermissionsCenterView
-          permissions={permissions}
-          setPermissions={setPermissions}
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
+  // Unified Liquid Magnifying Glass Atmosphere Wrapper
+  const wrapWithAtmosphere = (content: React.ReactNode) => (
+    <div className="flex-1 flex flex-col h-full relative select-none overflow-hidden text-slate-100 bg-transparent">
+      {/* Dynamic Cosmic Velvet Atmosphere matching character home screen */}
+      <HomeAtmosphereBackground status="READY" />
+      <div className="relative z-10 flex-1 flex flex-col h-full overflow-hidden bg-transparent">
+        {content}
       </div>
+    </div>
+  );
+
+  // Sub-screen routing with persistent model atmosphere and magnifying glass effect
+  if (currentSubScreen === 'permissions') {
+    return wrapWithAtmosphere(
+      <PermissionsCenterView
+        permissions={permissions}
+        setPermissions={setPermissions}
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'native_integration') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <NativeIntegrationView
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <NativeIntegrationView
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'appearance') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AppearanceView
-          config={appearanceConfig}
-          onChange={(updated) => setAppearanceConfig(prev => ({ ...prev, ...updated }))}
-          onBack={() => setCurrentSubScreen('root')}
-          onNavigateToOrbStudio={() => setCurrentSubScreen('orb_customization')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <AppearanceView
+        config={appearanceConfig}
+        onChange={(updated) => setAppearanceConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => setCurrentSubScreen('root')}
+        onNavigateToOrbStudio={() => setCurrentSubScreen('orb_customization')}
+      />
     );
   }
 
   if (currentSubScreen === 'orb_customization') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <OrbCustomizationView
-          config={appearanceConfig}
-          onChange={(updated) => setAppearanceConfig(prev => ({ ...prev, ...updated }))}
-          onBack={() => setCurrentSubScreen('root')}
-          onNavigateToAppearance={() => setCurrentSubScreen('appearance')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <OrbCustomizationView
+        config={appearanceConfig}
+        onChange={(updated) => setAppearanceConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => setCurrentSubScreen('root')}
+        onNavigateToAppearance={() => setCurrentSubScreen('appearance')}
+      />
     );
   }
 
   if (currentSubScreen === 'personal') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <PersonalSettingsView
-          config={personalConfig}
-          onChange={(updated) => setPersonalConfig(prev => ({ ...prev, ...updated }))}
-          onOpenCountryPicker={() => setCurrentSubScreen('country_code')}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <PersonalSettingsView
+        config={personalConfig}
+        onChange={(updated) => setPersonalConfig(prev => ({ ...prev, ...updated }))}
+        onOpenCountryPicker={() => setCurrentSubScreen('country_code')}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'country_code') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <CountryCodeView
-          selectedDialCode={personalConfig.countryDialCode}
-          onSelectCountry={handleSelectCountry}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <CountryCodeView
+        selectedDialCode={personalConfig.countryDialCode}
+        onSelectCountry={handleSelectCountry}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'persona_voice_studio') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <PersonaVoiceStudioView
-          userGender="Male"
-          assistantConfig={assistantConfig}
-          onUpdateAssistantConfig={(patch) => setAssistantConfig((prev) => ({ ...prev, ...patch }))}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <PersonaVoiceStudioView
+        userGender="Male"
+        assistantConfig={assistantConfig}
+        onUpdateAssistantConfig={(patch) => setAssistantConfig((prev) => ({ ...prev, ...patch }))}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'touch_security_vault') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <TouchSecurityVaultView
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <TouchSecurityVaultView
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'system_unlock_automation') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <SystemUnlockAutomationView
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <SystemUnlockAutomationView
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'emergency_sos') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <EmergencySOSView
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <EmergencySOSView
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'driving_mode_studio') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <DrivingModeStudioView
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <DrivingModeStudioView
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'unified_app_hub') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <UnifiedAppHubView
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <UnifiedAppHubView
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'ai_toolkit_scanner') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AIToolkitScannerView
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <AIToolkitScannerView
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'smart_lifestyle_iot') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <SmartLifestyleIoTView
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <SmartLifestyleIoTView
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'deep_automation_matrix') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <DeepAutomationMatrixView
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <DeepAutomationMatrixView
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'quantum_memory_vision') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <QuantumMemoryVisionView
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <QuantumMemoryVisionView
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'automation_dialogue_matrix') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AutomationDialogueStudioView
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <AutomationDialogueStudioView
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'neural_trading_matrix') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <NeuralTradingStudioView
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <NeuralTradingStudioView
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'assistant') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AssistantSettingsView
-          config={assistantConfig}
-          onChange={(updated) => setAssistantConfig(prev => ({ ...prev, ...updated }))}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <AssistantSettingsView
+        config={assistantConfig}
+        onChange={(updated) => setAssistantConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'voice_guardian') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <VoiceGuardianView
-          config={voiceGuardianConfig}
-          onChange={(updated) => setVoiceGuardianConfig(prev => ({ ...prev, ...updated }))}
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <VoiceGuardianView
+        config={voiceGuardianConfig}
+        onChange={(updated) => setVoiceGuardianConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')}
+      />
     );
   }
 
   if (currentSubScreen === 'skills') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <SkillsView
-          skills={skills}
-          onToggleSkill={handleToggleSkill}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <SkillsView
+        skills={skills}
+        onToggleSkill={handleToggleSkill}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'sub_agents') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <SubAgentsView
-          subAgents={subAgents}
-          onToggleAgent={handleToggleAgent}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <SubAgentsView
+        subAgents={subAgents}
+        onToggleAgent={handleToggleAgent}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'backup') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <BackupView
-          memories={memories}
-          messages={messages}
-          onClearAllData={handleClearAllData}
-          onRestoreData={handleRestoreData}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <BackupView
+        memories={memories}
+        messages={messages}
+        onClearAllData={handleClearAllData}
+        onRestoreData={handleRestoreData}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'ai_provider_fallback') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AIProviderFallbackView
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <AIProviderFallbackView
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'advanced') {
     const isChargingNow = telemetryLive.chargingStatus?.toLowerCase().includes('charging') && !telemetryLive.chargingStatus?.toLowerCase().includes('not');
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AdvancedSettingsView
-          config={advancedConfig}
-          onChange={(updated) => setAdvancedConfig(prev => ({ ...prev, ...updated }))}
-          onBack={() => {
-            setCameFromAdvanced(false);
-            setCurrentSubScreen('root');
-          }}
-          onNavigateSubScreen={(screen) => {
-            setCameFromAdvanced(true);
-            setCurrentSubScreen(screen);
-          }}
-          telemetryLive={{
-            cpuTemp: telemetryLive.cpuTempCelsius ?? 38,
-            cpuLoad: telemetryLive.cpuUsage ?? 24,
-            ramAllocatedMb: Math.round((telemetryLive.ramUsedGb ?? 2.4) * 1024),
-            batteryLevel: telemetryLive.batteryLevel ?? 88,
-            batteryHealth: telemetryLive.batteryHealth || 'Good (98%)',
-            chargingStatus: isChargingNow ? 'Charging' : 'Discharging'
-          }}
-          permissions={permissions}
-          voiceGuardianConfig={voiceGuardianConfig}
-          appLockConfig={appLockConfig}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <AdvancedSettingsView
+        config={advancedConfig}
+        onChange={(updated) => setAdvancedConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => {
+          setCameFromAdvanced(false);
+          setCurrentSubScreen('root');
+        }}
+        onNavigateSubScreen={(screen) => {
+          setCameFromAdvanced(true);
+          setCurrentSubScreen(screen);
+        }}
+        telemetryLive={{
+          cpuTemp: telemetryLive.cpuTempCelsius ?? 38,
+          cpuLoad: telemetryLive.cpuUsage ?? 24,
+          ramAllocatedMb: Math.round((telemetryLive.ramUsedGb ?? 2.4) * 1024),
+          batteryLevel: telemetryLive.batteryLevel ?? 88,
+          batteryHealth: telemetryLive.batteryHealth || 'Good (98%)',
+          chargingStatus: isChargingNow ? 'Charging' : 'Discharging'
+        }}
+        permissions={permissions}
+        voiceGuardianConfig={voiceGuardianConfig}
+        appLockConfig={appLockConfig}
+      />
     );
   }
 
   if (currentSubScreen === 'optional_integrations') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <OptionalIntegrationsView
-          integrations={integrations}
-          onBack={() => setCurrentSubScreen('root')}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <OptionalIntegrationsView
+        integrations={integrations}
+        onBack={() => setCurrentSubScreen('root')}
+      />
     );
   }
 
   if (currentSubScreen === 'privacy') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <PrivacyView 
-          onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')} 
-          permissions={permissions}
-          setPermissions={setPermissions}
-          memories={memories}
-          setMemories={setMemories}
-          messages={messages}
-          setMessages={setMessages}
-          appLockConfig={appLockConfig}
-          onUpdateAppLock={onUpdateAppLock}
-          onLockAppNow={onLockAppNow}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <PrivacyView 
+        onBack={() => setCurrentSubScreen(cameFromAdvanced ? 'advanced' : 'root')} 
+        permissions={permissions}
+        setPermissions={setPermissions}
+        memories={memories}
+        setMemories={setMemories}
+        messages={messages}
+        setMessages={setMessages}
+        appLockConfig={appLockConfig}
+        onUpdateAppLock={onUpdateAppLock}
+        onLockAppNow={onLockAppNow}
+      />
     );
   }
 
   if (currentSubScreen === 'linked_devices') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <LinkedDevicesView onBack={() => setCurrentSubScreen('root')} />
-      </div>
+    return wrapWithAtmosphere(
+      <LinkedDevicesView onBack={() => setCurrentSubScreen('root')} />
     );
   }
 
   if (currentSubScreen === 'offline_models') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <OfflineModelsView onBack={() => setCurrentSubScreen('root')} />
-      </div>
+    return wrapWithAtmosphere(
+      <OfflineModelsView onBack={() => setCurrentSubScreen('root')} />
     );
   }
 
   if (currentSubScreen === 'whiteboard') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <WhiteboardTool 
-          onClose={() => setCurrentSubScreen('root')} 
-          onSendToChat={(text) => {
-            setMessages(prev => [
-              ...prev,
-              { id: `msg-${Date.now()}`, sender: 'user', role: 'user', text, timestamp: Date.now() }
-            ]);
-            setCurrentSubScreen('root');
-            onCloseSettings();
-          }}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <WhiteboardTool 
+        onClose={() => setCurrentSubScreen('root')} 
+        onSendToChat={(text) => {
+          setMessages(prev => [
+            ...prev,
+            { id: `msg-${Date.now()}`, sender: 'user', role: 'user', text, timestamp: Date.now() }
+          ]);
+          setCurrentSubScreen('root');
+          onCloseSettings();
+        }}
+      />
     );
   }
 
   if (currentSubScreen === 'about') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <AboutView 
-          onBack={() => setCurrentSubScreen('root')} 
-          onOpenOnboarding={onOpenOnboarding}
-        />
-      </div>
+    return wrapWithAtmosphere(
+      <AboutView 
+        onBack={() => setCurrentSubScreen('root')} 
+        onOpenOnboarding={onOpenOnboarding}
+      />
     );
   }
 
@@ -897,27 +908,36 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
   })).filter(section => section.items.length > 0);
 
   return (
-    <div className={`flex-1 flex flex-col h-full relative select-none overflow-hidden transition-colors duration-200 ${
-      isDark ? 'bg-[#070312] text-slate-100' : 'bg-slate-900 text-slate-100'
-    }`}>
+    <div className="flex-1 flex flex-col h-full relative select-none overflow-hidden text-slate-100 bg-transparent">
       {/* Dynamic Cosmic Ambient Particle Background */}
       <HomeAtmosphereBackground status="READY" />
       
       {/* Top Header - iPhone Liquid Frosted Glass */}
-      <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-[#120626]/80 backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-white/[0.06] backdrop-blur-3xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
-            onClick={onCloseSettings}
+            onClick={() => {
+              if (selectedCategory) {
+                setSelectedCategory(null);
+              } else {
+                onCloseSettings();
+              }
+            }}
             className="p-2 -ml-1 rounded-full text-purple-300 hover:text-white hover:bg-white/10 transition-all active:scale-95 cursor-pointer"
-            title="Back to Home"
+            title={selectedCategory ? 'Back to Categories' : 'Back to Home'}
           >
             <ArrowLeft className="w-5 h-5 stroke-[2] text-purple-200" />
           </button>
 
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold font-sans tracking-tight text-white">
-              Dashboard
+          <div className="flex flex-col min-w-0">
+            <h1 className="text-base font-bold font-sans tracking-tight text-white truncate">
+              {selectedCategory ? (CATEGORY_DETAILS[selectedCategory]?.name || selectedCategory) : 'Dashboard'}
             </h1>
+            {selectedCategory && (
+              <span className="text-[10px] text-purple-300/70 font-sans -mt-0.5 font-medium">
+                Dashboard &gt; {selectedCategory}
+              </span>
+            )}
           </div>
         </div>
 
@@ -949,7 +969,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search in Dashboard..."
-            className="w-full pl-9 pr-8 py-2 border border-white/20 rounded-2xl text-xs bg-[#160b29]/60 focus:bg-[#200e3b]/80 text-white placeholder:text-purple-300/40 focus:border-purple-400/70 focus:outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] font-sans"
+            className="w-full pl-9 pr-8 py-2 border border-white/20 rounded-2xl text-xs bg-white/[0.06] focus:bg-white/[0.12] text-white placeholder:text-purple-300/40 focus:border-purple-400/80 focus:outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] font-sans"
           />
           {searchQuery && (
             <button
@@ -962,141 +982,319 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         </div>
       </div>
 
-      {/* Main Settings List - Frosted Liquid Glass Cards */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-5 scrollbar-thin scrollbar-thumb-purple-500/20">
-        {/* Top Glance & Live Widgets Carousel (Watchlist, Alarms, Telemetry, Security) */}
-        {!searchQuery && (
-          <SettingsTopWidgetCarousel
-            onNavigateSubScreen={(screen) => setCurrentSubScreen(screen)}
-            assistantConfig={assistantConfig}
-            voiceGuardianConfig={voiceGuardianConfig}
-            personalConfig={personalConfig}
-            permissions={permissions}
-            appLockConfig={appLockConfig}
-          />
-        )}
-
-        {filteredSections.map((section, sIdx) => (
-          <div key={`section-${section.category}-${sIdx}`} className="space-y-2">
-            <div className="flex items-center gap-2 px-1 pt-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
-              <h3 className="text-[11px] font-sans font-bold tracking-wider uppercase text-purple-300/90">
-                {section.category}
-              </h3>
-              <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-500/30 via-purple-500/10 to-transparent" />
+      {/* Main Settings Body */}
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/20">
+        
+        {/* CASE 1: SEARCH QUERY ACTIVE - Show Matching Items Across All Categories */}
+        {searchQuery.trim().length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs text-purple-300/80 font-sans">
+                Search results for &quot;<span className="text-white font-semibold">{searchQuery}</span>&quot;
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/30">
+                {filteredSections.reduce((acc, sec) => acc + sec.items.length, 0)} results
+              </span>
             </div>
 
-            <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-[#160b29]/50 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
-              {section.items.map((item, itemIdx) => (
-                <button
-                  key={`item-${section.category}-${item.id}-${itemIdx}`}
-                  onClick={() => {
-                    if ((item as any).onClick) {
-                      (item as any).onClick();
-                    } else {
-                      setCurrentSubScreen(item.id);
-                    }
-                  }}
-                  className="w-full p-3.5 flex flex-col justify-center active:scale-[0.99] transition-all text-left group hover:bg-white/[0.06] cursor-pointer gap-1.5"
-                >
-                  <div className="w-full flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div className="shrink-0">
-                        {item.icon}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold font-sans tracking-tight text-white group-hover:text-purple-300 transition-colors truncate">
-                            {item.title}
-                          </span>
-                          {item.badge && (
-                            <span className={`text-[8px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm shrink-0 ${
-                              item.badge === 'STUDIO'
-                                ? 'bg-purple-950/80 text-purple-200 border border-purple-400/40'
-                                : item.badge === 'FINANCE AI'
-                                ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-400/40'
-                                : item.badge === 'DEV PRO' || item.badge === 'AUTO'
-                                ? 'bg-cyan-950/90 text-cyan-300 border border-cyan-400/40'
-                                : item.badge === 'SOS' || item.badge === 'SECURITY'
-                                ? 'bg-rose-950/90 text-rose-300 border border-rose-400/40'
-                                : item.badge === 'DARK'
-                                ? 'bg-purple-950/80 text-purple-300 border border-purple-500/30'
-                                : item.badge === 'LIGHT'
-                                ? 'bg-amber-950/80 text-amber-300 border border-amber-400/30'
-                                : item.badge.includes('OFF') || item.badge.includes('0/') 
-                                ? 'bg-white/10 text-purple-300/60 border border-white/10'
-                                : 'bg-emerald-950/80 text-emerald-300 border border-emerald-400/30'
-                            }`}>
-                              {item.badge}
-                            </span>
-                          )}
+            {filteredSections.map((section, sIdx) => (
+              <div key={`search-sec-${section.category}-${sIdx}`} className="space-y-2">
+                <div className="flex items-center gap-2 px-1 pt-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+                  <h3 className="text-[11px] font-sans font-bold tracking-wider uppercase text-purple-300/90">
+                    {section.category}
+                  </h3>
+                  <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-500/30 via-purple-500/10 to-transparent" />
+                </div>
+
+                <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                  {section.items.map((item, itemIdx) => (
+                    <button
+                      key={`search-item-${section.category}-${item.id}-${itemIdx}`}
+                      onClick={() => {
+                        if ((item as any).onClick) {
+                          (item as any).onClick();
+                        } else {
+                          setCurrentSubScreen(item.id);
+                        }
+                      }}
+                      className="w-full p-3.5 flex flex-col justify-center active:scale-[0.99] transition-all text-left group hover:bg-white/[0.06] cursor-pointer gap-1.5"
+                    >
+                      <div className="w-full flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          <div className="shrink-0">{item.icon}</div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold font-sans tracking-tight text-white group-hover:text-purple-300 transition-colors truncate">
+                                {item.title}
+                              </span>
+                              {item.badge && (
+                                <span className="text-[8px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm shrink-0 bg-purple-950/80 text-purple-200 border border-purple-400/40">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] font-normal font-sans line-clamp-1 mt-0.5 text-purple-200/60 leading-tight">
+                              {item.subtitle}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-[11px] font-normal font-sans line-clamp-1 mt-0.5 text-purple-200/60 leading-tight">
-                          {item.subtitle}
+                        <ChevronRight className="w-4 h-4 text-purple-300/50 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* CASE 2: ROOT CATEGORY HUB (No search & no category selected) */}
+        {!searchQuery && selectedCategory === null && (
+          <div className="space-y-4">
+            {/* Top Glance Live Widgets Carousel */}
+            <SettingsTopWidgetCarousel
+              onNavigateSubScreen={(screen) => setCurrentSubScreen(screen)}
+              assistantConfig={assistantConfig}
+              voiceGuardianConfig={voiceGuardianConfig}
+              personalConfig={personalConfig}
+              permissions={permissions}
+              appLockConfig={appLockConfig}
+            />
+
+            {/* Category Hub Title */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+                <h3 className="text-xs font-sans font-bold tracking-wider uppercase text-purple-200">
+                  Categories
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/30 font-bold">
+                  {settingSections.length}
+                </span>
+              </div>
+              <span className="text-[10px] text-purple-300/60 font-sans">
+                Ek-ek category ko tap karke dekhein
+              </span>
+            </div>
+
+            {/* Category Cards List with Magnifying Glass Frosted Finish */}
+            <div className="space-y-2.5">
+              {settingSections.map((section) => {
+                const meta = CATEGORY_DETAILS[section.category] || {
+                  name: section.category,
+                  subtitle: `${section.items.length} items`,
+                  icon: SettingsIcon,
+                  color: 'purple',
+                  countBadge: `${section.items.length} Settings`,
+                  tagline: 'Options configure karein'
+                };
+                const IconComp = meta.icon;
+
+                return (
+                  <button
+                    key={`cat-card-${section.category}`}
+                    onClick={() => setSelectedCategory(section.category)}
+                    className="w-full p-4 rounded-3xl bg-white/[0.07] hover:bg-white/[0.12] active:bg-white/[0.15] active:scale-[0.98] backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] flex items-center justify-between transition-all group text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0 pr-2">
+                      <AppIconTile icon={IconComp} color={meta.color} size="lg" />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold font-sans tracking-tight text-white group-hover:text-purple-300 transition-colors">
+                            {meta.name}
+                          </span>
+                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-200 border border-purple-400/40 shrink-0">
+                            {meta.countBadge}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-normal font-sans text-purple-200/70 line-clamp-1 mt-0.5">
+                          {meta.subtitle}
                         </p>
                       </div>
                     </div>
 
-                    <ChevronRight className="w-4 h-4 text-purple-300/50 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
-                  </div>
-
-                  {/* Android Home-Screen Watchlist / Widget Stack: Compact One-Line Live Summary Card */}
-                  {item.oneLineSummary && (
-                    <div className="w-full mt-1 px-3 py-2 rounded-2xl bg-[#0d051d]/90 border border-white/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] flex items-center justify-between gap-2 group-hover:border-purple-400/40 transition-colors">
-                      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
-                        {item.oneLineSummary.isLive && (
-                          <span className="relative flex h-2 w-2 shrink-0">
-                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                              item.oneLineSummary.chipTone === 'rose'
-                                ? 'bg-rose-400'
-                                : item.oneLineSummary.chipTone === 'amber'
-                                ? 'bg-amber-400'
-                                : item.oneLineSummary.chipTone === 'cyan'
-                                ? 'bg-cyan-400'
-                                : 'bg-emerald-400'
-                            }`} />
-                            <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                              item.oneLineSummary.chipTone === 'rose'
-                                ? 'bg-rose-500'
-                                : item.oneLineSummary.chipTone === 'amber'
-                                ? 'bg-amber-500'
-                                : item.oneLineSummary.chipTone === 'cyan'
-                                ? 'bg-cyan-500'
-                                : 'bg-emerald-500'
-                            }`} />
-                          </span>
-                        )}
-                        <span className="text-[11px] font-mono font-medium tracking-tight text-slate-100 truncate">
-                          {item.oneLineSummary.text}
-                        </span>
-                      </div>
-
-                      {item.oneLineSummary.chipLabel && (
-                        <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-lg shrink-0 tracking-wider shadow-sm border ${
-                          item.oneLineSummary.chipTone === 'rose'
-                            ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
-                            : item.oneLineSummary.chipTone === 'amber'
-                            ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
-                            : item.oneLineSummary.chipTone === 'cyan'
-                            ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40'
-                            : item.oneLineSummary.chipTone === 'purple'
-                            ? 'bg-purple-950/80 text-purple-300 border-purple-500/40'
-                            : item.oneLineSummary.chipTone === 'blue'
-                            ? 'bg-blue-950/80 text-blue-300 border-blue-500/40'
-                            : item.oneLineSummary.chipTone === 'slate'
-                            ? 'bg-slate-800/80 text-slate-300 border-slate-600/40'
-                            : 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
-                        }`}>
-                          {item.oneLineSummary.chipLabel}
-                        </span>
-                      )}
+                    <div className="w-8 h-8 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-purple-500/20 group-hover:border-purple-400/40 transition-all">
+                      <ChevronRight className="w-4 h-4 text-purple-300 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </div>
-                  )}
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        ))}
+        )}
+
+        {/* CASE 3: SELECTED CATEGORY DRILL-DOWN VIEW (Show Only Items of this Category) */}
+        {!searchQuery && selectedCategory !== null && (
+          <div className="space-y-4">
+            {/* Top Breadcrumb Back Navigation */}
+            <div className="flex items-center justify-between px-1">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className="flex items-center gap-1.5 text-xs text-purple-300 hover:text-white transition-colors cursor-pointer active:scale-95"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 stroke-[2.2]" />
+                <span className="font-semibold">Back to All Categories</span>
+              </button>
+              <span className="text-[10px] font-mono text-purple-300/60 uppercase tracking-wider font-bold">
+                {selectedCategory}
+              </span>
+            </div>
+
+            {/* Category Header Banner Card */}
+            {(() => {
+              const meta = CATEGORY_DETAILS[selectedCategory];
+              if (!meta) return null;
+              const IconComp = meta.icon;
+              return (
+                <div className="p-4 rounded-3xl bg-gradient-to-r from-purple-950/70 via-[#180935]/80 to-indigo-950/70 border border-purple-400/30 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.25)] backdrop-blur-2xl flex items-center gap-3.5">
+                  <AppIconTile icon={IconComp} color={meta.color} size="lg" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-bold text-white tracking-tight">
+                        {meta.name}
+                      </h2>
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 border border-purple-400/40">
+                        {meta.countBadge}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-purple-200/80 mt-0.5">
+                      {meta.tagline}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Render Items of this category */}
+            {settingSections
+              .filter(sec => sec.category === selectedCategory)
+              .map((section, sIdx) => (
+                <div key={`cat-detail-${section.category}-${sIdx}`} className="space-y-2">
+                  <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-[#160b29]/50 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                    {section.items.map((item, itemIdx) => (
+                      <button
+                        key={`cat-item-${section.category}-${item.id}-${itemIdx}`}
+                        onClick={() => {
+                          if ((item as any).onClick) {
+                            (item as any).onClick();
+                          } else {
+                            setCurrentSubScreen(item.id);
+                          }
+                        }}
+                        className="w-full p-3.5 flex flex-col justify-center active:scale-[0.99] transition-all text-left group hover:bg-white/[0.06] cursor-pointer gap-1.5"
+                      >
+                        <div className="w-full flex items-center justify-between">
+                          <div className="flex items-center gap-3 min-w-0 pr-2">
+                            <div className="shrink-0">
+                              {item.icon}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-bold font-sans tracking-tight text-white group-hover:text-purple-300 transition-colors truncate">
+                                  {item.title}
+                                </span>
+                                {item.badge && (
+                                  <span className={`text-[8px] font-mono px-2 py-0.5 rounded-full font-bold shadow-sm shrink-0 ${
+                                    item.badge === 'STUDIO'
+                                      ? 'bg-purple-950/80 text-purple-200 border border-purple-400/40'
+                                      : item.badge === 'FINANCE AI'
+                                      ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-400/40'
+                                      : item.badge === 'DEV PRO' || item.badge === 'AUTO'
+                                      ? 'bg-cyan-950/90 text-cyan-300 border border-cyan-400/40'
+                                      : item.badge === 'SOS' || item.badge === 'SECURITY'
+                                      ? 'bg-rose-950/90 text-rose-300 border border-rose-400/40'
+                                      : item.badge === 'DARK'
+                                      ? 'bg-purple-950/80 text-purple-300 border border-purple-500/30'
+                                      : item.badge === 'LIGHT'
+                                      ? 'bg-amber-950/80 text-amber-300 border border-amber-400/30'
+                                      : item.badge.includes('OFF') || item.badge.includes('0/') 
+                                      ? 'bg-white/10 text-purple-300/60 border border-white/10'
+                                      : 'bg-emerald-950/80 text-emerald-300 border border-emerald-400/30'
+                                  }`}>
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-normal font-sans line-clamp-1 mt-0.5 text-purple-200/60 leading-tight">
+                                {item.subtitle}
+                              </p>
+                            </div>
+                          </div>
+
+                          <ChevronRight className="w-4 h-4 text-purple-300/50 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                        </div>
+
+                        {/* Android Home-Screen Watchlist / Widget Stack: Compact One-Line Live Summary Card */}
+                        {item.oneLineSummary && (
+                          <div className="w-full mt-1 px-3 py-2 rounded-2xl bg-[#0d051d]/90 border border-white/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] flex items-center justify-between gap-2 group-hover:border-purple-400/40 transition-colors">
+                            <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                              {item.oneLineSummary.isLive && (
+                                <span className="relative flex h-2 w-2 shrink-0">
+                                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                    item.oneLineSummary.chipTone === 'rose'
+                                      ? 'bg-rose-400'
+                                      : item.oneLineSummary.chipTone === 'amber'
+                                      ? 'bg-amber-400'
+                                      : item.oneLineSummary.chipTone === 'cyan'
+                                      ? 'bg-cyan-400'
+                                      : 'bg-emerald-400'
+                                  }`} />
+                                  <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                                    item.oneLineSummary.chipTone === 'rose'
+                                      ? 'bg-rose-500'
+                                      : item.oneLineSummary.chipTone === 'amber'
+                                      ? 'bg-amber-500'
+                                      : item.oneLineSummary.chipTone === 'cyan'
+                                      ? 'bg-cyan-500'
+                                      : 'bg-emerald-500'
+                                  }`} />
+                                </span>
+                              )}
+                              <span className="text-[11px] font-mono font-medium tracking-tight text-slate-100 truncate">
+                                {item.oneLineSummary.text}
+                              </span>
+                            </div>
+
+                            {item.oneLineSummary.chipLabel && (
+                              <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-lg shrink-0 tracking-wider shadow-sm border ${
+                                item.oneLineSummary.chipTone === 'rose'
+                                  ? 'bg-rose-950/80 text-rose-300 border-rose-500/40'
+                                  : item.oneLineSummary.chipTone === 'amber'
+                                  ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                                  : item.oneLineSummary.chipTone === 'cyan'
+                                  ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40'
+                                  : item.oneLineSummary.chipTone === 'purple'
+                                  ? 'bg-purple-950/80 text-purple-300 border-purple-500/40'
+                                  : item.oneLineSummary.chipTone === 'blue'
+                                  ? 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                                  : item.oneLineSummary.chipTone === 'slate'
+                                  ? 'bg-slate-800/80 text-slate-300 border-slate-600/40'
+                                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                              }`}>
+                                {item.oneLineSummary.chipLabel}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+            {/* Quick Back Button at the bottom of the category */}
+            <div className="pt-2">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className="w-full py-3 px-4 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-purple-400/30 text-purple-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 stroke-[2]" />
+                <span>Back to all Categories</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Quick Replay Welcome Tour Card */}
         {onOpenOnboarding && (

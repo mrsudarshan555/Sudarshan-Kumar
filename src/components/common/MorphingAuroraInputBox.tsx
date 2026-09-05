@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Mic, ArrowUp, X, Paperclip } from 'lucide-react';
 import { AssistantStatus } from '../../types';
+import { AudioWaveformIcon } from './AudioWaveformIcon';
 
 interface MorphingAuroraInputBoxProps {
   inputText: string;
@@ -156,7 +157,9 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
             damping: 30,
             mass: 0.7
           }}
-          className="w-full relative rounded-[22px] p-[1.5px] shadow-[0_12px_45px_rgba(0,0,0,0.8),0_0_35px_rgba(217,70,239,0.3)] transition-all duration-300"
+          className={`w-full relative p-[1.5px] shadow-[0_12px_45px_rgba(0,0,0,0.8),0_0_35px_rgba(217,70,239,0.3)] transition-all duration-300 ${
+            isMultiLine ? 'rounded-[24px]' : 'rounded-full'
+          }`}
           style={{
             background: isFocused
               ? 'linear-gradient(135deg, rgba(99,102,241,0.9) 0%, rgba(147,51,234,0.7) 45%, rgba(217,70,239,0.95) 75%, rgba(244,114,182,1) 100%)'
@@ -165,8 +168,8 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
         >
           {/* Inner Frosted Glass Card with Half-and-Half Ambient Color Flow */}
           <div
-            className={`w-full rounded-[21px] transition-all duration-200 relative overflow-hidden backdrop-blur-2xl ${
-              isMultiLine ? 'p-3.5' : 'px-3.5 py-2.5'
+            className={`w-full transition-all duration-200 relative overflow-hidden backdrop-blur-2xl ${
+              isMultiLine ? 'rounded-[23px] p-3.5' : 'rounded-full px-4 py-2.5'
             }`}
             style={{
               background: 'linear-gradient(135deg, rgba(13, 8, 30, 0.88) 0%, rgba(20, 9, 42, 0.85) 45%, rgba(38, 10, 60, 0.82) 75%, rgba(48, 12, 68, 0.85) 100%)'
@@ -329,14 +332,14 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
                         whileTap={{ scale: 0.92 }}
                         type="button"
                         onClick={onTriggerVoice}
-                        className={`p-1.5 rounded-full transition-all cursor-pointer ${
+                        className={`p-1 rounded-full transition-all cursor-pointer flex items-center justify-center ${
                           status === 'LISTENING'
-                            ? 'bg-fuchsia-500 text-white shadow-[0_0_15px_rgba(217,70,239,0.9)] animate-pulse'
-                            : 'text-purple-200/80 hover:text-white hover:bg-white/10'
+                            ? 'bg-fuchsia-500/20 text-white shadow-[0_0_15px_rgba(217,70,239,0.8)] border border-fuchsia-400/50'
+                            : 'text-purple-200 hover:text-white hover:bg-white/10'
                         }`}
                         title="Voice input"
                       >
-                        <Mic className="w-4 h-4 stroke-[2]" />
+                        <AudioWaveformIcon status={status || 'READY'} barCount={4} className="w-5 h-5 text-purple-200" />
                       </motion.button>
                     )}
                   </AnimatePresence>

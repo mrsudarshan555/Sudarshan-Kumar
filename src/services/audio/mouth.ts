@@ -62,7 +62,16 @@ export class Mouth {
       options.onStart();
     }
 
-    const persona = options.persona || 'STONICX';
+    let activeMode = 'mayra';
+    try {
+      const savedConfig = localStorage.getItem('mayra_assistant_config');
+      if (savedConfig) {
+        const parsed = JSON.parse(savedConfig);
+        if (parsed.activeMode) activeMode = parsed.activeMode;
+      }
+    } catch (e) {}
+
+    const persona = options.persona || (activeMode === 'stonicx' ? 'STONICX' : 'MAYRA');
     const voiceName = options.voice || (persona === 'STONICX' ? 'Charon' : 'Aoede');
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine !== false : true;
 
@@ -110,20 +119,11 @@ export class Mouth {
           }
         }
       } catch (e) {
-        console.warn(`[Mouth Engine] Direct TTS service unreachable, engaging calibrated on-device ${persona} voice match.`);
+        console.warn(`[Mouth Engine] Direct TTS service unreachable for ${persona}: staying silent without browser voice fallback.`);
       }
     }
 
-    // 2. Secondary: Persona-matched On-Device Voice (Soft/Warm Female for MAYRA, Deep Baritone for STONICX)
-    const spoke = OfflineVoiceMatcher.speakOffline(text, {
-      persona,
-      language: options.language || 'en',
-      onStart: () => {},
-      onEnd: handleSpeechEnd
-    });
-
-    if (spoke) return true;
-
+    // Explicit User Rule: Do NOT fall back to robotic browser speechSynthesis on failure. Stay silent.
     handleSpeechEnd();
     return false;
   }

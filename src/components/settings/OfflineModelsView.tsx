@@ -193,27 +193,27 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
   const activeSelectedModel = models.find((m) => m.id === selectedModelId);
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#070914] text-slate-100 relative select-none">
+    <div className="flex-1 flex flex-col h-full bg-transparent text-slate-100 relative select-none">
       
-      {/* Top Bar Header */}
-      <div className="h-14 px-4 bg-[#080B1C] border-b border-white/5 flex items-center justify-between z-10 shrink-0">
+      {/* Top Bar Header - Liquid Magnifying Glass */}
+      <div className="h-14 px-4 bg-black/30 border-b border-white/10 backdrop-blur-3xl flex items-center justify-between z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-2 -ml-1 text-slate-400 hover:text-white rounded-full hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+            className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
             title="Back to Settings"
           >
-            <ArrowLeft className="w-5 h-5 text-white stroke-[1.8]" />
+            <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
 
           <div>
             <h1 className="text-sm font-bold font-sans text-white tracking-tight flex items-center gap-2">
               Local AI & Offline Mode
-              <span className="text-[9px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.2 rounded font-bold">
+              <span className="text-[9px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-bold">
                 llama.cpp GGUF
               </span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-sans">
+            <p className="text-[10px] text-purple-300/70 font-sans">
               Choose on-device neural model for offline chat & voice
             </p>
           </div>
@@ -222,7 +222,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
         <button
           onClick={loadStats}
           disabled={isRefreshing}
-          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
+          className="p-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-purple-200 hover:text-white border border-white/15 transition-all disabled:opacity-50 cursor-pointer"
           title="Refresh hardware stats"
         >
           <RefreshCw className={`w-4 h-4 stroke-[1.8] ${isRefreshing ? 'animate-spin text-blue-400' : ''}`} />
@@ -234,40 +234,40 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
 
         {/* Instant Switch Toast Banner */}
         {switchFeedback && (
-          <div className="p-3 rounded-2xl bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 text-xs font-sans flex items-center justify-between gap-2 shadow-lg shadow-cyan-950/30 animate-fade-in">
+          <div className="p-3.5 rounded-2xl bg-cyan-950/60 backdrop-blur-xl border border-cyan-500/40 text-cyan-200 text-xs font-sans flex items-center justify-between gap-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] animate-fade-in">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-cyan-400 shrink-0 stroke-[2]" />
               <span>{switchFeedback}</span>
             </div>
             <button
               onClick={() => setSwitchFeedback(null)}
-              className="text-cyan-400 hover:text-white p-1"
+              className="text-cyan-400 hover:text-white p-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5 stroke-[1.8]" />
             </button>
           </div>
         )}
 
-        {/* Device Resource Status & Active Model Highlight */}
-        <div className="bg-[#0C1021] border border-white/5 rounded-2xl p-3.5 space-y-3">
+        {/* Device Resource Status & Active Model Highlight - Magnifying Glass */}
+        <div className="bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl p-4 space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-[10px] font-sans font-bold text-purple-200/80 uppercase tracking-wider flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-blue-400 stroke-[1.8]" />
               System Status & Active Model
             </span>
-            <span className="text-[9px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/20">
+            <span className="text-[9px] font-sans text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-bold">
               ARM64 NEON ON-DEVICE
             </span>
           </div>
 
           {/* Active Model Focus Card */}
-          <div className="p-3 rounded-xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/40 border border-blue-500/30 space-y-1.5">
-            <div className="flex items-center justify-between text-[10px] font-mono">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/40 backdrop-blur-xl border border-blue-500/30 space-y-1.5 shadow-sm">
+            <div className="flex items-center justify-between text-[10px] font-sans">
               <span className="text-blue-300 font-bold flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                 SELECTED FOR OFFLINE CHAT:
               </span>
-              <span className="text-slate-300 font-semibold">
+              <span className="text-slate-200 font-semibold">
                 {activeSelectedModel?.status === 'READY' ? (
                   <span className="text-emerald-400 flex items-center gap-1 font-bold">
                     <Check className="w-3 h-3 stroke-[2]" /> READY FOR OFFLINE USE
@@ -281,43 +281,43 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
             </div>
             <div className="text-xs font-bold text-white font-sans flex items-center gap-2">
               {activeSelectedModel?.name || 'LFM 2.5 230M (Default)'}
-              <span className="text-[9px] font-mono font-normal text-slate-300 bg-white/10 px-1.5 py-0.5 rounded">
+              <span className="text-[9px] font-mono font-normal text-purple-200/80 bg-white/10 px-2 py-0.5 rounded-full">
                 {activeSelectedModel?.sizeFormatted}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 font-sans">
+            <p className="text-[10px] text-purple-200/70 font-sans">
               {activeSelectedModel?.description}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             {/* RAM Stats */}
-            <div className="bg-[#070914]/80 border border-white/5 rounded-xl p-2.5 flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 shrink-0">
+            <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 shrink-0 border border-blue-500/20">
                 <Cpu className="w-4 h-4 stroke-[1.8]" />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-slate-400 font-sans">Available RAM</div>
+                <div className="text-[10px] text-purple-200/70 font-sans">Available RAM</div>
                 <div className="text-xs font-mono font-bold text-white">
                   {memoryInfo.availRamMb > 0 ? `${memoryInfo.availRamMb} MB` : '1.8 GB free'}
                 </div>
-                <div className="text-[9px] text-slate-500 font-mono">
+                <div className="text-[9px] text-purple-300/50 font-mono">
                   {memoryInfo.totalRamMb > 0 ? `Total: ${(memoryInfo.totalRamMb / 1024).toFixed(1)} GB` : '6.0 GB budget'}
                 </div>
               </div>
             </div>
 
             {/* Storage Stats */}
-            <div className="bg-[#070914]/80 border border-white/5 rounded-xl p-2.5 flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
+            <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 shrink-0 border border-emerald-500/20">
                 <HardDrive className="w-4 h-4 stroke-[1.8]" />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-slate-400 font-sans">Internal Storage</div>
+                <div className="text-[10px] text-purple-200/70 font-sans">Internal Storage</div>
                 <div className="text-xs font-mono font-bold text-white">
                   {storageInfo.freeStorageMb > 0 ? `${(storageInfo.freeStorageMb / 1024).toFixed(1)} GB free` : '24.5 GB free'}
                 </div>
-                <div className="text-[9px] text-slate-500 font-mono">
+                <div className="text-[9px] text-purple-300/50 font-mono">
                   /files/models/
                 </div>
               </div>
@@ -326,17 +326,17 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
 
           {/* Active Model in RAM Indicator */}
           {engineStatus?.isModelLoaded && (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/20 text-xs text-emerald-300">
+            <div className="flex items-center justify-between p-2.5 rounded-2xl bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 text-xs text-emerald-300">
               <div className="flex items-center gap-2">
                 <Zap className="w-3.5 h-3.5 text-emerald-400 animate-pulse stroke-[1.8]" />
-                <span className="font-mono text-[11px]">
-                  Loaded in RAM: <strong className="text-white">{engineStatus.activeModelId}</strong>
+                <span className="font-sans text-[11px]">
+                  Loaded in RAM: <strong className="text-white font-mono">{engineStatus.activeModelId}</strong>
                 </span>
               </div>
               <button
                 onClick={handleUnloadModel}
                 disabled={actionLoadingId === 'unload'}
-                className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white transition-all disabled:opacity-50 cursor-pointer"
+                className="text-[10px] font-sans px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all disabled:opacity-50 cursor-pointer"
               >
                 {actionLoadingId === 'unload' ? 'Unloading...' : 'Unload RAM'}
               </button>
@@ -348,11 +348,11 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
         <div className="space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-[10px] font-mono font-bold text-blue-400/80 tracking-widest uppercase flex items-center gap-1.5">
+              <h3 className="text-[10px] font-sans font-bold text-blue-300/90 tracking-widest uppercase flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 text-blue-400 stroke-[1.8]" />
                 Offline AI Models (4-5 Options)
               </h3>
-              <span className="text-[9px] font-mono text-slate-400">
+              <span className="text-[9px] font-sans text-purple-200/70">
                 Click any model to select as active
               </span>
             </div>
@@ -379,14 +379,14 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                       handleSelectActiveModel(model.id);
                     }
                   }}
-                  className={`bg-[#0C1021] border rounded-2xl p-4 space-y-3 transition-all cursor-pointer relative overflow-hidden ${
+                  className={`backdrop-blur-2xl border rounded-3xl p-4 space-y-3 transition-all cursor-pointer relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
                     isSelected
-                      ? 'border-blue-500 ring-2 ring-blue-500/20 bg-gradient-to-b from-[#0e1630] to-[#0C1021] shadow-lg shadow-blue-950/40'
+                      ? 'border-blue-400 ring-2 ring-blue-500/20 bg-black/45'
                       : isLoaded 
-                      ? 'border-emerald-500/40' 
+                      ? 'border-emerald-500/40 bg-black/35' 
                       : isReady
-                      ? 'border-white/10 hover:border-white/20'
-                      : 'border-white/5 hover:border-white/15'
+                      ? 'border-white/15 hover:border-white/25 bg-black/35'
+                      : 'border-white/10 hover:border-white/20 bg-black/30'
                   }`}
                 >
                   {/* Selected Indicator Top Border Bar */}
@@ -405,10 +405,10 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                               e.stopPropagation();
                               handleSelectActiveModel(model.id);
                             }}
-                            className={`w-4 h-4 rounded-full flex items-center justify-center transition-all shrink-0 ${
+                            className={`w-4 h-4 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
                               isSelected
                                 ? 'bg-blue-500 text-white shadow-sm shadow-blue-400/50'
-                                : 'border border-slate-600 hover:border-slate-400'
+                                : 'border border-slate-500 hover:border-slate-300'
                             }`}
                             title="Select as active offline model"
                           >
@@ -421,28 +421,28 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                         </h4>
 
                         {isSelected && (
-                          <span className="text-[8px] font-mono font-bold bg-blue-500 text-white px-2 py-0.5 rounded-full shadow-sm">
+                          <span className="text-[8px] font-sans font-bold bg-blue-500 text-white px-2 py-0.5 rounded-full shadow-sm">
                             ★ ACTIVE CHAT MODEL
                           </span>
                         )}
 
                         {model.id === 'lfm2.5-230m-q4' && (
-                          <span className="text-[8px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">
+                          <span className="text-[8px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                             DEFAULT / BASE
                           </span>
                         )}
                         {model.category === 'voice_stt' && (
-                          <span className="text-[8px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.2 rounded">
+                          <span className="text-[8px] font-sans font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
                             WHISPER STT
                           </span>
                         )}
                         {model.category === 'voice_tts' && (
-                          <span className="text-[8px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded">
+                          <span className="text-[8px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
                             PIPER TTS
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                      <p className="text-[11px] text-purple-200/70 font-sans leading-relaxed">
                         {model.description}
                       </p>
                     </div>
@@ -453,18 +453,18 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                   </div>
 
                   {/* Model Metadata Spec Grid */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-[#070914]/60 border border-white/5 text-[10px] font-mono text-slate-400">
+                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10 text-[10px] font-sans text-purple-200/70">
                     <div>
-                      <span className="text-slate-500 block text-[9px]">FILE SIZE</span>
-                      <span className="text-slate-200 font-semibold">{model.sizeFormatted}</span>
+                      <span className="text-purple-300/50 block text-[9px]">FILE SIZE</span>
+                      <span className="text-slate-100 font-mono font-semibold">{model.sizeFormatted}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[9px]">FORMAT / QUANT</span>
-                      <span className="text-slate-200 font-semibold">{model.format} {model.quantization ? `• ${model.quantization}` : ''}</span>
+                      <span className="text-purple-300/50 block text-[9px]">FORMAT / QUANT</span>
+                      <span className="text-slate-100 font-mono font-semibold">{model.format} {model.quantization ? `• ${model.quantization}` : ''}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[9px]">RAM BUDGET</span>
-                      <span className="text-slate-200 font-semibold">{model.estimatedRamFormatted}</span>
+                      <span className="text-purple-300/50 block text-[9px]">RAM BUDGET</span>
+                      <span className="text-slate-100 font-mono font-semibold">{model.estimatedRamFormatted}</span>
                     </div>
                   </div>
 
@@ -472,9 +472,9 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                   {(isDownloading || isVerifying) && (
                     <div 
                       onClick={(e) => e.stopPropagation()} 
-                      className="space-y-2 p-3 rounded-xl bg-blue-950/30 border border-blue-500/30"
+                      className="space-y-2 p-3 rounded-2xl bg-blue-950/40 backdrop-blur-xl border border-blue-500/30 shadow-sm"
                     >
-                      <div className="flex items-center justify-between text-[10px] font-mono">
+                      <div className="flex items-center justify-between text-[10px] font-sans">
                         <span className="text-blue-300 font-bold flex items-center gap-1.5">
                           {isVerifying ? (
                             <>
@@ -484,11 +484,11 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                           ) : (
                             <>
                               <Download className="w-3.5 h-3.5 text-blue-400 stroke-[1.8] animate-bounce" />
-                              Downloading: <strong className="text-white ml-1">{model.progressPercent}%</strong>
+                              Downloading: <strong className="text-white ml-1 font-mono">{model.progressPercent}%</strong>
                             </>
                           )}
                         </span>
-                        <span className="text-slate-300 font-mono text-[10px]">
+                        <span className="text-slate-200 font-mono text-[10px]">
                           {model.speedMbps > 0 ? `${model.speedMbps} Mbps • ETA ${model.etaSeconds}s` : 'Connecting...'}
                         </span>
                       </div>
@@ -506,17 +506,17 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                       </div>
 
                       {/* Detail Metrics: MB Downloaded, MB Remaining */}
-                      <div className="flex items-center justify-between text-[9px] font-mono text-slate-400">
+                      <div className="flex items-center justify-between text-[9px] font-sans text-purple-200/70">
                         <span>
-                          Downloaded: <strong className="text-slate-200">{downloadedMb} MB</strong> / {totalMb} MB
+                          Downloaded: <strong className="text-slate-200 font-mono">{downloadedMb} MB</strong> / <span className="font-mono">{totalMb} MB</span>
                         </span>
-                        <span className="text-amber-300 font-semibold">
+                        <span className="text-amber-300 font-semibold font-mono">
                           {remainingMb} MB bacha hai
                         </span>
                         {isDownloading && (
                           <button
                             onClick={() => handleCancelDownload(model.id)}
-                            className="text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer"
+                            className="text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer font-sans"
                           >
                             Cancel Download
                           </button>
@@ -529,7 +529,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                   {model.lastErrorMessage && (
                     <div 
                       onClick={(e) => e.stopPropagation()} 
-                      className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-[10px] font-mono flex items-start gap-2"
+                      className="p-3 rounded-2xl bg-rose-950/50 backdrop-blur-xl border border-rose-500/30 text-rose-200 text-[10px] font-sans flex items-start gap-2"
                     >
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400 mt-0.5 stroke-[1.8]" />
                       <div className="min-w-0">
@@ -548,7 +548,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                     {model.status === 'NOT_INSTALLED' && (
                       <button
                         onClick={() => handleDownload(model.id)}
-                        className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-white text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all shadow-md shadow-blue-900/30 cursor-pointer"
+                        className="flex-1 py-2 px-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-white text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all shadow-md shadow-blue-900/30 cursor-pointer"
                       >
                         <Download className="w-3.5 h-3.5 stroke-[1.8]" />
                         Download Model ({model.sizeFormatted})
@@ -558,7 +558,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                     {(model.status === 'CORRUPTED' || model.status === 'ERROR') && (
                       <button
                         onClick={() => handleDownload(model.id)}
-                        className="flex-1 py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-98 text-white text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        className="flex-1 py-2 px-3.5 rounded-2xl bg-amber-600 hover:bg-amber-500 active:scale-98 text-white text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5 stroke-[1.8]" />
                         Retry Download
@@ -573,10 +573,10 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                           <button
                             onClick={() => handleSelectActiveModel(model.id)}
                             disabled={isSelected || actionLoadingId === `select-${model.id}`}
-                            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                            className={`flex-1 py-2 px-3.5 rounded-2xl text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                               isSelected
-                                ? 'bg-blue-950/60 border border-blue-500/40 text-blue-300 opacity-90'
-                                : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                                ? 'bg-blue-950/60 backdrop-blur-xl border border-blue-500/40 text-blue-300 opacity-90'
+                                : 'bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/15'
                             }`}
                           >
                             <Check className="w-3.5 h-3.5 stroke-[2]" />
@@ -589,7 +589,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                           <button
                             onClick={handleUnloadModel}
                             disabled={actionLoadingId === 'unload'}
-                            className="py-2 px-3 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/30 text-amber-300 text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
+                            className="py-2 px-3.5 rounded-2xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/30 text-amber-300 text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
                           >
                             <Square className="w-3.5 h-3.5 text-amber-400 stroke-[1.8]" />
                             Unload
@@ -598,7 +598,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                           <button
                             onClick={() => handleLoadModel(model.id)}
                             disabled={actionLoadingId === model.id}
-                            className="py-2 px-3 rounded-xl bg-emerald-600/80 hover:bg-emerald-500 text-white text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
+                            className="py-2 px-3.5 rounded-2xl bg-emerald-600/80 hover:bg-emerald-500 text-white text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
                             title="Pre-warm model into RAM"
                           >
                             <Play className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -610,7 +610,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                         <button
                           onClick={() => handleRunDiagnostic(model.id)}
                           disabled={isTesting}
-                          className="py-2 px-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/60 border border-purple-500/30 text-purple-300 text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                          className="py-2 px-3.5 rounded-2xl bg-purple-950/60 hover:bg-purple-900/60 border border-purple-500/30 text-purple-300 text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer"
                           title="Run real diagnostic test on this model"
                         >
                           <Terminal className={`w-3.5 h-3.5 stroke-[1.8] ${isTesting ? 'animate-spin text-purple-400' : ''}`} />
@@ -623,13 +623,13 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                             <button
                               onClick={() => handleDeleteModel(model.id)}
                               disabled={actionLoadingId === model.id}
-                              className="p-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-mono font-bold transition-all cursor-pointer"
+                              className="px-3 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-sans font-bold transition-all cursor-pointer"
                             >
                               Confirm
                             </button>
                             <button
                               onClick={() => setConfirmDeleteId(null)}
-                              className="p-2 rounded-xl bg-white/10 text-slate-300 text-[10px] font-mono transition-all cursor-pointer"
+                              className="p-2 rounded-2xl bg-white/10 text-slate-300 text-[10px] font-sans transition-all cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5 stroke-[1.8]" />
                             </button>
@@ -637,7 +637,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                         ) : (
                           <button
                             onClick={() => setConfirmDeleteId(model.id)}
-                            className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-white/5 transition-all shrink-0 cursor-pointer"
+                            className="p-2.5 rounded-2xl bg-white/[0.08] hover:bg-rose-500/20 text-purple-200 hover:text-rose-400 border border-white/15 transition-all shrink-0 cursor-pointer"
                             title="Delete model file"
                           >
                             <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -652,51 +652,51 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
           </div>
         </div>
 
-        {/* Diagnostic Test Output Display Panel */}
+        {/* Diagnostic Test Output Display Panel - Magnifying Glass */}
         {diagnosticResult && (
-          <div className="bg-[#0C1021] border border-purple-500/30 rounded-2xl p-4 space-y-3 shadow-lg shadow-purple-950/20">
+          <div className="bg-black/35 backdrop-blur-2xl border border-purple-500/30 rounded-3xl p-4 space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-sans font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 stroke-[1.8]" />
                 llama.cpp Native Engine Diagnostic Test
               </span>
               <button
                 onClick={() => setDiagnosticResult(null)}
-                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                className="text-purple-300 hover:text-white p-1 cursor-pointer"
               >
-                <X className="w-3 h-3 stroke-[1.8]" />
+                <X className="w-3.5 h-3.5 stroke-[1.8]" />
               </button>
             </div>
 
-            <div className="space-y-2 text-xs font-mono">
-              <div className="p-2 rounded-xl bg-[#070914] border border-white/5">
-                <span className="text-slate-500 block text-[9px]">TEST PROMPT</span>
-                <span className="text-slate-200 font-semibold">{diagnosticResult.prompt}</span>
+            <div className="space-y-2 text-xs font-sans">
+              <div className="p-3 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10">
+                <span className="text-purple-300/50 block text-[9px]">TEST PROMPT</span>
+                <span className="text-slate-100 font-mono font-semibold">{diagnosticResult.prompt}</span>
               </div>
 
               {diagnosticResult.success ? (
-                <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-2">
+                <div className="p-3.5 rounded-2xl bg-emerald-950/40 backdrop-blur-xl border border-emerald-500/30 space-y-2">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="text-emerald-400 font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 stroke-[1.8]" />
                       Inference Successful
                     </span>
-                    <span className="text-slate-400 font-mono">
+                    <span className="text-purple-200/70 font-mono">
                       {diagnosticResult.tokensPerSecond.toFixed(1)} tokens/sec • {diagnosticResult.durationMs.toFixed(0)} ms
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-[#070914] border border-white/5 text-slate-100 font-mono text-xs whitespace-pre-wrap">
+                  <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-slate-100 font-mono text-xs whitespace-pre-wrap">
                     {diagnosticResult.response || 'MAYRA OFFLINE TEST OK'}
                   </div>
                 </div>
               ) : (
-                <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-500/30 space-y-1">
+                <div className="p-3.5 rounded-2xl bg-rose-950/40 backdrop-blur-xl border border-rose-500/30 space-y-1">
                   <div className="text-rose-400 font-bold text-[10px] flex items-center gap-1">
                     <AlertCircle className="w-3 h-3 stroke-[1.8]" />
                     Inference Test Failed
                   </div>
-                  <div className="text-rose-300 text-[11px]">
+                  <div className="text-rose-200 text-[11px]">
                     {diagnosticResult.error}
                   </div>
                 </div>

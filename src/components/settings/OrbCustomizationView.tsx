@@ -94,31 +94,25 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
   ];
 
   return (
-    <div className={`flex-1 flex flex-col h-full overflow-hidden select-none transition-colors duration-200 ${
-      isDark ? 'bg-[#070914] text-slate-100' : 'bg-slate-50 text-slate-900'
-    }`}>
+    <div className="flex-1 flex flex-col h-full overflow-hidden select-none bg-transparent text-slate-100">
       
-      {/* Top App Bar */}
-      <div className={`h-14 px-4 border-b flex items-center justify-between z-10 shrink-0 ${
-        isDark ? 'bg-[#080B1C] border-white/5' : 'bg-white border-slate-200 shadow-sm'
-      }`}>
+      {/* Top App Bar - Liquid Magnifying Glass */}
+      <div className="h-14 px-4 border-b border-white/10 bg-black/30 backdrop-blur-3xl flex items-center justify-between z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className={`p-2 -ml-1 rounded-full transition-all active:scale-95 ${
-              isDark ? 'text-slate-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+            className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
             title="Back to Settings"
           >
-            <ArrowLeft className={`w-5 h-5 ${isDark ? 'text-white' : 'text-slate-800'}`} />
+            <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
           <div className="flex items-center gap-2.5">
             <AppIconTile icon={Sparkles} color="cyan" size="sm" />
             <div>
-              <h1 className={`font-bold text-sm tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <h1 className="font-bold text-sm tracking-tight text-white font-sans">
                 Orb Customization Studio
               </h1>
-              <p className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className="text-[10px] font-normal text-purple-300/70 font-sans">
                 Rendering Engine & Aura Presence
               </p>
             </div>
@@ -128,11 +122,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         {onNavigateToAppearance && (
           <button
             onClick={onNavigateToAppearance}
-            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
-              isDark 
-                ? 'bg-purple-950/40 border-purple-500/30 text-purple-300 hover:bg-purple-900/50' 
-                : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'
-            }`}
+            className="text-[11px] font-bold px-3 py-1 rounded-xl border border-purple-500/30 bg-purple-950/40 text-purple-300 hover:bg-purple-900/50 backdrop-blur-xl transition-all cursor-pointer"
           >
             Styles
           </button>
@@ -142,12 +132,8 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
       {/* Main Scrollable Canvas */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10">
 
-        {/* (a) LARGE LIVE PREVIEW BOX */}
-        <section className={`p-4 rounded-2xl border relative overflow-hidden transition-all ${
-          isDark 
-            ? 'bg-gradient-to-b from-[#0e142c] via-[#090d1f] to-[#060815] border-cyan-500/25 shadow-[0_8px_30px_rgba(6,182,212,0.15)]' 
-            : 'bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 text-white border-slate-700 shadow-md'
-        }`}>
+        {/* (a) LARGE LIVE PREVIEW BOX - Liquid Magnifying Glass */}
+        <section className="p-4 rounded-3xl border border-cyan-500/30 bg-black/35 backdrop-blur-2xl relative overflow-hidden transition-all shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           {/* Subtle Ambient Radial Glow */}
           <div 
             className="absolute inset-0 pointer-events-none opacity-40 blur-2xl transition-all duration-500"
@@ -163,11 +149,11 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
             <div className="w-full flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300 font-sans">
                   LIVE REAL-TIME ENGINE PREVIEW
                 </span>
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-200 border border-white/15">
+              <span className="text-[10px] font-sans font-bold px-2.5 py-0.5 rounded-full bg-white/[0.08] text-purple-200 border border-white/15 backdrop-blur-xl">
                 {currentStyleDef.name} • {currentOrbType.toUpperCase()}
               </span>
             </div>
@@ -191,8 +177,8 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
             </div>
 
             {/* Simulation Status Controls */}
-            <div className="w-full pt-2 border-t border-white/10 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="w-full pt-2.5 border-t border-white/10 flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300/70 font-sans">
                 Simulate Status:
               </span>
               <div className="flex items-center gap-1">
@@ -200,10 +186,10 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                   <button
                     key={st}
                     onClick={() => setPreviewStatus(st)}
-                    className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold transition-all ${
+                    className={`px-2.5 py-1 rounded-xl text-[9px] font-sans font-bold transition-all cursor-pointer ${
                       previewStatus === st
-                        ? 'bg-cyan-500 text-slate-950 shadow-sm font-extrabold'
-                        : 'bg-white/5 hover:bg-white/10 text-slate-300'
+                        ? 'bg-cyan-500 text-slate-950 shadow-md font-extrabold'
+                        : 'bg-white/[0.06] hover:bg-white/[0.12] text-purple-200'
                     }`}
                   >
                     {st}
@@ -218,14 +204,12 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         <section className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`} />
-              <h3 className={`text-[10px] font-bold uppercase tracking-widest ${
-                isDark ? 'text-cyan-400' : 'text-cyan-600'
-              }`}>
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <h3 className="text-[10px] font-sans font-bold uppercase tracking-widest text-cyan-400">
                 ORB CORE STYLES & PRESETS
               </h3>
             </div>
-            <span className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className="text-[10px] font-sans font-normal text-purple-200/70">
               {ORB_STYLES.length} Dynamic Engines
             </span>
           </div>
@@ -240,20 +224,16 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                 <button
                   key={styleDef.id}
                   onClick={() => onChange({ orbStyle: styleDef.id })}
-                  className={`p-3 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between group ${
+                  className={`p-3.5 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between group backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] cursor-pointer ${
                     isSelected
-                      ? isDark
-                        ? 'bg-gradient-to-b from-[#141b3a] to-[#0a1024] border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                        : 'bg-gradient-to-b from-cyan-50 to-white border-cyan-500 shadow-md ring-1 ring-cyan-500'
-                      : isDark
-                      ? 'bg-[#0C1021] border-white/10 hover:border-cyan-500/40 hover:bg-white/[0.04]'
-                      : 'bg-white border-slate-200 hover:border-cyan-400 hover:bg-slate-50'
+                      ? 'bg-cyan-950/40 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
+                      : 'bg-black/35 border-white/15 hover:border-cyan-400/50 hover:bg-black/45'
                   }`}
                 >
                   {/* Top Badge for Video Special */}
                   {isVideoSpecial && (
                     <div className="absolute top-2 right-2">
-                      <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                         NEW HD
                       </span>
                     </div>
@@ -275,10 +255,10 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
 
                   <div className="mt-1">
                     <div className="flex items-center justify-between">
-                      <span className={`font-bold text-xs tracking-tight ${
+                      <span className={`font-bold text-xs tracking-tight font-sans ${
                         isSelected 
-                          ? isDark ? 'text-white font-extrabold' : 'text-cyan-950 font-extrabold'
-                          : isDark ? 'text-slate-100' : 'text-slate-900'
+                          ? 'text-white font-extrabold'
+                          : 'text-slate-100'
                       }`}>
                         {styleDef.name}
                       </span>
@@ -286,9 +266,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                         <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                       )}
                     </div>
-                    <p className={`text-[9px] font-normal mt-0.5 line-clamp-2 leading-tight ${
-                      isDark ? 'text-slate-400' : 'text-slate-500'
-                    }`}>
+                    <p className="text-[9px] font-sans font-normal mt-0.5 line-clamp-2 leading-tight text-purple-200/70">
                       {styleDef.description}
                     </p>
                   </div>
@@ -301,12 +279,10 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         {/* (c) 'ORB TYPE' QUICK-SELECT BUTTONS */}
         <section className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h3 className={`text-[10px] font-bold uppercase tracking-widest ${
-              isDark ? 'text-cyan-400' : 'text-cyan-600'
-            }`}>
+            <h3 className="text-[10px] font-sans font-bold uppercase tracking-widest text-cyan-400">
               ORB RENDERING TYPE
             </h3>
-            <span className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className="text-[10px] font-sans font-normal text-purple-200/70">
               Visual Treatment Layer
             </span>
           </div>
@@ -318,24 +294,16 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                 <button
                   key={type.id}
                   onClick={() => handleOrbTypeSelect(type.id)}
-                  className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
+                  className={`p-3.5 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] cursor-pointer ${
                     isSelected
-                      ? isDark
-                        ? 'bg-cyan-950/40 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400'
-                        : 'bg-cyan-50 border-cyan-500 shadow-sm ring-1 ring-cyan-500'
-                      : isDark
-                      ? 'bg-[#0C1021] border-white/5 hover:bg-white/5 hover:border-white/15'
-                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                      ? 'bg-cyan-950/40 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400'
+                      : 'bg-black/35 border-white/15 hover:bg-black/45 hover:border-cyan-400/40'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-1">
                     <div className="flex items-center gap-2">
                       <AppIconTile icon={type.icon} color={type.color} size="xs" />
-                      <span className={`font-bold text-xs tracking-tight ${
-                        isSelected 
-                          ? isDark ? 'text-white' : 'text-cyan-950'
-                          : isDark ? 'text-white' : 'text-slate-900'
-                      }`}>
+                      <span className="font-bold text-xs tracking-tight text-white font-sans">
                         {type.label}
                       </span>
                     </div>
@@ -345,9 +313,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                     )}
                   </div>
 
-                  <p className={`text-[10px] font-normal leading-relaxed mt-1 line-clamp-2 ${
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  }`}>
+                  <p className="text-[10px] font-sans font-normal leading-relaxed mt-1 line-clamp-2 text-purple-200/70">
                     {type.desc}
                   </p>
                 </button>
@@ -356,25 +322,21 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
           </div>
         </section>
 
-        {/* (c) ADJUST ORB SIZE SLIDER */}
-        <section className={`p-4 rounded-2xl border transition-all ${
-          isDark ? 'bg-[#0C1021] border-white/10 shadow-lg' : 'bg-white border-slate-200 shadow-sm'
-        }`}>
+        {/* (c) ADJUST ORB SIZE SLIDER - Liquid Magnifying Glass */}
+        <section className="p-4 rounded-3xl border border-white/15 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <AppIconTile icon={Sliders} color="blue" size="xs" />
               <div>
-                <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <h4 className="font-bold text-xs text-white font-sans">
                   Adjust Orb Size
                 </h4>
-                <p className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <p className="text-[10px] font-normal text-purple-200/70 font-sans">
                   Continuous scaling for home stage & widget
                 </p>
               </div>
             </div>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold ${
-              isDark ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-cyan-100 text-cyan-800'
-            }`}>
+            <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               {config.orbSize} dp
             </span>
           </div>
@@ -389,7 +351,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
               onChange={handleSizeChange}
               className="w-full h-2 bg-slate-700/60 rounded-lg appearance-none cursor-pointer accent-cyan-400"
             />
-            <div className="flex justify-between text-[9px] font-mono font-normal text-slate-400 px-1">
+            <div className="flex justify-between text-[9px] font-sans font-normal text-purple-300/60 px-1">
               <span>Compact (44dp)</span>
               <span>Standard (64dp)</span>
               <span>Large (96dp)</span>
@@ -399,24 +361,22 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         </section>
 
         {/* (d) ADJUST COLOR HUE: CONTINUOUS RAINBOW GRADIENT SLIDER */}
-        <section className={`p-4 rounded-2xl border transition-all ${
-          isDark ? 'bg-[#0C1021] border-white/10 shadow-lg' : 'bg-white border-slate-200 shadow-sm'
-        }`}>
+        <section className="p-4 rounded-3xl border border-white/15 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <AppIconTile icon={Palette} color="pink" size="xs" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  <h4 className="font-bold text-xs text-white font-sans">
                     Adjust Color Hue
                   </h4>
                   {hasCustomHue && (
-                    <span className="px-1.5 py-0.2 rounded text-[8px] font-mono font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-mono font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">
                       SPECTRUM HUE
                     </span>
                   )}
                 </div>
-                <p className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <p className="text-[10px] font-normal text-purple-200/70 font-sans">
                   Full 360° continuous rainbow spectrum slider
                 </p>
               </div>
@@ -425,18 +385,14 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
             {hasCustomHue ? (
               <button
                 onClick={handleResetHueToPreset}
-                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
-                  isDark ? 'bg-white/10 hover:bg-white/15 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-sans font-bold bg-white/10 hover:bg-white/15 text-slate-200 border border-white/15 transition-all cursor-pointer"
                 title="Reset to preset color swatch"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset</span>
               </button>
             ) : (
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700'
-              }`}>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-sans font-bold bg-white/10 text-purple-200 border border-white/10">
                 Preset: {config.orbColor.toUpperCase()}
               </span>
             )}
@@ -452,7 +408,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                 step="1"
                 value={currentHue}
                 onChange={handleHueSliderChange}
-                className="w-full h-4 rounded-lg appearance-none cursor-pointer"
+                className="w-full h-4 rounded-xl appearance-none cursor-pointer"
                 style={{
                   background: 'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)'
                 }}
@@ -466,11 +422,11 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                   className="w-5 h-5 rounded-full border-2 border-white shadow-md"
                   style={{ backgroundColor: `hsl(${currentHue}, 95%, 55%)` }}
                 />
-                <span className={`text-[11px] font-mono font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <span className="text-[11px] font-mono font-bold text-white">
                   Hue: {currentHue}°
                 </span>
               </div>
-              <span className={`text-[10px] font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className="text-[10px] font-sans text-purple-300/60">
                 {hasCustomHue ? 'Continuous Custom Palette' : 'Sliding overrides preset'}
               </span>
             </div>
@@ -480,32 +436,26 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         {/* (e & f) SYSTEM PRESENCE & INTERACTIVE VISUALIZERS */}
         <section className="space-y-2">
           <div className="flex items-center justify-between px-1">
-            <h3 className={`text-[10px] font-bold uppercase tracking-widest ${
-              isDark ? 'text-cyan-400' : 'text-cyan-600'
-            }`}>
+            <h3 className="text-[10px] font-sans font-bold uppercase tracking-widest text-cyan-400">
               SYSTEM PRESENCE & VISUALIZERS
             </h3>
-            <span className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className="text-[10px] font-sans font-normal text-purple-200/70">
               Voice Reactivity & Edge Glow
             </span>
           </div>
 
-          <div className={`border rounded-2xl overflow-hidden divide-y ${
-            isDark 
-              ? 'bg-[#0C1021] border-white/5 divide-white/5 shadow-lg' 
-              : 'bg-white border-slate-200 divide-slate-100 shadow-xs'
-          }`}>
+          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             
             {/* (e) Voice Visualizer Toggle */}
-            <div className="p-3.5 flex items-center justify-between">
+            <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 pr-2">
                 <AppIconTile icon={Volume2} color="cyan" size="xs" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <span className="font-bold text-xs text-white font-sans">
                       Voice Visualizer Presence
                     </span>
-                    <span className={`text-[8px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                    <span className={`text-[8px] font-sans px-2 py-0.5 rounded-full font-bold ${
                       (config.voiceVisualizerEnabled ?? true)
                         ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
                         : 'bg-slate-800 text-slate-400'
@@ -513,7 +463,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                       {(config.voiceVisualizerEnabled ?? true) ? 'ACTIVE' : 'OFF'}
                     </span>
                   </div>
-                  <p className={`text-[10px] font-normal mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className="text-[10px] font-sans font-normal mt-0.5 text-purple-200/70">
                     Ambient orb dot sits quietly at idle and dynamically expands in real-time while MAYRA is speaking
                   </p>
                 </div>
@@ -521,7 +471,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
 
               <button
                 onClick={handleToggleVoiceVisualizer}
-                className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out relative shrink-0 ${
+                className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out relative shrink-0 cursor-pointer ${
                   (config.voiceVisualizerEnabled ?? true) ? 'bg-cyan-600' : 'bg-slate-700'
                 }`}
               >
@@ -532,15 +482,15 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
             </div>
 
             {/* (f) Aura Border Mode Toggle */}
-            <div className="p-3.5 flex items-center justify-between">
+            <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 pr-2">
                 <AppIconTile icon={ShieldCheck} color="purple" size="xs" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <span className="font-bold text-xs text-white font-sans">
                       Aura Border Mode
                     </span>
-                    <span className={`text-[8px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                    <span className={`text-[8px] font-sans px-2 py-0.5 rounded-full font-bold ${
                       (config.auraBorderMode ?? false)
                         ? 'bg-purple-950/80 text-purple-400 border border-purple-500/30'
                         : 'bg-slate-800 text-slate-400'
@@ -548,7 +498,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                       {(config.auraBorderMode ?? false) ? 'AURA ON' : 'OFF'}
                     </span>
                   </div>
-                  <p className={`text-[10px] font-normal mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className="text-[10px] font-sans font-normal mt-0.5 text-purple-200/70">
                     Shows a thin, rotating glowing chromatic aura border around the phone screen bezel
                   </p>
                 </div>
@@ -556,7 +506,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
 
               <button
                 onClick={handleToggleAuraBorder}
-                className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out relative shrink-0 ${
+                className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out relative shrink-0 cursor-pointer ${
                   (config.auraBorderMode ?? false) ? 'bg-purple-600' : 'bg-slate-700'
                 }`}
               >
@@ -572,12 +522,10 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         {/* 3. ALTERNATE APP LAUNCHER ICON VARIANTS */}
         <section className="space-y-2 pb-6">
           <div className="flex items-center justify-between px-1">
-            <h3 className={`text-[10px] font-bold uppercase tracking-widest ${
-              isDark ? 'text-cyan-400' : 'text-cyan-600'
-            }`}>
+            <h3 className="text-[10px] font-sans font-bold uppercase tracking-widest text-cyan-400">
               APP LAUNCHER ICON THEMES
             </h3>
-            <span className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className="text-[10px] font-sans font-normal text-purple-200/70">
               Dynamic Insignia Styling
             </span>
           </div>
@@ -589,14 +537,10 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                 <button
                   key={iconDef.id}
                   onClick={() => handleSelectLauncherIcon(iconDef.id)}
-                  className={`p-3 rounded-xl border text-left transition-all relative flex flex-col items-center text-center ${
+                  className={`p-3.5 rounded-3xl border text-left transition-all relative flex flex-col items-center text-center backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] cursor-pointer ${
                     isSelected
-                      ? isDark
-                        ? 'bg-[#0E152D] border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                        : 'bg-cyan-50 border-cyan-500 shadow-sm ring-1 ring-cyan-500'
-                      : isDark
-                      ? 'bg-[#0C1021] border-white/5 hover:bg-white/5'
-                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                      ? 'bg-cyan-950/40 border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
+                      : 'bg-black/35 border-white/15 hover:bg-black/45 hover:border-cyan-400/40'
                   }`}
                 >
                   <div className="mb-2">
@@ -607,22 +551,20 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                     />
                   </div>
 
-                  <span className={`font-bold text-xs tracking-tight ${
+                  <span className={`font-bold text-xs tracking-tight font-sans ${
                     isSelected 
-                      ? isDark ? 'text-white font-extrabold' : 'text-cyan-950 font-extrabold'
-                      : isDark ? 'text-white' : 'text-slate-900'
+                      ? 'text-white font-extrabold'
+                      : 'text-slate-100'
                   }`}>
                     {iconDef.name}
                   </span>
 
-                  <p className={`text-[9px] font-normal mt-0.5 line-clamp-1 ${
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  }`}>
+                  <p className="text-[9px] font-sans font-normal mt-0.5 line-clamp-1 text-purple-200/70">
                     {iconDef.subtitle}
                   </p>
 
                   {isSelected && (
-                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-mono font-bold text-cyan-400">
+                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-sans font-bold text-cyan-400">
                       <CheckCircle2 className="w-3 h-3" />
                       <span>ACTIVE</span>
                     </div>

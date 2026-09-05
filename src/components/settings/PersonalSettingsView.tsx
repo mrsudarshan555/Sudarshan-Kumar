@@ -46,10 +46,10 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-[#070312] text-slate-100 scrollbar-thin scrollbar-thumb-purple-500/20">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-100 scrollbar-thin scrollbar-thumb-purple-500/20">
       
-      {/* Top Header with Back Arrow - iPhone Frosted Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#120626]/80 backdrop-blur-2xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      {/* Top Header with Back Arrow - Liquid Magnifying Frosted Glass */}
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -77,8 +77,8 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
 
       <div className="p-4 space-y-4 text-xs font-sans pb-8">
         
-        {/* Connected Cloud Account Status Card */}
-        <div className="p-4 bg-gradient-to-br from-[#1c0d36]/70 to-[#120626]/80 backdrop-blur-2xl border border-purple-500/30 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        {/* Connected Cloud Account Status Card - Magnifying Glass */}
+        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-purple-300" /> Account Status
@@ -122,8 +122,8 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
           </div>
         </div>
 
-        {/* User Identity & Editable Details Section */}
-        <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        {/* User Identity & Editable Details Section - Magnifying Glass */}
+        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <User className="w-3.5 h-3.5" /> User Profile & Details
           </div>

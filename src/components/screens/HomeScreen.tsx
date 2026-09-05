@@ -271,42 +271,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const getStatusBadge = () => {
     switch (status) {
+      case 'SPEAKING':
+        return {
+          label: 'Speaking...',
+          textColor: 'text-emerald-300',
+          dotColor: 'bg-emerald-400'
+        };
       case 'LISTENING':
         return {
-          label: 'LISTENING',
-          badgeColor: 'text-cyan-300 bg-cyan-950/70 border-cyan-400/40 shadow-[0_0_12px_rgba(6,182,212,0.4)]',
+          label: 'Listening...',
+          textColor: 'text-cyan-300',
           dotColor: 'bg-cyan-400'
         };
       case 'THINKING':
         return {
-          label: 'REASONING',
-          badgeColor: 'text-amber-300 bg-amber-950/70 border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.4)]',
+          label: 'Thinking...',
+          textColor: 'text-amber-300',
           dotColor: 'bg-amber-400'
-        };
-      case 'SPEAKING':
-        return {
-          label: 'SPEAKING',
-          badgeColor: 'text-emerald-300 bg-emerald-950/70 border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.4)]',
-          dotColor: 'bg-emerald-400'
-        };
-      case 'INTERRUPTED':
-        return {
-          label: 'BARGE-IN',
-          badgeColor: 'text-violet-300 bg-violet-950/70 border-violet-400/40 shadow-[0_0_12px_rgba(139,92,246,0.4)]',
-          dotColor: 'bg-violet-400'
-        };
-      case 'ERROR':
-        return {
-          label: 'ERROR',
-          badgeColor: 'text-rose-300 bg-rose-950/70 border-rose-400/40 shadow-[0_0_12px_rgba(244,63,94,0.4)]',
-          dotColor: 'bg-rose-400'
         };
       case 'READY':
       default:
         return {
-          label: 'HEY MAYRA READY',
-          badgeColor: 'text-cyan-400 bg-cyan-950/50 border-cyan-500/30 shadow-[0_0_8px_rgba(6,182,212,0.2)]',
-          dotColor: 'bg-cyan-400'
+          label: 'Online',
+          textColor: 'text-emerald-300',
+          dotColor: 'bg-emerald-400'
         };
     }
   };
@@ -453,9 +441,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </div>
             </button>
 
-            <div className={`px-1.5 py-0.5 rounded-full border text-[8px] font-mono font-bold tracking-wider flex items-center gap-1 shrink-0 ${statusBadge.badgeColor}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dotColor} animate-ping`} />
-              <span>{statusBadge.label}</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/25 backdrop-blur-md text-[10px] font-medium tracking-wide">
+              <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dotColor} shadow-[0_0_8px_currentColor] animate-pulse`} />
+              <span className={statusBadge.textColor}>{statusBadge.label}</span>
             </div>
 
             {/* Dropdown Menu for Switching Assistant Mode (MAYRA / STONICX) */}
@@ -556,15 +544,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </AnimatePresence>
           </div>
 
-          {/* Right: Clean Top Action Icons (Brand, Whiteboard, Share, Lock, Settings) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Sign In Button: Only visible on Home when user is not authenticated */}
+          {/* Right: Clean Minimal Top Action Icons */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Sign In Button */}
             {!currentUser && onOpenSignIn && (
               <motion.button
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.94 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={onOpenSignIn}
-                className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/35 hover:to-cyan-500/35 border border-cyan-400/40 hover:border-cyan-400/70 rounded-full text-[10px] font-sans font-medium text-cyan-200 hover:text-white transition-all cursor-pointer shadow-[0_0_12px_rgba(6,182,212,0.25)] shrink-0"
+                className="flex items-center gap-1 px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded-md text-[10px] font-sans font-medium text-cyan-200 hover:text-white transition-all cursor-pointer shrink-0"
                 title="Sign In / Sync Profile"
               >
                 <User className="w-3 h-3 text-cyan-300 stroke-[2]" />
@@ -572,104 +560,89 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </motion.button>
             )}
 
-            {/* 1. Whiteboard (Direct Study & AI Solver Canvas) */}
+            {/* 1. Whiteboard */}
             {onOpenWhiteboard && (
               <motion.button
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.88 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={onOpenWhiteboard}
-                className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 text-[11px] font-sans ${
-                  isStageCanvasOpen
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
-                    : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border border-white/10 hover:border-cyan-400/40'
+                className={`p-1 rounded-md transition-all cursor-pointer text-slate-300 hover:text-white hover:bg-white/10 ${
+                  isStageCanvasOpen ? 'text-cyan-400 bg-cyan-500/20' : ''
                 }`}
-                title={isStageCanvasOpen ? 'Close Study Whiteboard' : 'Open Study Whiteboard (Mayra AI Solver)'}
+                title={isStageCanvasOpen ? 'Close Study Whiteboard' : 'Open Study Whiteboard'}
               >
-                <PenTool className="w-3.5 h-3.5 stroke-[2] text-cyan-300" />
-                <span className="hidden sm:inline text-[10px] font-medium text-slate-200">Whiteboard</span>
+                <PenTool className="w-3.5 h-3.5 stroke-[1.8]" />
               </motion.button>
             )}
 
-            {/* 2. Barehands AR Gesture / Hand Tracking Control */}
+            {/* 2. Barehands AR Gesture Control */}
             <motion.button
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => {
                 setIsBarehandsCameraOpen(true);
                 if (!isHandTrackingActive) {
                   toggleHandTracking();
                 }
               }}
-              className={`p-1.5 rounded-full border transition-all cursor-pointer ${
-                isBarehandsCameraOpen || isHandTrackingActive || isHandTrackingLoading
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.5)]'
-                  : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border-white/10 hover:border-cyan-400/40'
+              className={`p-1 rounded-md transition-all cursor-pointer text-slate-300 hover:text-white hover:bg-white/10 ${
+                isBarehandsCameraOpen || isHandTrackingActive || isHandTrackingLoading ? 'text-cyan-400 bg-cyan-500/20' : ''
               }`}
-              title={
-                isHandTrackingLoading
-                  ? 'Initializing Barehands...'
-                  : isBarehandsCameraOpen
-                  ? 'Full-Screen Hand Camera Active'
-                  : 'Barehands AR Hand Gesture Control'
-              }
+              title="Barehands AR Hand Gesture Control"
             >
               <Hand className={`w-3.5 h-3.5 stroke-[1.8] ${isHandTrackingLoading || isBarehandsCameraOpen ? 'animate-pulse text-cyan-400' : ''}`} />
             </motion.button>
 
-            {/* 2.5 StonicX-L Parity Studio & Sem-to-Sem Comparison Modal */}
+            {/* 2.5 Parity Studio */}
             <motion.button
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setIsComparisonModalOpen(true)}
-              className={`p-1.5 rounded-full border transition-all cursor-pointer ${
-                isComparisonModalOpen
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/60 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
-                  : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border-white/10 hover:border-emerald-400/40'
+              className={`p-1 rounded-md transition-all cursor-pointer text-slate-300 hover:text-white hover:bg-white/10 ${
+                isComparisonModalOpen ? 'text-emerald-400 bg-emerald-500/20' : ''
               }`}
-              title="StonicX-L Sem-to-Sem Parity Studio (Memory Vault, Backtalk, Visualizer, Barehands)"
+              title="StonicX-L Parity Studio"
             >
-              <Columns2 className="w-3.5 h-3.5 stroke-[1.8] text-emerald-400" />
+              <Columns2 className="w-3.5 h-3.5 stroke-[1.8]" />
             </motion.button>
 
-            {/* 3. Screen Share / Cast Button */}
+            {/* 3. Screen Share */}
             <motion.button
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={handleToggleScreenShare}
-              className={`p-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-colors cursor-pointer ${
-                isScreenSharing
-                  ? 'text-cyan-400 border-cyan-400/50 drop-shadow-[0_0_10px_rgba(6,182,212,0.9)]'
-                  : 'text-slate-300 hover:text-white'
+              className={`p-1 rounded-md transition-colors cursor-pointer text-slate-300 hover:text-white hover:bg-white/10 ${
+                isScreenSharing ? 'text-cyan-400 bg-cyan-500/20' : ''
               }`}
               title={isScreenSharing ? 'Disconnect Screen Share' : 'Connect Screen Stream'}
             >
               <ScreenShare className="w-3.5 h-3.5 stroke-[1.8]" />
             </motion.button>
 
-            {/* 4. Character Lock / Unlock Button */}
+            {/* 4. Character Lock */}
             <motion.button
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={handleToggleLock}
-              className="p-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-colors text-slate-300 hover:text-white cursor-pointer"
+              className="p-1 rounded-md transition-colors text-slate-300 hover:text-white hover:bg-white/10 cursor-pointer"
               title={lockState.isLocked ? 'Character Locked' : 'Character Unlocked'}
             >
               {lockState.isLocked ? (
-                <Lock className="w-3.5 h-3.5 text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)] stroke-[1.8]" />
+                <Lock className="w-3.5 h-3.5 text-amber-400 stroke-[1.8]" />
               ) : (
-                <Unlock className="w-3.5 h-3.5 text-slate-300 hover:text-white stroke-[1.8]" />
+                <Unlock className="w-3.5 h-3.5 text-slate-300 stroke-[1.8]" />
               )}
             </motion.button>
 
             {/* 5. Settings Gear Icon */}
             <motion.button
-              whileHover={{ scale: 1.15, rotate: 45 }}
-              whileTap={{ scale: 0.88 }}
+              whileHover={{ scale: 1.1, rotate: 45 }}
+              whileTap={{ scale: 0.9 }}
               onClick={onOpenSettings}
-              className="p-1.5 rounded-full bg-purple-950/50 hover:bg-purple-900/60 border border-purple-400/30 text-purple-300 hover:text-white shadow-[0_0_10px_rgba(168,85,247,0.25)] transition-all group cursor-pointer"
+              className="p-1 rounded-md text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               title={`Settings (${userName})`}
             >
-              <SettingsIcon className="w-3.5 h-3.5 animate-[spin_10s_linear_infinite] stroke-[1.8]" />
+              <SettingsIcon className="w-3.5 h-3.5 stroke-[1.8]" />
             </motion.button>
           </div>
         </header>
