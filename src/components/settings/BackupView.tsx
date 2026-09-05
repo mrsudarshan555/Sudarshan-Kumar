@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { MemoryItem, ChatMessage } from '../../types';
 import { 
   Download, Upload, Trash2, Database, 
-  CheckCircle2, AlertTriangle, HardDrive, FileJson, Clock, RefreshCw, ArrowLeft
+  CheckCircle2, AlertTriangle, HardDrive, FileJson, Clock, RefreshCw, ArrowLeft,
+  Package, ShieldCheck
 } from 'lucide-react';
+import { MemoryBackupService } from '../../services/memory/memoryBackupService';
 
 interface BackupViewProps {
   memories: MemoryItem[];
@@ -27,6 +29,16 @@ export const BackupView: React.FC<BackupViewProps> = ({
   const showStatus = (msg: string) => {
     setStatusMessage(msg);
     setTimeout(() => setStatusMessage(null), 3000);
+  };
+
+  const handleExportComprehensive = () => {
+    try {
+      const res = MemoryBackupService.getInstance().exportBackup();
+      setLastBackup(new Date().toLocaleTimeString());
+      showStatus(`Comprehensive backup exported (${res.stats.memoriesCount} memories, ${res.stats.chatMessagesCount} chats, ${res.stats.contactsCount} contacts).`);
+    } catch (err: any) {
+      showStatus(`Export failed: ${err.message}`);
+    }
   };
 
   const handleExportMemories = () => {
@@ -53,25 +65,28 @@ export const BackupView: React.FC<BackupViewProps> = ({
     showStatus(`Exported ${messages.length} conversation messages.`);
   };
 
-  const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRestoreFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed)) {
-          onRestoreData(parsed);
-          showStatus(`Successfully restored ${parsed.length} items.`);
-        } else {
-          showStatus('Invalid backup JSON format.');
-        }
-      } catch (err) {
-        showStatus('Error parsing backup file.');
+    try {
+      const fileText = await file.text();
+      const result = await MemoryBackupService.getInstance().restoreBackup(fileText);
+      if (result.success) {
+        try {
+          const parsed = JSON.parse(fileText);
+          const data = parsed.data || parsed;
+          if (Array.isArray(data.memories)) {
+            onRestoreData(data.memories);
+          }
+        } catch {}
+        showStatus(result.message);
       }
-    };
-    reader.readAsText(file);
+    } catch (err: any) {
+      showStatus(`Restore failed: ${err?.message || 'Invalid backup file'}`);
+    } finally {
+      e.target.value = '';
+    }
   };
 
   return (
@@ -144,6 +159,23 @@ export const BackupView: React.FC<BackupViewProps> = ({
           </div>
 
           <div className="space-y-2">
+            <button
+              onClick={handleExportComprehensive}
+              className="w-full p-2.5 bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/40 rounded-xl flex items-center justify-between transition-colors text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <Package className="w-4 h-4 text-purple-400" />
+                <div>
+                  <div className="text-white font-medium text-xs flex items-center gap-1.5">
+                    <span>Full Comprehensive Backup (.json)</span>
+                    <span className="text-[9px] font-mono text-purple-300 bg-purple-900/60 px-1.5 py-0.2 rounded">Recommended</span>
+                  </div>
+                  <div className="text-[9px] text-slate-300">All memories, chat history, contacts & settings into one archive</div>
+                </div>
+              </div>
+              <Download className="w-3.5 h-3.5 text-purple-300" />
+            </button>
+
             <button
               onClick={handleExportMemories}
               className="w-full p-2.5 bg-[#070913] hover:bg-white/5 border border-white/10 rounded-xl flex items-center justify-between transition-colors text-left"

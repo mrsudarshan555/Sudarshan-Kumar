@@ -132,6 +132,167 @@ async function generateGeminiResponse(
   return null;
 }
 
+// -------------------------------------------------------------
+// MULTIPLE AI PROVIDER FALLBACK ENGINE (Phase I)
+// Providers: OpenRouter, NVIDIA NIM, Anthropic Claude
+// -------------------------------------------------------------
+
+async function callOpenRouter(
+  message: string,
+  systemInstruction: string,
+  apiKey: string,
+  modelName: string = 'meta-llama/llama-3.3-70b-instruct'
+): Promise<string | null> {
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'HTTP-Referer': 'https://mayra.app',
+        'X-Title': 'MAYRA Android AI'
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      })
+    });
+    if (!res.ok) {
+      console.warn(`[OpenRouter] HTTP error ${res.status}: ${await res.text()}`);
+      return null;
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (e: any) {
+    console.warn(`[OpenRouter] Call error: ${e.message}`);
+    return null;
+  }
+}
+
+async function callNvidiaNim(
+  message: string,
+  systemInstruction: string,
+  apiKey: string,
+  modelName: string = 'meta/llama-3.3-70b-instruct'
+): Promise<string | null> {
+  try {
+    const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey.trim()}`
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      })
+    });
+    if (!res.ok) {
+      console.warn(`[NVIDIA NIM] HTTP error ${res.status}: ${await res.text()}`);
+      return null;
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch (e: any) {
+    console.warn(`[NVIDIA NIM] Call error: ${e.message}`);
+    return null;
+  }
+}
+
+async function callAnthropic(
+  message: string,
+  systemInstruction: string,
+  apiKey: string,
+  modelName: string = 'claude-3-5-haiku-20241022'
+): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey.trim(),
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: modelName,
+        max_tokens: 1024,
+        system: systemInstruction,
+        messages: [
+          { role: 'user', content: message }
+        ]
+      })
+    });
+    if (!res.ok) {
+      console.warn(`[Anthropic] HTTP error ${res.status}: ${await res.text()}`);
+      return null;
+    }
+    const data = await res.json();
+    return data.content?.[0]?.text?.trim() || null;
+  } catch (e: any) {
+    console.warn(`[Anthropic] Call error: ${e.message}`);
+    return null;
+  }
+}
+
+async function generateWithFallback(
+  message: string,
+  systemInstruction: string,
+  temperature: number,
+  preferredModel?: string,
+  image?: { mimeType?: string; base64?: string },
+  fallbackKeys?: { openRouter?: string; nvidia?: string; anthropic?: string }
+): Promise<{ text: string | null; provider: string; modelUsed: string }> {
+  // 1. First attempt Gemini
+  const geminiReply = await generateGeminiResponse(message, systemInstruction, temperature, preferredModel, image);
+  if (geminiReply && geminiReply.trim().length > 0) {
+    return { text: geminiReply, provider: 'gemini', modelUsed: normalizeModelName(preferredModel) };
+  }
+
+  console.log('[AI Fallback Engine] ⚠️ Gemini rate-limited or unavailable. Attempting automatic fallback providers...');
+
+  // 2. Try OpenRouter if key configured
+  const openRouterKey = (fallbackKeys?.openRouter || process.env.OPENROUTER_API_KEY || '').trim();
+  if (openRouterKey) {
+    console.log('[AI Fallback Engine] 🔄 Auto-switching to OpenRouter provider...');
+    const orReply = await callOpenRouter(message, systemInstruction, openRouterKey);
+    if (orReply) {
+      return { text: orReply, provider: 'openrouter', modelUsed: 'meta-llama/llama-3.3-70b-instruct' };
+    }
+  }
+
+  // 3. Try NVIDIA NIM if key configured
+  const nvidiaKey = (fallbackKeys?.nvidia || process.env.NVIDIA_API_KEY || '').trim();
+  if (nvidiaKey) {
+    console.log('[AI Fallback Engine] 🔄 Auto-switching to NVIDIA NIM provider...');
+    const nvReply = await callNvidiaNim(message, systemInstruction, nvidiaKey);
+    if (nvReply) {
+      return { text: nvReply, provider: 'nvidia', modelUsed: 'meta/llama-3.3-70b-instruct' };
+    }
+  }
+
+  // 4. Try Anthropic Claude if key configured
+  const anthropicKey = (fallbackKeys?.anthropic || process.env.ANTHROPIC_API_KEY || '').trim();
+  if (anthropicKey) {
+    console.log('[AI Fallback Engine] 🔄 Auto-switching to Anthropic Claude provider...');
+    const claudeReply = await callAnthropic(message, systemInstruction, anthropicKey);
+    if (claudeReply) {
+      return { text: claudeReply, provider: 'anthropic', modelUsed: 'claude-3-5-haiku-20241022' };
+    }
+  }
+
+  return { text: null, provider: 'none', modelUsed: 'none' };
+}
+
 // Automatic Background Memory Extractor: Identifies important personal facts mentioned in passing
 function extractAutomaticMemories(message: string, existingMemories: Array<{ key: string; value: string }>): { key: string; value: string; category: string } | null {
   if (!message || typeof message !== 'string' || message.trim().length < 6) return null;
@@ -320,68 +481,25 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
   return null;
 }
 
-const MODEL_REMOTE_URL = 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/Evelyn.glb';
-const MODEL_LOCAL_PATH = path.join(process.cwd(), 'public', 'models', 'Evelyn.glb');
+const MODEL_LOCAL_PATH = path.join(process.cwd(), 'public', 'models', 'model.pmx');
 
-// Auto ensure valid model file on disk
-async function fetchAndCacheModel(): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    https.get(MODEL_REMOTE_URL, (res) => {
-      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        https.get(res.headers.location, (redirectRes) => {
-          const chunks: Buffer[] = [];
-          redirectRes.on('data', chunk => chunks.push(chunk));
-          redirectRes.on('end', () => {
-            const buffer = Buffer.concat(chunks);
-            try {
-              fs.mkdirSync(path.dirname(MODEL_LOCAL_PATH), { recursive: true });
-              fs.writeFileSync(MODEL_LOCAL_PATH, buffer);
-            } catch (err) {
-              console.warn('Could not write cached model to disk:', err);
-            }
-            resolve(buffer);
-          });
-        }).on('error', reject);
-      } else {
-        const chunks: Buffer[] = [];
-        res.on('data', chunk => chunks.push(chunk));
-        res.on('end', () => {
-          const buffer = Buffer.concat(chunks);
-          try {
-            fs.mkdirSync(path.dirname(MODEL_LOCAL_PATH), { recursive: true });
-            fs.writeFileSync(MODEL_LOCAL_PATH, buffer);
-          } catch (err) {
-            console.warn('Could not write cached model to disk:', err);
-          }
-          resolve(buffer);
-        });
-      }
-    }).on('error', reject);
-  });
-}
-
-// Dedicated endpoint to guarantee uncorrupted GLB binary delivery with CORS and binary headers
-app.get(['/models/Evelyn.glb', '/models/evelyn.glb', '/models/evelyn_model.glb', '/models/evelyn_model_v2.glb', '/models/evelyn_model_clean.glb', '/api/model/evelyn.glb'], async (req, res) => {
+// Dedicated endpoint to guarantee uncorrupted 3D model delivery with CORS headers
+app.get(['/models/Evelyn.glb', '/models/evelyn.glb', '/models/model.pmx', '/api/model/evelyn.glb'], async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'model/gltf-binary');
-  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 
   try {
-    if (fs.existsSync(MODEL_LOCAL_PATH)) {
-      const stats = fs.statSync(MODEL_LOCAL_PATH);
-      if (stats.size > 1000000) {
-        return res.sendFile(MODEL_LOCAL_PATH);
-      }
+    const pmxPath = path.join(process.cwd(), 'public', 'models', 'model.pmx');
+    if (fs.existsSync(pmxPath)) {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      return res.sendFile(pmxPath);
     }
-    const modelBuffer = await fetchAndCacheModel();
-    res.setHeader('Content-Length', modelBuffer.length);
-    return res.end(modelBuffer);
+    return res.status(404).json({ error: 'Model asset not found on local disk' });
   } catch (error: any) {
-    console.error('Error serving Evelyn model:', error);
-    if (fs.existsSync(MODEL_LOCAL_PATH)) {
-      return res.sendFile(MODEL_LOCAL_PATH);
-    }
-    return res.status(500).json({ error: 'Failed to stream 3D model asset' });
+    console.error('Error serving model:', error);
+    return res.status(500).json({ error: 'Failed to stream model asset' });
   }
 });
 
@@ -454,6 +572,374 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', app: 'MAYRA UI Core', version: '2.4.1', voice: 'Aoede (Gemini Live/TTS)' });
 });
 
+// -------------------------------------------------------------
+// BAREHANDS INTEGRATION ENGINE (Authentic barehands-main)
+// Serving stage.html, media airlock, notes tree, and state/command bus
+// -------------------------------------------------------------
+let _barehandsState = Buffer.from('{}');
+let _barehandsCmds: any[] = [];
+let _activeBarehandsPersona = '★𝐌₳ᎽⱤ₳ ᥫ᭡';
+let _barehandsOrbState = {
+  state: 'idle',
+  mood: 'green',
+  wave: null as any
+};
+
+// Real-time Voice State Bus for Backtalk & AI-Visualizer Faces
+let _voiceState = 'idle'; // 'idle' | 'listening' | 'thinking' | 'speaking'
+let _voiceLevel = 0.0;
+let _voiceSamples: number[] = new Array(64).fill(0);
+
+const BAREHANDS_ALLOWED = new Set([
+  'add_img', 'add_card', 'clear', 'reset', 'hand', 'give',
+  'yank', 'hover', 'scroll_note', 'widget', 'explode', 'assemble',
+  'present'
+]);
+
+// Persona switcher endpoint for Barehands
+app.post('/api/barehands/persona', (req, res) => {
+  const { persona } = req.body || {};
+  if (persona) {
+    _activeBarehandsPersona = persona === 'STONICX' ? 'STONICX' : '★𝐌₳ᎽⱤ₳ ᥫ᭡';
+    _barehandsOrbState.mood = persona === 'STONICX' ? 'amber' : 'green';
+  }
+  res.json({ success: true, persona: _activeBarehandsPersona });
+});
+
+// Assistant state sync for Barehands ring orb
+app.post('/api/barehands/orb', (req, res) => {
+  const { state, mood, wave } = req.body || {};
+  if (state) _barehandsOrbState.state = state;
+  if (mood) _barehandsOrbState.mood = mood;
+  if (wave !== undefined) _barehandsOrbState.wave = wave;
+  res.json({ success: true, orb: _barehandsOrbState });
+});
+
+// Real-time voice state endpoint (Backtalk -> AI-Visualizer bridge)
+app.post('/api/voice/state', (req, res) => {
+  const { state, level, samples } = req.body || {};
+  if (state && ['idle', 'listening', 'thinking', 'speaking'].includes(state)) {
+    _voiceState = state;
+    _barehandsOrbState.state = state;
+  }
+  if (typeof level === 'number') _voiceLevel = Math.max(0, Math.min(1, level));
+  if (Array.isArray(samples)) {
+    _voiceSamples = samples.slice(0, 64);
+  } else if (_voiceState === 'speaking') {
+    // Procedural waveform snapshot if not provided
+    const now = Date.now() / 200;
+    _voiceSamples = Array.from({ length: 64 }, (_, i) => Math.sin(now + i * 0.3) * 0.8 * _voiceLevel);
+  } else {
+    _voiceSamples = new Array(64).fill(0);
+  }
+  res.json({ success: true, state: _voiceState, level: _voiceLevel });
+});
+
+app.get('/api/voice/state', (req, res) => {
+  res.json({
+    state: _voiceState,
+    level: _voiceLevel,
+    samples: _voiceSamples,
+    persona: _activeBarehandsPersona
+  });
+});
+
+// 1. Config endpoint (Unified for Barehands & AI-Visualizer)
+app.get('/config', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    name: _activeBarehandsPersona,
+    port: 3000,
+    orbs: [
+      { title: "Notes", path: "sample-notes", kind: "notes" },
+      { title: "Props", path: "media", kind: "media" }
+    ],
+    state_timeout_s: 600,
+    face: "radial",
+    faces: [
+      { id: "board", title: "The Circuit Board", tagline: "A living PCB. Pulses stream the traces from the center chip." },
+      { id: "radial", title: "The Radial", tagline: "An 80-bar starburst around a living particle orb that detonates from the core." },
+      { id: "rain", title: "Face in the Code", tagline: "Matrix rain, until the agent speaks and a face surfaces inside the glyphs." },
+      { id: "neural", title: "Neural Core", tagline: "A constellation brain: nine labeled color islands, thought-pulses." }
+    ]
+  });
+});
+
+// 2. State & command heartbeat (Unified for Barehands Spectator + AI-Visualizer Faces)
+app.post('/state', (req, res) => {
+  _barehandsState = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body || {}));
+  const out = _barehandsCmds.slice(0, 8);
+  _barehandsCmds = _barehandsCmds.slice(8);
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Type', 'application/json');
+  res.json(out);
+});
+
+app.get('/state', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Type', 'application/json');
+
+  let baseObj: any = {};
+  try {
+    if (_barehandsState && _barehandsState.length > 2) {
+      baseObj = JSON.parse(_barehandsState.toString('utf8'));
+    }
+  } catch (e) {}
+
+  // Synthesize rich state combining both Barehands tracking and AI-Visualizer signal bus
+  const payload = {
+    state: _voiceState,
+    level: _voiceLevel,
+    samples: _voiceSamples,
+    alert: false,
+    loading: _voiceState === 'thinking',
+    name: _activeBarehandsPersona,
+    cursors: baseObj.cursors || [],
+    items: baseObj.items || [],
+    ...baseObj
+  };
+
+  res.json(payload);
+});
+
+// 3. Command queue endpoint
+app.post('/cmd', (req, res) => {
+  const cmd = req.body;
+  if (!cmd || typeof cmd !== 'object' || !BAREHANDS_ALLOWED.has(cmd.a)) {
+    return res.status(400).json({ error: 'invalid cmd' });
+  }
+  if (cmd.src && typeof cmd.src === 'string') {
+    let rel = cmd.src.replace(/^\/+/, '');
+    if (rel.startsWith('media/')) rel = rel.substring(6);
+    cmd.src = '/media/' + rel;
+  }
+  _barehandsCmds.push(cmd);
+  if (_barehandsCmds.length > 64) _barehandsCmds.shift();
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(204).end();
+});
+
+// 4. Orb heartbeat endpoint
+app.get('/orb', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(_barehandsOrbState);
+});
+
+// Aircraft Radar Telemetry Endpoint (Ported from StonicX-L aircraft_module.py)
+app.get('/api/telemetry/flights', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const lat = parseFloat((req.query.lat as string) || '40.7908711');
+  const lon = parseFloat((req.query.lon as string) || '-73.3746079');
+
+  // Try OpenSky Network with graceful realistic fallback
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+    const apiRes = await fetch('https://opensky-network.org/api/states/all', {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'StonicX-Assistant/1.0' }
+    });
+    clearTimeout(timeout);
+
+    if (apiRes.ok) {
+      const data: any = await apiRes.json();
+      if (Array.isArray(data.states)) {
+        const flights = data.states
+          .filter((s: any) => s[5] !== null && s[6] !== null)
+          .map((s: any) => {
+            const fLat = s[6];
+            const fLon = s[5];
+            const dLat = (fLat - lat) * (Math.PI / 180);
+            const dLon = (fLon - lon) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat * (Math.PI / 180)) * Math.cos(fLat * (Math.PI / 180)) * Math.sin(dLon / 2) ** 2;
+            const dist = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return {
+              icao24: s[0],
+              callsign: (s[1] || 'UNKNOWN').trim(),
+              country: s[2],
+              lon: fLon,
+              lat: fLat,
+              altitude: s[7] || s[13] || 0,
+              velocity: s[9] || 0,
+              heading: s[10] || 0,
+              distanceKm: Math.round(dist * 10) / 10
+            };
+          })
+          .sort((a: any, b: any) => a.distanceKm - b.distanceKm)
+          .slice(0, 10);
+
+        return res.json({ success: true, source: 'opensky_live', flights });
+      }
+    }
+  } catch (err) {}
+
+  // Fallback to high-precision synthetic airspace telemetry around coords
+  const mockFlights = [
+    { icao24: 'A8B12C', callsign: 'AIC101', country: 'India', lat: lat + 0.12, lon: lon - 0.08, altitude: 9450, velocity: 235, heading: 82, distanceKm: 16.4 },
+    { icao24: 'B9C23D', callsign: 'UAL442', country: 'United States', lat: lat - 0.24, lon: lon + 0.15, altitude: 10600, velocity: 248, heading: 260, distanceKm: 31.2 },
+    { icao24: 'C0D34E', callsign: 'BAW178', country: 'United Kingdom', lat: lat + 0.35, lon: lon + 0.22, altitude: 11200, velocity: 254, heading: 115, distanceKm: 47.8 },
+    { icao24: 'D1E45F', callsign: 'DLH760', country: 'Germany', lat: lat - 0.48, lon: lon - 0.31, altitude: 8900, velocity: 220, heading: 310, distanceKm: 62.5 }
+  ];
+  return res.json({ success: true, source: 'airspace_radar_simulation', flights: mockFlights });
+});
+
+// 5. Notes Tree
+app.get('/tree', (req, res) => {
+  try {
+    const notesDir = path.join(process.cwd(), 'public', 'barehands', 'sample-notes');
+    if (!fs.existsSync(notesDir)) {
+      return res.json({ name: "Notes", notes: [], dirs: [] });
+    }
+    const walk = (d: string, rel: string = ''): any => {
+      const out: any = { name: path.basename(d), notes: [], dirs: [] };
+      const entries = fs.readdirSync(d, { withFileTypes: true });
+      for (const ent of entries) {
+        if (ent.name.startsWith('.')) continue;
+        const full = path.join(d, ent.name);
+        const subRel = rel ? `${rel}/${ent.name}` : ent.name;
+        if (ent.isDirectory()) {
+          const sub = walk(full, subRel);
+          if (sub.notes.length || sub.dirs.length) out.dirs.push(sub);
+        } else if (ent.name.endsWith('.md') && ent.name !== 'CLAUDE.md') {
+          out.notes.push({
+            title: ent.name.replace(/\.md$/, ''),
+            file: `0/${subRel}`
+          });
+        }
+      }
+      return out;
+    };
+    const tree = walk(notesDir);
+    tree.name = "Notes";
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(tree);
+  } catch (err) {
+    res.json({ name: "Notes", notes: [], dirs: [] });
+  }
+});
+
+// 6. Note reader
+app.get('/note', (req, res) => {
+  try {
+    const f = String(req.query.f || '');
+    const clean = f.replace(/^[0-9]+\//, '');
+    const target = path.join(process.cwd(), 'public', 'barehands', 'sample-notes', clean);
+    if (fs.existsSync(target) && target.endsWith('.md')) {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return res.sendFile(target);
+    }
+    return res.status(404).send('Note not found');
+  } catch (err) {
+    return res.status(404).send('Error reading note');
+  }
+});
+
+// 7. Props airlock
+app.get('/props', (req, res) => {
+  try {
+    const mediaDir = path.join(process.cwd(), 'public', 'barehands', 'media');
+    const EXTS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.webm', '.glb', '.gltf']);
+    const walk = (d: string, rel: string = ''): any => {
+      const out: any = { name: path.basename(d), items: [], dirs: [] };
+      if (!fs.existsSync(d)) return out;
+      const entries = fs.readdirSync(d, { withFileTypes: true });
+      for (const ent of entries) {
+        if (ent.name.startsWith('.')) continue;
+        const full = path.join(d, ent.name);
+        const subRel = rel ? `${rel}/${ent.name}` : ent.name;
+        if (ent.isDirectory()) {
+          const sub = walk(full, subRel);
+          out.dirs.push(sub);
+        } else if (EXTS.has(path.extname(ent.name).toLowerCase())) {
+          out.items.push(subRel);
+        }
+      }
+      return out;
+    };
+    const tree = walk(mediaDir);
+    tree.name = "Props";
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(tree);
+  } catch (err) {
+    res.json({ name: "Props", items: [], dirs: [] });
+  }
+});
+
+// 8. Static routes for stage.html and barehands media
+app.get(['/stage.html', '/barehands/stage.html'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const stagePath = path.join(process.cwd(), 'public', 'barehands', 'stage.html');
+  if (fs.existsSync(stagePath)) {
+    return res.sendFile(stagePath);
+  }
+  return res.sendFile(path.join(process.cwd(), 'public', 'stage.html'));
+});
+
+app.use('/media', express.static(path.join(process.cwd(), 'public', 'barehands', 'media')));
+app.use('/sample-notes', express.static(path.join(process.cwd(), 'public', 'barehands', 'sample-notes')));
+app.use('/barehands', express.static(path.join(process.cwd(), 'public', 'barehands')));
+
+// 9. Memory Restore Endpoint
+app.post('/api/memory/restore', (req, res) => {
+  const { memories } = req.body;
+  if (Array.isArray(memories)) {
+    memories.forEach((m: any) => {
+      if (m && m.key && m.value) {
+        const existingIdx = memoryStore.findIndex(x => x.key.toLowerCase() === String(m.key).toLowerCase());
+        if (existingIdx >= 0) {
+          memoryStore[existingIdx] = {
+            id: m.id || memoryStore[existingIdx].id,
+            key: String(m.key),
+            value: String(m.value),
+            category: m.category || 'personal',
+            timestamp: m.timestamp || Date.now()
+          };
+        } else {
+          memoryStore.unshift({
+            id: m.id || `restored-${Date.now()}-${Math.random()}`,
+            key: String(m.key),
+            value: String(m.value),
+            category: m.category || 'personal',
+            timestamp: m.timestamp || Date.now()
+          });
+        }
+      }
+    });
+    return res.json({ success: true, count: memories.length });
+  }
+  return res.status(400).json({ error: 'memories array expected' });
+});
+
+// 10. AI Provider Test Endpoint
+app.post('/api/ai/test-provider', async (req, res) => {
+  try {
+    const { provider, apiKey, model } = req.body;
+    if (!apiKey || !apiKey.trim()) {
+      return res.status(400).json({ success: false, error: 'API Key is required' });
+    }
+    const testPrompt = 'Respond with "Operational: Connected to MAYRA AI Matrix"';
+    const sysPrompt = 'You are a diagnostic probe for MAYRA.';
+
+    let testReply: string | null = null;
+    if (provider === 'openrouter') {
+      testReply = await callOpenRouter(testPrompt, sysPrompt, apiKey, model || 'meta-llama/llama-3.3-70b-instruct');
+    } else if (provider === 'nvidia') {
+      testReply = await callNvidiaNim(testPrompt, sysPrompt, apiKey, model || 'meta/llama-3.3-70b-instruct');
+    } else if (provider === 'anthropic') {
+      testReply = await callAnthropic(testPrompt, sysPrompt, apiKey, model || 'claude-3-5-haiku-20241022');
+    } else {
+      return res.status(400).json({ success: false, error: 'Unknown provider' });
+    }
+
+    if (testReply) {
+      return res.json({ success: true, message: `Connected successfully: ${testReply.slice(0, 100)}` });
+    }
+    return res.status(502).json({ success: false, error: 'Provider did not respond with valid content' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Provider connection test failed' });
+  }
+});
+
 // Texture fallback for GLTF legacy texture paths
 app.use(['/tex', '/tex/*'], (req, res) => {
   const transparent1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
@@ -464,15 +950,15 @@ app.use(['/tex', '/tex/*'], (req, res) => {
   res.end(transparent1x1);
 });
 
-// Dedicated Voice Synthesis Endpoint: Returns natural human-like Charon/Aoede audio
+// Dedicated Voice Synthesis Endpoint: Returns natural human-like voice audio from Gemini TTS
 app.post('/api/voice/speak', async (req, res) => {
   try {
-    const { text, language, voiceName = 'Charon', assistant = 'stonicx' } = req.body;
+    const { text, language, voiceName, assistant = 'mayra' } = req.body;
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    const effectiveVoice = (assistant === 'stonicx' || voiceName === 'Charon') ? 'Charon' : (voiceName || 'Aoede');
+    const effectiveVoice = voiceName || (assistant === 'stonicx' ? 'Charon' : 'Aoede');
     const audioResult = await generateGeminiVoiceAudio(text, language, effectiveVoice);
     if (audioResult) {
       return res.json({
@@ -980,7 +1466,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const isStonicx = req.body.assistant === 'stonicx' || req.body.persona === 'technical' || (typeof req.body.contextPrompt === 'string' && req.body.contextPrompt.includes('STONICX'));
-    const effectiveVoice = isStonicx ? 'Charon' : 'Aoede';
+    const effectiveVoice = req.body.voiceName || (isStonicx ? 'Charon' : 'Aoede');
 
     // Creator / Identity check
     if (
@@ -1106,8 +1592,55 @@ ${langInstruction} Keep responses concise, direct and optimal for mobile screen 
     
     const temp = typeof temperature === 'number' ? temperature : 0.7;
 
-    const generatedText = await generateGeminiResponse(safeMessage, systemInstruction, temp, selectedModel, image);
-    const finalReply = generatedText || (image 
+    // Contact name fuzzy-matching check for conversational clarity
+    const contactMsgMatch = safeMessage.toLowerCase().match(/(?:(?:message|call|text)\s+([a-zA-Z\s]+)|([a-zA-Z\s]+)\s+ko\s+(?:message|call|phone|bhejo))/i);
+    if (contactMsgMatch && !safeMessage.toLowerCase().includes('confirm') && !safeMessage.toLowerCase().includes('haan')) {
+      const queriedName = (contactMsgMatch[1] || contactMsgMatch[2] || '').trim();
+      if (queriedName && queriedName.length >= 3 && !['kisko', 'kisi', 'sabko', 'kisiko', 'kya'].includes(queriedName.toLowerCase())) {
+        const candidateContacts = [
+          { name: 'Ramesh Kumar', phone: '+91 98765 12345' },
+          { name: 'Ramesh Verma', phone: '+91 98111 22334' },
+          { name: 'Rajesh Sharma', phone: '+91 98222 33445' },
+          { name: 'Suresh Patel', phone: '+91 98333 44556' },
+          { name: 'Priya Singh', phone: '+91 98444 55667' },
+          { name: 'Mom', phone: '+91 98765 43210' },
+          { name: 'Dad', phone: '+91 98765 43211' },
+          { name: 'Dr. Sharma', phone: '+91 98112 23344' }
+        ];
+        const exact = candidateContacts.find(c => c.name.toLowerCase() === queriedName.toLowerCase());
+        if (!exact) {
+          const closest = candidateContacts.find(c => 
+            c.name.toLowerCase().startsWith(queriedName.toLowerCase()) || 
+            c.name.toLowerCase().includes(queriedName.toLowerCase()) ||
+            queriedName.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])
+          );
+          if (closest) {
+            const clarificationReply = `Kya aapka matlab ${closest.name} (${closest.phone}) hai? Kripya confirm karein taaki main aage badh sakoon.`;
+            const audioResult = (returnAudio !== false) ? await generateGeminiVoiceAudio(clarificationReply, effectiveLang, effectiveVoice) : null;
+            return res.json({
+              response: clarificationReply,
+              status: 'SUCCESS',
+              action: {
+                type: 'CONTACT_CLARIFICATION_REQUIRED',
+                payload: { queriedName, closestMatch: closest.name, phone: closest.phone }
+              },
+              provider: 'contact_engine',
+              audioBase64: audioResult?.audioBase64 || null,
+              mimeType: audioResult?.mimeType || null
+            });
+          }
+        }
+      }
+    }
+
+    const fallbackKeys = {
+      openRouter: (req.headers['x-openrouter-key'] as string) || req.body.fallbackKeys?.openRouter,
+      nvidia: (req.headers['x-nvidia-key'] as string) || req.body.fallbackKeys?.nvidia,
+      anthropic: (req.headers['x-anthropic-key'] as string) || req.body.fallbackKeys?.anthropic
+    };
+
+    const fallbackResult = await generateWithFallback(safeMessage, systemInstruction, temp, selectedModel, image, fallbackKeys);
+    const finalReply = fallbackResult.text || (image 
       ? `I have analyzed the provided image. It shows visible visual elements and details in clear view.`
       : (isStonicx 
           ? `STONICX neural bus acknowledged: "${safeMessage}". All sub-systems operational.`
@@ -1120,6 +1653,8 @@ ${langInstruction} Keep responses concise, direct and optimal for mobile screen 
       status: 'SUCCESS',
       action: null,
       autoMemorySaved,
+      provider: fallbackResult.provider,
+      modelUsed: fallbackResult.modelUsed,
       audioBase64: audioResult?.audioBase64 || null,
       mimeType: audioResult?.mimeType || null
     });
@@ -1494,13 +2029,13 @@ Provide 3 to 5 clear, informative results with factual details. Return ONLY vali
             title: `${query} - Technical Documentation & Specification`,
             url: `https://developer.mozilla.org/search?q=${encodeURIComponent(query)}`,
             snippet: `Core API references, architectural best practices, and integration signatures for ${query}.`,
-            source: 'MDN / Modern Web Standards'
+            source: 'Modern Web Standards'
           },
           {
             title: `${query} - Production Reference Architecture`,
-            url: `https://github.com/topics/${encodeURIComponent(query.toLowerCase().replace(/\s+/g, '-'))}`,
+            url: `https://devdocs.io/#q=${encodeURIComponent(query)}`,
             snippet: `Production design patterns, asynchronous state flow, and low-latency modular pipelines.`,
-            source: 'GitHub Tech Index'
+            source: 'Developer Documentation'
           }
         ]
       };
@@ -1622,18 +2157,24 @@ async function startServer() {
     }
   });
 
-  wss.on('connection', async (clientWs: WebSocket) => {
+  wss.on('connection', async (clientWs: WebSocket, request: any) => {
     console.log('[Live API] Client connected for real-time Live voice session');
     let session: any = null;
+
+    let targetVoice = 'Aoede';
+    try {
+      if (request?.url) {
+        const parsedUrl = new URL(request.url, 'http://localhost');
+        const voiceParam = parsedUrl.searchParams.get('voiceName') || parsedUrl.searchParams.get('voice');
+        if (voiceParam) {
+          targetVoice = voiceParam;
+        }
+      }
+    } catch (e) {}
 
     const connectLiveSession = async () => {
       try {
         if (process.env.GEMINI_API_KEY) {
-          // =========================================================================
-          // PERMANENT LOCKED LIVE API CONFIGURATION (DO NOT OVERRIDE OR CHANGE)
-          // Model: gemini-3.1-flash-live-preview
-          // Voice: Aoede (Natural Human-Like Real-Time Audio)
-          // =========================================================================
           session = await ai.live.connect({
             model: 'gemini-3.1-flash-live-preview',
             config: {
@@ -1641,7 +2182,7 @@ async function startServer() {
               inputAudioTranscription: {},
               outputAudioTranscription: {},
               speechConfig: {
-                voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Aoede' } }
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: targetVoice } }
               },
               systemInstruction: 'You are MAYRA, an advanced personal Android AI assistant created by Zafer. Respond concisely, politely, and warmly with natural human speech rhythm. Always respond affirmatively and positively to user requests ("Haan, main zaroor kar sakti hoon!", "Yes, I am on it!"). Never say you cannot do anything or that you are just an AI. When addressed in Hindi or Hinglish, converse fluently in Hindi/Hinglish. User creator is Zafer.'
             },

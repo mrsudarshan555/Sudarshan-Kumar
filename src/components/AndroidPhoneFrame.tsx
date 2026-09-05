@@ -33,6 +33,8 @@ import { GlassAuthModal } from './auth/GlassAuthModal';
 import { AccountSyncService } from '../services/auth/accountSyncService';
 import { FloatingHomeQuizModal } from './quiz/FloatingHomeQuizModal';
 import { QuizPayload } from '../types';
+import { MicStatusIndicator } from './voice/MicStatusIndicator';
+import { EdgeGlowRing } from './character/EdgeGlowRing';
 
 interface AndroidPhoneFrameProps {
   activeTab: ActiveTab;
@@ -248,6 +250,12 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       } as React.CSSProperties}
     >
 
+      {/* Edge Glow Gradient Ring for Visual Feedback */}
+      <EdgeGlowRing 
+        status={status} 
+        isBatterySaver={localStorage.getItem('mayra_glow_battery_saver') === 'true'}
+      />
+
       {/* Aura Border Pulse Effect */}
       {appearanceConfig.auraBorderMode && (
         <div className="absolute inset-0 pointer-events-none z-50 border border-purple-500/30 rounded-none shadow-[inset_0_0_24px_rgba(168,85,247,0.15)] animate-pulse" />
@@ -261,12 +269,13 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
             <span className="font-sans font-extrabold text-xs text-white tracking-wide truncate">
               ★𝐌₳ᎽⱤ₳ ᥫ᭡
             </span>
-            {appearanceConfig.voiceVisualizerEnabled && status === 'SPEAKING' && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-[9px] font-mono text-purple-300 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                <span>VOICE</span>
-              </span>
-            )}
+            {/* Visual Mute/Unmute Mic Status Indicator */}
+            <MicStatusIndicator
+              status={status}
+              isListeningMode={isListeningMode}
+              onToggleMic={onTriggerVoice}
+              variant="pill"
+            />
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">

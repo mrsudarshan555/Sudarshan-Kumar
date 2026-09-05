@@ -1,6 +1,8 @@
 # MAYRA / STONICX: Real Offline AI Model (llama.cpp) Setup Guide
 
-This guide details how to integrate the real prebuilt `llama.cpp` and `ggml` shared libraries into the Android project to enable genuine, on-device GGUF transformer inference.
+**Proprietary and Private Project by Zafer & Sudarshan. All rights reserved. NOT OPEN SOURCE.**
+
+This guide details how to integrate prebuilt `llama.cpp` and `ggml` shared libraries into the Android project to enable genuine, on-device GGUF transformer inference.
 
 ---
 
@@ -36,19 +38,17 @@ app/src/main/jniLibs/${ANDROID_ABI}/libggml.so
 
 ## 2. Obtaining Prebuilt `libllama.so` and `libggml.so`
 
-### Method A: Official llama.cpp GitHub Releases & CI Artifacts (Fastest)
-1. Go to the official repository: **[ggerganov/llama.cpp Releases](https://github.com/ggerganov/llama.cpp/releases)**
-2. Download the Android release archive containing `arm64-v8a` shared libraries (`.so`), or fetch the Android build artifact from GitHub Actions CI.
-3. Extract `libllama.so` and `libggml.so`.
+### Method A: Direct Prebuilt Binary Placement (Fastest)
+1. Place the precompiled Android `arm64-v8a` shared libraries (`.so`) in your local directory.
+2. Ensure `libllama.so` and `libggml.so` are present in `app/src/main/jniLibs/arm64-v8a/`.
 
 ---
 
-### Method B: Compiling with Android NDK (Recommended for custom optimizations)
-If you have the Android NDK installed (or in Google Colab / Linux terminal):
+### Method B: Compiling with Android NDK
+If you have the Android NDK installed:
 
 ```bash
-# 1. Clone official llama.cpp
-git clone https://github.com/ggerganov/llama.cpp.git
+# 1. Compile llama.cpp source
 cd llama.cpp
 
 # 2. Set your Android NDK path

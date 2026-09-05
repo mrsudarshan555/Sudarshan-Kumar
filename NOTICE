@@ -1,0 +1,22 @@
+================================================================================
+                    MAYRA & STONICX NOTICE & CREDITS
+================================================================================
+
+Project Leads & Maintainers:
+  - Zafer
+  - Sudarshan
+
+Original Architecture & Foundational Design:
+  - Jared Rhodenizer (Creator of Barehands, Backtalk, AI-Visualizer, 
+    AI Memory Vault, and Fullstack Agent)
+
+Technology Attribution:
+  - MediaPipe (Google) — Real-time hand tracking models
+  - Three.js — 3D graphics and WebGL pipeline
+  - OpenAI & SYSTRAN — Whisper / faster-whisper speech recognition
+  - Kokoro (hexgrad) & espeak-ng — Neural text-to-speech audio synthesis
+
+This application combines Jared Rhodenizer's groundbreaking spatial and audio
+architectures with Zafer & Sudarshan's Android Jetpack Compose system UI,
+dual-persona AI engine, and interactive holographic web platform.
+================================================================================

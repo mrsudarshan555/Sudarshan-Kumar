@@ -122,6 +122,11 @@ export class ThinkingAudioBridge {
       }
 
       console.log('[STONICX Audio] Thinking audio loop started -> Ducking active');
+      fetch('/api/voice/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: 'thinking', level: 0.25 })
+      }).catch(() => {});
     } catch (err) {
       console.warn('[STONICX Audio] Could not initialize Web Audio oscillator loop:', err);
     }
@@ -161,6 +166,11 @@ export class ThinkingAudioBridge {
       setTimeout(() => {
         this.cleanup();
         this.applyAudioDucking(false);
+        fetch('/api/voice/state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: 'idle', level: 0 })
+        }).catch(() => {});
         console.log('[STONICX Audio] Thinking audio loop stopped -> Volume restored');
       }, fadeDurationSec * 1000 + 30);
     } catch (e) {

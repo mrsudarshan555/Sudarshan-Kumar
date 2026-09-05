@@ -11,21 +11,10 @@ if (typeof globalThis !== 'undefined') {
   (globalThis as any).MMDParser = ParserClass;
 }
 
-export const PMX_MODEL_URL = 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/model.pmx';
-export const LOCAL_PMX_FALLBACK = '/models/model.pmx';
-export const TEXTURES_JSON_URL = 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/textures.json';
-
-export const RAW_TEXTURE_URLS: Record<string, string> = {
-  'tex_0.png': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_0.png',
-  'tex_1.bmp': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_1.bmp',
-  'tex_2.png': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_2.png',
-  'tex_3.bmp': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_3.bmp',
-  'tex_4.bmp': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_4.bmp',
-  'tex_5.png': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_5.png',
-  'tex_6.png': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_6.png',
-  'tex_7.jpg': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_7.jpg',
-  'tex_8.bmp': 'https://raw.githubusercontent.com/mrsudarshan555/Model/main/tex_8.bmp'
-};
+export const PMX_MODEL_VERSION = 'v2_986453';
+export const PMX_MODEL_URL = `/models/model.pmx?v=${PMX_MODEL_VERSION}`;
+export const LOCAL_PMX_FALLBACK = `/models/model.pmx?fresh=${Date.now()}`;
+export const TEXTURES_JSON_URL = '/models/textures.json';
 
 export const LOCAL_TEXTURE_URLS: Record<string, string> = {
   'tex_0.png': '/models/tex_0.png',
@@ -38,6 +27,8 @@ export const LOCAL_TEXTURE_URLS: Record<string, string> = {
   'tex_7.jpg': '/models/tex_7.jpg',
   'tex_8.bmp': '/models/tex_8.bmp'
 };
+
+export const RAW_TEXTURE_URLS: Record<string, string> = LOCAL_TEXTURE_URLS;
 
 export const DEFAULT_TEXTURE_MAPPING: Record<string, string> = {
   'tex\\衣.tga': RAW_TEXTURE_URLS['tex_0.png'],
@@ -117,22 +108,45 @@ export function resolveTextureUrl(pathOrName: string, customMap?: Record<string,
 }
 
 /**
- * Helper to fetch a URL as ArrayBuffer with failover
+ * Helper to fetch a URL as ArrayBuffer with failover and integrity check
  */
 async function fetchModelBuffer(): Promise<ArrayBuffer> {
+  const ts = Date.now();
   const candidateUrls = [
     PMX_MODEL_URL,
-    LOCAL_PMX_FALLBACK
+    `/models/model.pmx?bust=${ts}`,
+    `/api/model/evelyn.glb?bust=${ts}`,
+    LOCAL_PMX_FALLBACK,
+    '/models/model.pmx'
   ];
 
   let lastError: any = null;
   for (const url of candidateUrls) {
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'reload',
+        headers: { 'Cache-Control': 'no-cache, no-store' }
+      });
       if (response.ok) {
         const buffer = await response.arrayBuffer();
+        // Check size and PMX magic header
         if (buffer && buffer.byteLength > 1000) {
-          return buffer;
+          const header = new Uint8Array(buffer.slice(0, 4));
+          const magic = String.fromCharCode(...header);
+          if (magic === 'PMX ') {
+            // Verify parseability before returning
+            try {
+              const testParser = new ParserClass();
+              const testData = testParser.parsePmx(buffer, true);
+              if (testData && testData.metadata && testData.bones) {
+                console.log(`[PMXLoader] Valid PMX model loaded from ${url} (length: ${buffer.byteLength}, bones: ${testData.bones.length})`);
+                return buffer;
+              }
+            } catch (testErr) {
+              console.warn(`[PMXLoader] Buffer from ${url} failed parse test:`, testErr);
+              continue;
+            }
+          }
         }
       }
     } catch (err) {
@@ -141,7 +155,7 @@ async function fetchModelBuffer(): Promise<ArrayBuffer> {
     }
   }
 
-  throw lastError || new Error('Failed to fetch PMX model binary from any candidate URL');
+  throw lastError || new Error('Failed to fetch valid PMX model binary from candidate URLs');
 }
 
 /**
@@ -211,8 +225,23 @@ export async function loadEvelynPMXModel(
   const arrayBuffer = await fetchModelBuffer();
 
   // 2. Parse PMX Data
-  const parser = new ParserClass();
-  const data = parser.parsePmx(arrayBuffer, true);
+  let data: any = null;
+  try {
+    const parser = new ParserClass();
+    data = parser.parsePmx(arrayBuffer, true);
+  } catch (parseErr) {
+    console.warn('[PMXLoader] Primary ParserClass parse failed, trying MMDLoader internal parser:', parseErr);
+    try {
+      const mmdLoaderInst = new MMDLoader();
+      const internalParser = (mmdLoaderInst as any)._getParser ? (mmdLoaderInst as any)._getParser() : null;
+      if (internalParser && typeof internalParser.parsePmx === 'function') {
+        data = internalParser.parsePmx(arrayBuffer, true);
+      }
+    } catch (innerErr) {
+      console.error('[PMXLoader] Internal parser also failed:', innerErr);
+    }
+  }
+
   if (!data || !data.metadata) {
     throw new Error('PMX parser returned invalid metadata');
   }

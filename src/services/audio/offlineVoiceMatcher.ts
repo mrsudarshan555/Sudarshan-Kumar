@@ -9,6 +9,7 @@
 
 export interface VoiceMatchOptions {
   persona?: 'MAYRA' | 'STONICX';
+  voiceName?: string;
   language?: 'en' | 'hi';
   onStart?: () => void;
   onEnd?: () => void;
@@ -259,7 +260,12 @@ export class OfflineVoiceMatcher {
         return false;
       }
 
-      const matchedVoice = this.findBestVoice(persona, lang);
+      const maleVoiceList = ['charon', 'fenrir', 'puck', 'gacrux', 'zephyr', 'sulafat', 'laomedeia'];
+      const isMaleVoice = options.voiceName
+        ? maleVoiceList.includes(options.voiceName.toLowerCase())
+        : (persona === 'STONICX');
+
+      const matchedVoice = this.findBestVoice(isMaleVoice ? 'STONICX' : 'MAYRA', lang);
       let started = false;
 
       sentences.forEach((sentenceText, idx) => {
@@ -269,13 +275,13 @@ export class OfflineVoiceMatcher {
           utterance.lang = matchedVoice.lang;
         }
 
-        if (persona === 'STONICX') {
-          // Charon Persona Tuning: Deep, authoritative, confident baritone
-          utterance.pitch = 0.78;
-          utterance.rate = 0.96;
+        if (isMaleVoice) {
+          // Deep, authoritative, confident baritone male pace
+          utterance.pitch = 0.82;
+          utterance.rate = 0.98;
           utterance.volume = 1.0;
         } else {
-          // Aoede Persona Tuning: Soft, warm, melodic, natural feminine pace
+          // Soft, warm, melodic, natural feminine pace
           utterance.pitch = 1.06;
           utterance.rate = 0.98;
           utterance.volume = 1.0;

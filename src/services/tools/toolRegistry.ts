@@ -14,6 +14,7 @@
 import { ToolDefinition, ToolExecutionResult, FloatingCardPayload } from './types';
 import { MemoryQueryEngine } from '../memory/memoryQueryEngine';
 import { MemoryVaultManager } from '../memory/memoryVaultManager';
+import { TypingToolService, TypingSpeed } from './typingTool';
 
 export class ToolRegistry {
   private static instance: ToolRegistry | null = null;
@@ -94,13 +95,13 @@ export class ToolRegistry {
                 title: `${query} - Technical Documentation & Reference Specs`,
                 url: `https://developer.mozilla.org/search?q=${encodeURIComponent(query)}`,
                 snippet: `Verified architectural guidelines, interface definitions, and state handling paradigms for ${query}.`,
-                source: 'MDN / Modern Web Standards'
+                source: 'Modern Web Standards'
               },
               {
                 title: `${query} - Production Design Patterns`,
-                url: `https://github.com/topics/${encodeURIComponent(query.toLowerCase().replace(/\s+/g, '-'))}`,
+                url: `https://devdocs.io/#q=${encodeURIComponent(query)}`,
                 snippet: `High-concurrency streaming, zero-latency state caching, and modular service isolation techniques.`,
-                source: 'GitHub Tech Index'
+                source: 'Developer Documentation'
               }
             ]
           };
@@ -372,6 +373,82 @@ export class ToolRegistry {
           data: { expression, output: evalOutput },
           executionTimeMs: elapsed,
           error: isError ? errorMessage : undefined,
+          cardPayload
+        };
+      }
+    });
+
+    // 5. AUTONOMOUS TYPING TOOL (Human Cadence & Speed Adjustable)
+    this.registerTool({
+      name: 'typing_tool',
+      displayName: 'Autonomous Human-Like Typing Tool',
+      category: 'execution',
+      description: 'Allows MAYRA to type autonomously into text-input fields, forms, or search boxes with natural human-like cadence and adjustable speed (fast/normal/slow).',
+      parameters: {
+        text: {
+          name: 'text',
+          type: 'string',
+          description: 'The exact text string for MAYRA to type into the field',
+          required: true
+        },
+        speed: {
+          name: 'speed',
+          type: 'string',
+          description: 'Typing speed: "fast" (~18ms/char), "normal" (~48ms/char), or "slow" (~110ms/char)',
+          required: false
+        },
+        target: {
+          name: 'target',
+          type: 'string',
+          description: 'Target input selector or field alias (e.g. "chat_input", "search_input", or CSS selector)',
+          required: false
+        }
+      },
+      execute: async (params): Promise<ToolExecutionResult> => {
+        const startTime = performance.now();
+        console.log(`[ToolRegistry] Tool invoked: typing_tool -> Parameters: ${JSON.stringify(params)}`);
+
+        const textToType = String(params.text || '');
+        const speed = (params.speed as TypingSpeed) || 'normal';
+        const target = String(params.target || 'chat_input');
+
+        const typingService = TypingToolService.getInstance();
+        const result = await typingService.typeText(textToType, {
+          speed,
+          target,
+          addHumanJitter: true,
+          clearFirst: false
+        });
+
+        const elapsed = Math.round(performance.now() - startTime);
+
+        const cardPayload: FloatingCardPayload = {
+          id: `card-type-${Date.now()}`,
+          toolType: 'TERMINAL OUTPUT',
+          title: `Typing: ${textToType.slice(0, 25)}${textToType.length > 25 ? '...' : ''}`,
+          queryOrTarget: target,
+          summary: `Autonomously typed ${textToType.length} characters in ${elapsed}ms at "${speed}" speed.`,
+          keyPoints: [
+            `• Speed Profile: ${speed.toUpperCase()}`,
+            `• Target Field: ${target}`,
+            `• Content Typed: "${textToType}"`,
+            `• Cadence: Natural human rhythm with punctuation pauses`
+          ],
+          metrics: {
+            latencyMs: elapsed,
+            source: 'MAYRA Input Synthesizer'
+          },
+          timestamp: Date.now(),
+          rawJson: { text: textToType, speed, target, durationMs: elapsed }
+        };
+
+        return {
+          tool: 'typing_tool',
+          success: result.success,
+          title: `Autonomous Typing Complete`,
+          summary: `Typed ${textToType.length} chars into ${target} at ${speed} speed`,
+          data: { text: textToType, speed, target, elapsedMs: elapsed },
+          executionTimeMs: elapsed,
           cardPayload
         };
       }

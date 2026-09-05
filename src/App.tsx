@@ -13,10 +13,8 @@ import './services/stonicx/stonicxPowerTestHarness';
 import './services/audio/voicePipelineTestHarness';
 import './services/memory/memoryVaultTestHarness';
 import './services/tools/toolCallingTestHarness';
-import './services/stage/stageCanvasTestHarness';
 import { MemoryVaultManager } from './services/memory/memoryVaultManager';
 import { FloatingDataCardLayer } from './components/tools/FloatingDataCardLayer';
-import { BarehandsStageCanvas } from './components/stage/BarehandsStageCanvas';
 
 export default function App() {
   // Initial App Startup / Splash screen state
@@ -415,9 +413,6 @@ export default function App() {
 
       {/* 3. Autonomous Floating HUD Data Cards Layer */}
       <FloatingDataCardLayer />
-
-      {/* 4. Phase H: Barehands Virtual Workspace & Interactive Stage Canvas */}
-      <BarehandsStageCanvas />
     </div>
   );
 }

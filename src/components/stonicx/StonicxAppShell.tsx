@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Terminal, Database, Camera, Mic, Sliders, X, 
-  ChevronRight, RefreshCw, Cpu, Layers, Maximize2, Minimize2, Sparkles, MessageSquare, PenTool
+  ChevronRight, RefreshCw, Cpu, Layers, Maximize2, Minimize2, Sparkles, MessageSquare, PenTool,
+  Columns2
 } from 'lucide-react';
+import { StonicxLComparisonModal } from '../comparison/StonicxLComparisonModal';
 import { CircuitBoardVisualizer, STONICX_PALETTES } from './CircuitBoardVisualizer';
 import { StonicxScanner } from './StonicxScanner';
 import { StonicxVault } from './StonicxVault';
@@ -46,6 +48,7 @@ export const StonicxAppShell: React.FC<StonicxAppShellProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [manualStateOverride, setManualStateOverride] = useState<'idle' | 'listening' | 'thinking' | 'speaking' | null>(null);
 
@@ -224,6 +227,15 @@ export const StonicxAppShell: React.FC<StonicxAppShellProps> = ({
               >
                 Vault: {MemoryVaultManager.getInstance().getTotalNotesCount()} Notes | Synced
               </span>
+              <button
+                onClick={() => setIsComparisonOpen(true)}
+                style={{ borderColor: `${activePal.primary}40`, color: activePal.primary }}
+                className="flex items-center gap-1 text-[9px] font-mono font-bold bg-black/60 hover:bg-black px-2 py-0.5 rounded border transition-colors cursor-pointer"
+                title="Open StonicX-L Sem-to-Sem Parity Matrix & Comparison Studio"
+              >
+                <Columns2 className="w-3 h-3" />
+                <span>PARITY MATRIX</span>
+              </button>
             </div>
           </div>
         </div>
@@ -454,6 +466,26 @@ export const StonicxAppShell: React.FC<StonicxAppShellProps> = ({
                           </div>
                           <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                         </button>
+
+                        {/* 5. StonicX-L Parity Matrix */}
+                        <button
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            setIsComparisonOpen(true);
+                          }}
+                          className="w-full p-2 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer hover:bg-emerald-500/10 text-emerald-200 border border-transparent hover:border-emerald-500/30"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1.5 border border-emerald-500/40 bg-emerald-500/15 rounded-lg text-emerald-400">
+                              <Columns2 className="w-3.5 h-3.5" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-emerald-300">PARITY MATRIX</div>
+                              <div className="text-[9px] text-slate-400 font-mono">StonicX-L vs Mayra 1:1</div>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-emerald-500" />
+                        </button>
                       </div>
 
                       {/* Assistant Switch Option */}
@@ -643,6 +675,13 @@ export const StonicxAppShell: React.FC<StonicxAppShellProps> = ({
 
       {/* 6. Autonomous Floating Data Cards Layer */}
       <FloatingDataCardLayer />
+
+      {/* 7. StonicX-L & Mayra Sem-to-Sem Comparison Modal */}
+      <StonicxLComparisonModal
+        isOpen={isComparisonOpen}
+        onClose={() => setIsComparisonOpen(false)}
+        initialPersona="STONICX"
+      />
     </div>
   );
 };

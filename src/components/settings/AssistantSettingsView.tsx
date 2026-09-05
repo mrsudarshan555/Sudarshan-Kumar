@@ -5,6 +5,7 @@ import {
   Vibrate, Bell, Zap, Check, Play, MessageSquare,
   ArrowLeft, Palette
 } from 'lucide-react';
+import { MtManagerVoiceStudio } from './MtManagerVoiceStudio';
 
 interface AssistantSettingsViewProps {
   config: AssistantConfig;
@@ -193,28 +194,16 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         <div className="p-3.5 bg-[#0C1021] border border-blue-500/20 rounded-2xl space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-mono font-bold text-blue-400 uppercase flex items-center gap-1.5">
-              <Volume2 className="w-3.5 h-3.5" /> Voice Engine (Gemini Live • Aoede)
+              <Volume2 className="w-3.5 h-3.5" /> Neural Voice Studio (Mayra & Stonicx)
             </div>
-            <button
-              onClick={playVoiceDemo}
-              className="text-[9px] font-mono text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 border border-cyan-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors"
-            >
-              <Play className="w-2.5 h-2.5" /> {isPlayingDemo ? 'Speaking...' : 'Test Aoede Voice'}
-            </button>
+            <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded-full border border-cyan-500/30">
+              Male & Female Voices
+            </span>
           </div>
 
-          <div>
-            <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Active Neural Voice</label>
-            <div className="w-full bg-[#070913] border border-blue-500/40 rounded-xl p-2.5 text-white font-mono text-xs flex items-center justify-between">
-              <div>
-                <span className="font-bold text-cyan-300">Aoede</span>
-                <span className="text-slate-400 text-[10px] ml-2">(Gemini Live API • Natural Human Audio)</span>
-              </div>
-              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[9px] rounded-full font-bold">LOCKED HIGH-FIDELITY</span>
-            </div>
-          </div>
+          <MtManagerVoiceStudio config={config} onChange={onChange} />
 
-          <div>
+          <div className="pt-2 border-t border-white/5">
             <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Primary Assistant Language</label>
             <select
               value={config.language}

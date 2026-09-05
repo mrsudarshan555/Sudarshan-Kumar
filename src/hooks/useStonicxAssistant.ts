@@ -146,13 +146,14 @@ export function useStonicxAssistant({ personalConfig, assistantConfig, onSwitchT
     };
 
     try {
-      // 1. Primary: Fetch Gemini Charon PCM Audio
+      // 1. Primary: Fetch Gemini Voice PCM Audio
+      const targetVoice = assistantConfig?.stonicxVoice || 'Charon';
       const res = await fetch('/api/voice/speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          voiceName: 'Charon',
+          voiceName: targetVoice,
           assistant: 'stonicx',
           language: 'en'
         })
@@ -170,12 +171,14 @@ export function useStonicxAssistant({ personalConfig, assistantConfig, onSwitchT
         }
       }
     } catch (e) {
-      console.warn('[STONICX Voice Pipeline] Charon direct voice endpoint notice, engaging deep male synthesis fallback.');
+      console.warn('[STONICX Voice Pipeline] Voice endpoint notice, engaging voice synthesis fallback.');
     }
 
-    // 2. Secondary Fallback: Deep, authoritative male speech synthesis matching Charon
+    // 2. Secondary Fallback: Speech synthesis matching selected voice
+    const targetVoice = assistantConfig?.stonicxVoice || 'Charon';
     const spokeOffline = OfflineVoiceMatcher.speakOffline(text, {
       persona: 'STONICX',
+      voiceName: targetVoice,
       language: 'en',
       onStart: () => setStatus('SPEAKING'),
       onEnd: handleSpeechEnd
@@ -373,7 +376,7 @@ Synthesize your response by applying the primed user profile, shared memory vaul
           contextPrompt: stonicxSystemPrompt,
           assistant: 'stonicx',
           persona: 'technical',
-          voiceName: 'Charon',
+          voiceName: assistantConfig?.stonicxVoice || 'Charon',
           returnAudio: true,
           model: personalConfig.geminiModel || 'gemini-3.1-flash-lite',
           temperature: 0.35, // Low temperature for high precision & logic

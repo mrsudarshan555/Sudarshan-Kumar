@@ -26,12 +26,10 @@ import {
   loadEvelynPMXModel 
 } from './pmxModelLoader';
 
-// Priority Model URLs with automatic failover
+// Priority Model URLs with automatic failover (strictly local)
 export const MODEL_CANDIDATE_URLS = [
   PMX_MODEL_URL,
-  '/models/Evelyn.glb',
-  'https://cdn.jsdelivr.net/gh/mrsudarshan555/Model@main/Evelyn.glb',
-  'https://raw.githubusercontent.com/mrsudarshan555/Model/main/Evelyn.glb'
+  '/models/model.pmx'
 ];
 
 export const PRIMARY_MODEL_URL = MODEL_CANDIDATE_URLS[0];
@@ -420,11 +418,12 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
       return;
     }
 
-    const tryLoadGltfFallback = (urlIdx: number) => {
+    const tryLoadGltfFallback = (urlIdx: number, originalErr?: any) => {
       const glbUrls = MODEL_CANDIDATE_URLS.filter(u => !u.endsWith('.pmx'));
       if (urlIdx >= glbUrls.length) {
         if (isMounted) {
-          setLoadError('Failed to load 3D character asset.');
+          const detail = originalErr?.message ? ` (${originalErr.message})` : '';
+          setLoadError(`Failed to load 3D character asset${detail}. Tap Retry.`);
           setIsLoading(false);
         }
         return;
@@ -441,14 +440,14 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
             instantiateFreshModel(gltf.scene);
           } catch (err: any) {
             console.error('[Mayra3D] Error processing GLTF scene:', err);
-            tryLoadGltfFallback(urlIdx + 1);
+            tryLoadGltfFallback(urlIdx + 1, originalErr);
           }
         },
         undefined,
         (err) => {
           if (!isMounted) return;
           console.warn(`[Mayra3D] Failed loading GLTF from ${currentUrl}:`, err);
-          tryLoadGltfFallback(urlIdx + 1);
+          tryLoadGltfFallback(urlIdx + 1, originalErr);
         }
       );
     };
@@ -459,8 +458,9 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
         setLoadError(null);
       }
 
+      let errorEncountered: any = null;
       try {
-        console.log('[Mayra3D] Loading Evelyn PMX model with textures from GitHub...');
+        console.log('[Mayra3D] Loading Evelyn PMX model with textures...');
         const pmxScene = await loadEvelynPMXModel();
         if (!isMounted) return;
 
@@ -469,11 +469,12 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
         instantiateFreshModel(pmxScene);
         console.log('[Mayra3D] Evelyn PMX model successfully loaded.');
         return;
-      } catch (pmxErr) {
-        console.warn('[Mayra3D] PMX loader failed, falling back to GLB candidates:', pmxErr);
+      } catch (pmxErr: any) {
+        errorEncountered = pmxErr;
+        console.warn('[Mayra3D] PMX loader failed, falling back to candidates:', pmxErr);
       }
 
-      tryLoadGltfFallback(0);
+      tryLoadGltfFallback(0, errorEncountered);
     };
 
     loadCharacter();

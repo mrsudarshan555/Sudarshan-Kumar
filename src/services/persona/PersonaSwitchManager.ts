@@ -22,7 +22,7 @@ export interface PersonaProfile {
   codename: string;
   tagline: string;
   description: string;
-  voice: 'Charon' | 'Aoede' | 'Fenrir' | 'Puck' | 'Kore' | 'Zephyr';
+  voice: string;
   systemPromptModifier: string;
   defaultPitch: number;
   defaultSpeed: number;

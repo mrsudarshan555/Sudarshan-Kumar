@@ -2,7 +2,7 @@
  * Tool Definitions & Payloads for Autonomous Tool Calling Engine (Phase G)
  */
 
-export type ToolCategory = 'search' | 'codebase' | 'memory' | 'terminal' | 'system';
+export type ToolCategory = 'search' | 'codebase' | 'memory' | 'terminal' | 'system' | 'execution';
 
 export type FloatingCardType = 
   | 'WEB SEARCH RESULTS' 

@@ -270,7 +270,9 @@ function getInitialCharacterSkinTone(): number {
 const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   activeMode: 'mayra',
   personaTone: 'executive',
-  voiceProfile: 'Mayra Violet (Neural)',
+  voiceProfile: 'Aoede',
+  mayraVoice: 'Aoede',
+  stonicxVoice: 'Charon',
   language: 'en-IN',
   speechRate: 1.0,
   speechPitch: 1.0,

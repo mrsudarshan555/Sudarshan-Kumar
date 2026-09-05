@@ -57,6 +57,31 @@ export const AboutView: React.FC<AboutViewProps> = ({ onBack, onOpenOnboarding }
           )}
         </div>
 
+        {/* Credits & Acknowledgments Card */}
+        <div className="p-3.5 bg-[#0C1021] border border-cyan-500/20 rounded-2xl space-y-2.5">
+          <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/20" /> Credits &amp; Acknowledgments
+          </div>
+          <div className="p-3 bg-[#070913] rounded-xl border border-white/5 space-y-1.5">
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-slate-400 font-mono">Original Spatial &amp; Voice Architecture</span>
+              <span className="text-cyan-300 font-bold font-mono">Jared Rhodenizer</span>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal font-sans">
+              Special recognition and credit to <strong>Jared Rhodenizer</strong> for the groundbreaking Barehands (air-board hand-tracking), Backtalk (voice ducking engine), and AI-Visualizer (living circuit board) foundational concepts.
+            </p>
+          </div>
+          <div className="p-3 bg-[#070913] rounded-xl border border-white/5 space-y-1.5">
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-slate-400 font-mono">Android &amp; Dual-Brain Integration</span>
+              <span className="text-emerald-400 font-bold font-mono">Zafer &amp; Sudarshan</span>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal font-sans">
+              MAYRA Android UI architecture, Jetpack Compose system bridge, StonicX dual-persona integration, offline model runner, and full-stack runtime engineering.
+            </p>
+          </div>
+        </div>
+
         {/* Technical Specs Card */}
         <div className="p-3.5 bg-[#0C1021] border border-white/10 rounded-2xl space-y-2.5">
           <div className="text-[11px] font-mono font-bold text-white uppercase flex items-center gap-1.5">
@@ -67,6 +92,14 @@ export const AboutView: React.FC<AboutViewProps> = ({ onBack, onOpenOnboarding }
             <div className="flex justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
               <span className="text-slate-400">APPLICATION_ID</span>
               <span className="text-white font-semibold">com.mayra.assistant</span>
+            </div>
+            <div className="flex justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+              <span className="text-slate-400">OWNERSHIP</span>
+              <span className="text-emerald-400 font-bold">Zafer & Sudarshan</span>
+            </div>
+            <div className="flex justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+              <span className="text-slate-400">LICENSE STATUS</span>
+              <span className="text-amber-400 font-semibold">Private & Proprietary (Not Open Source)</span>
             </div>
             <div className="flex justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
               <span className="text-slate-400">UI FRAMEWORK</span>
@@ -83,6 +116,74 @@ export const AboutView: React.FC<AboutViewProps> = ({ onBack, onOpenOnboarding }
             <div className="flex justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
               <span className="text-slate-400">MINIMUM ANDROID SDK</span>
               <span className="text-white font-semibold">Android 8.0 (API 26)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Ownership & Private Rights Banner */}
+        <div className="p-3.5 bg-gradient-to-r from-purple-950/40 via-blue-950/40 to-slate-900/40 border border-purple-500/30 rounded-2xl space-y-2">
+          <div className="text-[11px] font-mono font-bold text-purple-300 uppercase flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" /> Proprietary Project & Ownership
+          </div>
+          <p className="text-[11px] text-slate-200 leading-relaxed font-sans">
+            Yeh project <strong className="text-white font-semibold">Zafer &amp; Sudarshan</strong> ka private aur proprietary project hai. Yeh open-source bilkul nahi hai. All rights reserved.
+          </p>
+        </div>
+
+        {/* Credits & Acknowledgments Section */}
+        <div className="p-3.5 bg-[#0C1021] border border-cyan-500/20 rounded-2xl space-y-3">
+          <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" /> Credits, Attribution & Licenses
+          </div>
+          <div className="space-y-2 text-[11px] font-sans text-slate-300">
+            <div className="p-2 bg-[#070913] rounded-xl border border-white/5 space-y-1">
+              <div className="font-bold text-white flex justify-between">
+                <span>Core Project & System Architects</span>
+                <span className="text-cyan-400 font-mono text-[10px]">Zafer & Sudarshan</span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Creators of MAYRA & STONICX multimodal assistant architecture, UI/UX design, autonomous agents, and voice pipelines.
+              </p>
+            </div>
+
+            <div className="p-2 bg-[#070913] rounded-xl border border-white/5 space-y-1">
+              <div className="font-bold text-white flex justify-between">
+                <span>Voice Studio & Audio Architecture</span>
+                <span className="text-purple-400 font-mono text-[10px]">MT Manager Inspired</span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Multi-voice switcher and audition interface inspired by MT Manager audio and file utility workflows.
+              </p>
+            </div>
+
+            <div className="p-2 bg-[#070913] rounded-xl border border-white/5 space-y-1">
+              <div className="font-bold text-white flex justify-between">
+                <span>3D Graphics & Engine</span>
+                <span className="text-blue-400 font-mono text-[10px]">Three.js (MIT License)</span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                MMD / PMX character animation and shader pipeline powered by Three.js (Mr.doob & open source contributors).
+              </p>
+            </div>
+
+            <div className="p-2 bg-[#070913] rounded-xl border border-white/5 space-y-1">
+              <div className="font-bold text-white flex justify-between">
+                <span>Typography & Visual Fonts</span>
+                <span className="text-amber-400 font-mono text-[10px]">Peter Hull (SIL OFL 1.1)</span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                VT323 retro font created by Peter Hull, distributed under the SIL Open Font License 1.1.
+              </p>
+            </div>
+
+            <div className="p-2 bg-[#070913] rounded-xl border border-emerald-500/20 space-y-1">
+              <div className="font-bold text-emerald-400 flex items-center justify-between">
+                <span>License Compliance Guarantee</span>
+                <span className="text-emerald-400 font-mono text-[10px]">0% AGPL</span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Strict compliance verified: No AGPL (Affero General Public License) code is included or used in this project. All dependencies utilize permissive licenses (MIT, Apache 2.0, BSD, SIL OFL).
+              </p>
             </div>
           </div>
         </div>

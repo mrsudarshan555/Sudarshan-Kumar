@@ -99,7 +99,7 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col items-center select-none relative px-2">
+    <div className="w-full flex flex-col items-center select-none relative px-0.5">
       
       {/* 1. TOP HEADING ("What's on your mind today?") - Hides when user taps/focuses into chat box */}
       <AnimatePresence>
@@ -109,7 +109,7 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
             animate={{ opacity: 1, y: 0, height: 'auto' }}
             exit={{ opacity: 0, y: -8, height: 0 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-2.5 text-center overflow-hidden"
+            className="mb-2 text-center overflow-hidden"
           >
             <h2 className="text-[14px] sm:text-[15px] font-sans font-medium text-white/90 tracking-wide drop-shadow-[0_2px_14px_rgba(217,70,239,0.5)]">
               {headingText}
@@ -119,7 +119,7 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
       </AnimatePresence>
 
       {/* 2. OUTER CONTAINER WITH 4 FLOATING DUAL-COLOR AURORAS (Half Blue-Violet, Half Hot-Magenta) */}
-      <div className="relative w-full max-w-md flex flex-col items-center">
+      <div className="relative w-full max-w-lg flex flex-col items-center">
         
         {/* Floating Aurora Plume 1: Top-Right Hot Magenta Bloom */}
         <div 

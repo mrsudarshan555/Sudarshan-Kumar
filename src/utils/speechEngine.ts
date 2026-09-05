@@ -638,7 +638,8 @@ export async function speakText(
   lang: MayraLanguage = 'en',
   onStart?: () => void,
   onEnd?: () => void,
-  audioBase64Payload?: string | null
+  audioBase64Payload?: string | null,
+  customVoiceName?: string
 ): Promise<void> {
   const cleanText = sanitizeTextForSpeech(text);
   if (!cleanText) {
@@ -646,9 +647,11 @@ export async function speakText(
     return;
   }
 
+  const effectiveVoice = customVoiceName || 'Aoede';
+
   // 1. If audio base64 is already provided in the response payload, play directly
   if (audioBase64Payload) {
-    audioResponseCache.set(`${lang}:${cleanText}`, audioBase64Payload);
+    audioResponseCache.set(`${effectiveVoice}:${lang}:${cleanText}`, audioBase64Payload);
     const success = playRawPcm24kAudio(audioBase64Payload, onStart, onEnd);
     if (success) return;
   }
@@ -671,7 +674,7 @@ export async function speakText(
       const isFirst = !hasTriggeredStart;
       const isLast = chunkIndex >= chunks.length;
 
-      const chunkCacheKey = `${lang}:${currentChunkText}`;
+      const chunkCacheKey = `${effectiveVoice}:${lang}:${currentChunkText}`;
       if (audioResponseCache.has(chunkCacheKey)) {
         const cached = audioResponseCache.get(chunkCacheKey)!;
         playRawPcm24kAudio(
@@ -700,7 +703,7 @@ export async function speakText(
         const res = await fetch('/api/voice/speak', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: currentChunkText, language: lang, voiceName: 'Aoede', assistant: 'mayra' }),
+          body: JSON.stringify({ text: currentChunkText, language: lang, voiceName: effectiveVoice, assistant: 'mayra' }),
           signal: controller.signal
         });
         clearTimeout(timer);
@@ -740,14 +743,14 @@ export async function speakText(
   }
 
   // 3. Check local audio response cache for zero network latency (single chunk)
-  const cacheKey = `${lang}:${cleanText}`;
+  const cacheKey = `${effectiveVoice}:${lang}:${cleanText}`;
   if (audioResponseCache.has(cacheKey)) {
     const cachedAudio = audioResponseCache.get(cacheKey)!;
     const played = playRawPcm24kAudio(cachedAudio, onStart, onEnd);
     if (played) return;
   }
 
-  // 4. Attempt direct natural Gemini Aoede Voice from backend (single chunk)
+  // 4. Attempt direct natural Gemini Voice from backend (single chunk)
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);
@@ -755,7 +758,7 @@ export async function speakText(
     const res = await fetch('/api/voice/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, language: lang, voiceName: 'Aoede', assistant: 'mayra' }),
+      body: JSON.stringify({ text: cleanText, language: lang, voiceName: effectiveVoice, assistant: 'mayra' }),
       signal: controller.signal
     });
     clearTimeout(timer);
@@ -772,9 +775,10 @@ export async function speakText(
     // Network or timeout notice
   }
 
-  // 5. Offline & On-Device Persona Voice Matching (Soft, Warm Aoede match)
+  // 5. Offline & On-Device Persona Voice Matching
   const spokeOffline = OfflineVoiceMatcher.speakOffline(cleanText, {
     persona: 'MAYRA',
+    voiceName: effectiveVoice,
     language: lang,
     onStart,
     onEnd

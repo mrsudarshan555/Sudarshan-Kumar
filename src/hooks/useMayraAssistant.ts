@@ -237,7 +237,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
 
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/live-ws`;
+      const activeVoice = assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Aoede';
+      const wsUrl = `${protocol}//${window.location.host}/api/live-ws?voiceName=${encodeURIComponent(activeVoice)}`;
       console.log('[LIVE_WS_STATE] CONNECTING ->', wsUrl);
       const ws = new WebSocket(wsUrl);
 
@@ -781,6 +782,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
             temperature: personalConfig.temperature ?? 0.7,
             userName: personalConfig.preferredName || personalConfig.fullName,
             language: detected,
+            assistant: 'mayra',
+            voiceName: assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Aoede',
             returnAudio: true
           })
         });

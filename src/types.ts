@@ -30,6 +30,7 @@ export type SettingsSubScreen =
   | 'linked_devices'
   | 'whiteboard'
   | 'offline_models'
+  | 'ai_provider_fallback'
   | 'backup'
   | 'advanced'
   | 'optional_integrations'
@@ -277,6 +278,8 @@ export interface AssistantConfig {
   activeMode?: AssistantMode; // 'mayra' | 'stonicx' (persisted active app-shell mode)
   personaTone: 'executive' | 'friendly' | 'technical' | 'concise';
   voiceProfile: string;
+  mayraVoice?: string; // Neural voice for Mayra (Aoede, Kore, Charon, Fenrir, etc.)
+  stonicxVoice?: string; // Neural voice for Stonicx (Charon, Fenrir, Aoede, etc.)
   language: string;
   speechRate: number;
   speechPitch: number;

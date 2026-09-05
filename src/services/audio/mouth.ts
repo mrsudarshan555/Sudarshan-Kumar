@@ -13,7 +13,7 @@ import { playPcmAudio, stopCurrentSpeech } from '../../utils/speechEngine';
 import { OfflineVoiceMatcher } from './offlineVoiceMatcher';
 
 export interface MouthSpeakOptions {
-  voice?: 'Charon' | 'Aoede' | 'Fenrir' | 'Puck' | 'Kore';
+  voice?: string;
   persona?: 'MAYRA' | 'STONICX';
   language?: 'en' | 'hi';
   onStart?: () => void;
@@ -51,6 +51,13 @@ export class Mouth {
     this.isSpeaking = true;
     ducking.duck({ duckGain: 0.20, rampDownTimeSec: 0.15 });
 
+    // Sync signal bus for AI-Visualizer faces
+    fetch('/api/voice/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'speaking', level: 0.85 })
+    }).catch(() => {});
+
     if (options.onStart) {
       options.onStart();
     }
@@ -62,6 +69,11 @@ export class Mouth {
     const handleSpeechEnd = () => {
       this.isSpeaking = false;
       ducking.restore({ rampUpTimeSec: 0.30 });
+      fetch('/api/voice/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: 'idle', level: 0 })
+      }).catch(() => {});
       if (options.onEnd) {
         options.onEnd();
       }
@@ -121,5 +133,10 @@ export class Mouth {
     stopCurrentSpeech();
     OfflineVoiceMatcher.stop();
     AudioDuckingManager.getInstance().restore({ rampUpTimeSec: 0.20 });
+    fetch('/api/voice/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: 'idle', level: 0 })
+    }).catch(() => {});
   }
 }

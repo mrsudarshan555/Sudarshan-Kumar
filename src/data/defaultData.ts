@@ -215,12 +215,12 @@ export const INITIAL_INTEGRATIONS: IntegrationItem[] = [
     icon: 'Webhook'
   },
   {
-    id: 'integ-github',
-    name: 'GitHub Repository & CI Bridge',
-    description: 'Synchronizes code repos, issues, pull requests, and automated builds.',
+    id: 'integ-private-git',
+    name: 'Private Git & Code Storage',
+    description: 'Synchronizes private repositories, internal commits, and automated builds.',
     category: 'Developer',
     status: 'configured',
-    icon: 'Github'
+    icon: 'GitBranch'
   },
   {
     id: 'integ-notion',

@@ -16,6 +16,7 @@ import { VoiceGuardianView } from './VoiceGuardianView';
 import { SkillsView } from './SkillsView';
 import { SubAgentsView } from './SubAgentsView';
 import { BackupView } from './BackupView';
+import { AIProviderFallbackView } from './AIProviderFallbackView';
 import { AdvancedSettingsView } from './AdvancedSettingsView';
 import { OptionalIntegrationsView } from './OptionalIntegrationsView';
 import { PrivacyView } from './PrivacyView';
@@ -369,6 +370,8 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <PersonaVoiceStudioView
           userGender="Male"
+          assistantConfig={assistantConfig}
+          onUpdateAssistantConfig={(patch) => setAssistantConfig((prev) => ({ ...prev, ...patch }))}
           onBack={() => setCurrentSubScreen('root')}
         />
       </div>
@@ -541,6 +544,16 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
           messages={messages}
           onClearAllData={handleClearAllData}
           onRestoreData={handleRestoreData}
+          onBack={() => setCurrentSubScreen('root')}
+        />
+      </div>
+    );
+  }
+
+  if (currentSubScreen === 'ai_provider_fallback') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <AIProviderFallbackView
           onBack={() => setCurrentSubScreen('root')}
         />
       </div>
@@ -812,6 +825,19 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
           subtitle: 'Export and restore memories, chats & configuration archives',
           badge: `${memories.length} MEMS`,
           icon: <AppIconTile icon={Database} color="blue" size="md" />
+        },
+        {
+          id: 'ai_provider_fallback' as SettingsSubScreen,
+          title: 'Multiple AI Provider Fallback',
+          subtitle: 'OpenRouter, NVIDIA NIM & Anthropic auto-failover keys',
+          badge: 'FAILOVER MATRIX',
+          icon: <AppIconTile icon={Zap} color="purple" size="md" />,
+          oneLineSummary: {
+            text: '⚡ Multi-Provider Failover • OpenRouter • NVIDIA • Anthropic',
+            chipLabel: 'AUTO-FAILOVER',
+            chipTone: 'purple',
+            isLive: true
+          }
         },
         {
           id: 'quantum_memory_vision' as SettingsSubScreen,

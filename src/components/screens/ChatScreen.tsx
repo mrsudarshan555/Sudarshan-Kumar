@@ -4,7 +4,7 @@ import { ChatMessage, AssistantStatus } from '../../types';
 import { 
   Send, Mic, Sparkles, Copy, 
   Paperclip, X, FileText, Image as ImageIcon,
-  Check, Search, ChevronUp, ChevronDown, Trash2, Zap
+  Check, Search, ChevronUp, ChevronDown, Trash2, Zap, Keyboard
 } from 'lucide-react';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
@@ -14,6 +14,7 @@ import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
 import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
 import { PullToRefresh } from '../common/PullToRefresh';
 import { InteractiveQuizWidget } from '../quiz/InteractiveQuizWidget';
+import { TypingToolWidget } from '../tools/TypingToolWidget';
 
 interface ChatScreenProps {
   messages: ChatMessage[];
@@ -51,6 +52,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(0);
+  const [isTypingToolOpen, setIsTypingToolOpen] = useState<boolean>(false);
 
   // Filter and find matching message IDs
   const matchingMessageIds = useMemo(() => {
@@ -98,11 +100,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       const visualHeight = window.visualViewport.height;
       const windowHeight = window.innerHeight;
       const offset = Math.max(0, windowHeight - visualHeight - (window.visualViewport.offsetTop || 0));
-      setKeyboardOffset(offset);
-      if (offset > 40) {
+      if (offset > 140 && isInputFocused) {
+        setKeyboardOffset(offset);
         setTimeout(() => {
           scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 80);
+      } else {
+        setKeyboardOffset(0);
       }
     };
 
@@ -113,7 +117,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       window.visualViewport?.removeEventListener('resize', handleVisualResize);
       window.visualViewport?.removeEventListener('scroll', handleVisualResize);
     };
-  }, []);
+  }, [isInputFocused]);
 
   useEffect(() => {
     if (!isSearchOpen) {
@@ -189,14 +193,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   return (
     <div 
-      className="flex-1 flex flex-col h-full overflow-hidden bg-[#070312] text-slate-100 relative min-h-0 transition-[padding-bottom] duration-200 ease-out"
+      className="flex-1 flex flex-col h-full overflow-hidden bg-transparent text-slate-100 relative min-h-0 transition-[padding-bottom] duration-200 ease-out"
       style={keyboardOffset > 0 ? { paddingBottom: `${keyboardOffset}px` } : undefined}
     >
       {/* 1. Atmospheric Ambient Background Depth & Drifting Particles (Matching 3D Avatar/Home) */}
       <HomeAtmosphereBackground status={status} />
       
       {/* Top Floating Mini Header with Search & Clear */}
-      <div className="relative px-3.5 py-2 border-b border-white/10 flex items-center justify-between bg-[#120626]/70 backdrop-blur-2xl z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="relative px-3.5 py-2 border-b border-white/10 flex items-center justify-between bg-black/25 backdrop-blur-xl z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30">
             <Sparkles className="w-3.5 h-3.5" />
@@ -215,6 +219,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               <span className="hidden sm:inline">Routines</span>
             </button>
           )}
+
+          <button
+            onClick={() => setIsTypingToolOpen(true)}
+            className="p-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/30 transition-all flex items-center gap-1 text-[10px] font-mono cursor-pointer"
+            title="MAYRA Autonomous Typing Tool"
+          >
+            <Keyboard className="w-3.5 h-3.5 stroke-[1.8]" />
+            <span className="hidden sm:inline">Type</span>
+          </button>
 
           <button
             onClick={() => {
@@ -532,7 +545,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </AnimatePresence>
 
       {/* Chat Input Bar - Morphing Aurora Capsule (Fully Blended with Space Ambient Glow) */}
-      <div className="p-3 bg-transparent shrink-0 flex justify-center z-10">
+      <div className="px-2.5 pt-1 pb-1.5 bg-transparent shrink-0 flex justify-center z-10">
         <div className="w-full max-w-lg">
           <MorphingAuroraInputBox
             inputText={inputText}
@@ -575,6 +588,12 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           setAttachedFile(item);
         }}
         onOpenVisionScanner={onOpenVisionScanner}
+      />
+
+      {/* Autonomous Typing Tool Interactive Tester Modal */}
+      <TypingToolWidget
+        isOpen={isTypingToolOpen}
+        onClose={() => setIsTypingToolOpen(false)}
       />
 
     </div>

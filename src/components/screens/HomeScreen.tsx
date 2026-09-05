@@ -8,6 +8,7 @@ import { useCharacterController } from '../../hooks/useCharacterController';
 import { useBarehandsGesture } from '../../hooks/useBarehandsGesture';
 import { BarehandsCameraOverlay } from '../character/BarehandsCameraOverlay';
 import { BarehandsCameraStage } from '../stage/BarehandsCameraStage';
+import { StonicxLComparisonModal } from '../comparison/StonicxLComparisonModal';
 import { ApkExportModal } from '../dev/ApkExportModal';
 import { MayraLogo } from '../common/MayraLogo';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
@@ -18,7 +19,8 @@ import { UserAccount } from '../../types/auth';
 import { 
   Settings as SettingsIcon, Send, Paperclip, 
   Sparkles, ScreenShare, Lock, Unlock, FileText, 
-  X, PenTool, Hand, Zap, Smartphone, ChevronDown, Check, Cpu, User
+  X, PenTool, Hand, Zap, Smartphone, ChevronDown, Check, Cpu, User,
+  Columns2
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -110,6 +112,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [isSwitcherOpen, setIsSwitcherOpen] = useState<boolean>(false);
   const [isStageCanvasOpen, setIsStageCanvasOpen] = useState<boolean>(false);
   const [isBarehandsCameraOpen, setIsBarehandsCameraOpen] = useState<boolean>(false);
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState<boolean>(false);
   const [isApkExportOpen, setIsApkExportOpen] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -613,6 +616,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <Hand className={`w-3.5 h-3.5 stroke-[1.8] ${isHandTrackingLoading || isBarehandsCameraOpen ? 'animate-pulse text-cyan-400' : ''}`} />
             </motion.button>
 
+            {/* 2.5 StonicX-L Parity Studio & Sem-to-Sem Comparison Modal */}
+            <motion.button
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.88 }}
+              onClick={() => setIsComparisonModalOpen(true)}
+              className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                isComparisonModalOpen
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/60 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
+                  : 'bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 border-white/10 hover:border-emerald-400/40'
+              }`}
+              title="StonicX-L Sem-to-Sem Parity Studio (Memory Vault, Backtalk, Visualizer, Barehands)"
+            >
+              <Columns2 className="w-3.5 h-3.5 stroke-[1.8] text-emerald-400" />
+            </motion.button>
+
             {/* 3. Screen Share / Cast Button */}
             <motion.button
               whileHover={{ scale: 1.15 }}
@@ -804,6 +822,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         onClose={() => setIsBarehandsCameraOpen(false)}
         userName={personalConfig.preferredName || personalConfig.fullName || 'Zafer'}
         onTriggerVoice={onTriggerVoice}
+      />
+
+      {/* 5.5 StonicX-L & Mayra Sem-to-Sem Comparison Modal */}
+      <StonicxLComparisonModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        initialPersona="MAYRA"
       />
 
       {/* 6. Build & Export Android APK Modal */}

@@ -11,6 +11,8 @@
 import { AgentPermissionLevel, AgentPendingConfirmation } from '../../types';
 import { MayraSystemBridge } from '../native/MayraSystemIntegrationBridge';
 import { MemoryVaultService } from '../memory/memoryVaultService';
+import { ContactFuzzyMatcher } from '../contacts/contactFuzzyMatcher';
+import { TypingToolService, TypingSpeed } from '../tools/typingTool';
 
 export interface ToolParameterSchema {
   type: 'string' | 'number' | 'boolean' | 'object' | 'array';
@@ -367,12 +369,27 @@ export class AgentToolRegistry {
         impactLevel: 'high'
       }),
       execute: async (args) => {
-        const target = args.phoneNumber || args.contactName;
+        const matcher = ContactFuzzyMatcher.getInstance();
+        const matchResult = matcher.matchContact(args.contactName);
+
+        // If not exact match but a close match exists, ask for confirmation!
+        if (!matchResult.exact && matchResult.matchedContact) {
+          return {
+            success: false,
+            needsClarification: true,
+            clarificationPrompt: matchResult.clarificationPrompt,
+            closestMatch: matchResult.matchedContact.name,
+            phoneNumber: matchResult.matchedContact.phoneNumber,
+            details: matchResult.clarificationPrompt
+          };
+        }
+
+        const target = args.phoneNumber || matchResult.matchedContact?.phoneNumber || args.contactName;
         const msg = args.message;
         const res = await MayraSystemBridge.sendWhatsAppMessage(target, msg, true);
         return {
           success: res.success,
-          contactName: args.contactName,
+          contactName: matchResult.matchedContact?.name || args.contactName,
           message: msg,
           details: res.message || 'WhatsApp message dispatched via Accessibility Service / Intent'
         };
@@ -407,12 +424,68 @@ export class AgentToolRegistry {
         impactLevel: 'high'
       }),
       execute: async (args) => {
-        const target = args.phoneNumber || args.contactName;
+        const matcher = ContactFuzzyMatcher.getInstance();
+        const matchResult = matcher.matchContact(args.contactName);
+
+        if (!matchResult.exact && matchResult.matchedContact) {
+          return {
+            success: false,
+            needsClarification: true,
+            clarificationPrompt: matchResult.clarificationPrompt,
+            closestMatch: matchResult.matchedContact.name,
+            phoneNumber: matchResult.matchedContact.phoneNumber,
+            details: matchResult.clarificationPrompt
+          };
+        }
+
+        const target = args.phoneNumber || matchResult.matchedContact?.phoneNumber || args.contactName;
         const res = await MayraSystemBridge.placePhoneCall(target);
         return {
           success: res.success,
-          contact: args.contactName,
+          contact: matchResult.matchedContact?.name || args.contactName,
           details: res.message || 'Call initiated via Telecom / Dialer'
+        };
+      }
+    });
+
+    // 10b. typing_tool (SAFE)
+    AgentToolRegistry.register({
+      name: 'typing_tool',
+      description: 'Autonomously type text into search boxes, forms, or chat inputs with adjustable speed (fast/normal/slow) and natural human cadence.',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 12000,
+      parameters: {
+        type: 'object',
+        properties: {
+          text: {
+            type: 'string',
+            description: 'Text string for MAYRA to type'
+          },
+          speed: {
+            type: 'string',
+            description: 'Speed: "fast", "normal", or "slow"'
+          },
+          target: {
+            type: 'string',
+            description: 'Target input name or element selector'
+          }
+        },
+        required: ['text']
+      },
+      execute: async (args) => {
+        const typingService = TypingToolService.getInstance();
+        const speed = (args.speed as TypingSpeed) || 'normal';
+        const res = await typingService.typeText(args.text, {
+          speed,
+          target: args.target || 'chat_input',
+          addHumanJitter: true
+        });
+        return {
+          success: res.success,
+          text: res.typedText,
+          durationMs: res.durationMs,
+          speed
         };
       }
     });

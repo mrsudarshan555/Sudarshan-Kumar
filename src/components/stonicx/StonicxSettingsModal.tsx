@@ -1096,6 +1096,22 @@ export const StonicxSettingsModal: React.FC<StonicxSettingsModalProps> = ({
                       <span className="text-[10px] text-slate-400">ACTIVE FONT STYLE</span>
                       <div className="font-bold text-cyan-200">{currentFont}</div>
                     </div>
+
+                    <div className="p-3 bg-gradient-to-r from-cyan-950/40 via-emerald-950/30 to-blue-950/40 border border-emerald-500/30 rounded-2xl space-y-1 col-span-2">
+                      <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">PROJECT OWNERSHIP & CLASSIFICATION</span>
+                      <div className="font-bold text-white text-xs">Proprietary Software: Zafer &amp; Sudarshan</div>
+                      <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                        Developed and maintained by <strong className="text-emerald-300">Zafer &amp; Sudarshan</strong>.
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-[#030D22] border border-cyan-500/20 rounded-2xl space-y-1 col-span-2">
+                      <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider">FOUNDATIONAL ARCHITECTURE CREDITS</span>
+                      <div className="font-bold text-cyan-200 text-xs">Original Concept &amp; Systems: Jared Rhodenizer</div>
+                      <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                        Heartfelt credit to <strong>Jared Rhodenizer</strong> for the foundational Barehands AR air-board, Backtalk voice bridge, and AI-Visualizer technologies.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

@@ -6,15 +6,21 @@ import {
 import { PERSONA_PROFILES, PersonaSwitchManager, PersonaProfile } from '../../services/persona/PersonaSwitchManager';
 import { REGIONAL_LANGUAGES, RegionalLanguageAudioEngine, RegionalLanguageConfig } from '../../services/audio/RegionalLanguageAudioEngine';
 import { Mouth } from '../../services/audio/mouth';
+import { MtManagerVoiceStudio } from './MtManagerVoiceStudio';
+import { AssistantConfig } from '../../types';
 
 interface PersonaVoiceStudioViewProps {
   onBack: () => void;
   userGender?: 'Male' | 'Female' | 'Other';
+  assistantConfig?: AssistantConfig;
+  onUpdateAssistantConfig?: (patch: Partial<AssistantConfig>) => void;
 }
 
 export const PersonaVoiceStudioView: React.FC<PersonaVoiceStudioViewProps> = ({
   onBack,
-  userGender = 'Male'
+  userGender = 'Male',
+  assistantConfig,
+  onUpdateAssistantConfig
 }) => {
   const personaManager = PersonaSwitchManager.getInstance();
   const langEngine = RegionalLanguageAudioEngine.getInstance();
@@ -132,6 +138,27 @@ export const PersonaVoiceStudioView: React.FC<PersonaVoiceStudioViewProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Neural Voice Selection Studio (Male/Female MT Manager Style) */}
+        {assistantConfig && onUpdateAssistantConfig && (
+          <div className="p-4 bg-[#0C1021] border border-cyan-500/20 rounded-2xl space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase flex items-center gap-1.5">
+                <Volume2 className="w-3.5 h-3.5" /> Neural Voice Studio (Mayra & Stonicx)
+              </div>
+              <span className="text-[9px] font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">
+                MT Manager Audio Engine
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              Select any male or female voice for Mayra and Stonicx. Test audio clips and apply instantly.
+            </p>
+            <MtManagerVoiceStudio
+              config={assistantConfig}
+              onChange={onUpdateAssistantConfig}
+            />
+          </div>
+        )}
 
         {/* 1. Multi-Persona Selection */}
         <div className="p-4 bg-[#0C1021] border border-purple-500/20 rounded-2xl space-y-3.5">
