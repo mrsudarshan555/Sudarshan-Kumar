@@ -74,7 +74,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -100,7 +100,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
       </div>
 
       {/* User Title & Name Config Bar - Frosted Glass */}
-      <div className="p-3.5 bg-black/25 backdrop-blur-xl border-b border-white/10 flex flex-wrap items-center gap-3 text-xs">
+      <div className="p-3.5 bg-white/[0.05] backdrop-blur-xl border-b border-white/10 flex flex-wrap items-center gap-3 text-xs">
         <div className="flex items-center gap-1.5">
           <span className="text-[11px] font-sans text-purple-200/70">Address Title ({`{Title}`}):</span>
           <input
@@ -108,7 +108,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
             value={userTitle}
             onChange={(e) => setUserTitle(e.target.value)}
             onBlur={handleSaveTitles}
-            className="w-24 bg-black/30 backdrop-blur-xl border border-white/15 rounded-xl px-2.5 py-1 text-white font-sans text-xs outline-none focus:border-amber-400 transition-all"
+            className="w-24 bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-xl px-2.5 py-1 text-white font-sans text-xs outline-none focus:border-amber-400 transition-all"
           />
         </div>
         <div className="flex items-center gap-1.5">
@@ -118,7 +118,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
             onBlur={handleSaveTitles}
-            className="w-28 bg-black/30 backdrop-blur-xl border border-white/15 rounded-xl px-2.5 py-1 text-white font-sans text-xs outline-none focus:border-amber-400 transition-all"
+            className="w-28 bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-xl px-2.5 py-1 text-white font-sans text-xs outline-none focus:border-amber-400 transition-all"
           />
         </div>
         <button
@@ -130,7 +130,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
       </div>
 
       {/* Search & Categories Bar - Frosted Glass */}
-      <div className="p-3 px-4 border-b border-white/10 space-y-2.5 bg-black/20 backdrop-blur-xl">
+      <div className="p-3 px-4 border-b border-white/10 space-y-2.5 bg-white/[0.04] backdrop-blur-xl">
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-purple-300/50 absolute left-3.5 top-2.5" />
           <input
@@ -138,7 +138,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search automation by trigger or action (e.g. अनलॉक, whatsapp, sos)..."
-            className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl pl-9 pr-3.5 py-2 text-white font-sans text-xs outline-none focus:border-amber-400 transition-all"
+            className="w-full bg-white/[0.07] backdrop-blur-xl border border-white/10 rounded-2xl pl-9 pr-3.5 py-2 text-white font-sans text-xs outline-none focus:border-amber-400 transition-all"
           />
         </div>
 
@@ -175,7 +175,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
         {filteredRules.map((rule, idx) => (
           <div
             key={rule.id}
-            className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 transition-all hover:border-amber-500/40 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]"
+            className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 transition-all hover:border-amber-500/40 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]"
           >
             {/* Rule Header */}
             <div className="flex items-center justify-between">
@@ -191,7 +191,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
             </div>
 
             {/* Triggers */}
-            <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center gap-2 flex-wrap">
+            <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex items-center gap-2 flex-wrap">
               <span className="text-[9px] font-sans text-amber-400 uppercase font-bold">Triggers:</span>
               {rule.triggers.map((trig, tIdx) => (
                 <span key={tIdx} className="px-2 py-0.5 bg-amber-950/50 border border-amber-500/30 text-amber-300 rounded-lg text-[10px] font-sans">
@@ -203,7 +203,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
             {/* Dialogue Matrix: Action, Success, Failure */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px]">
               {/* 1. Action Start Speech */}
-              <div className="p-3 bg-black/30 backdrop-blur-xl border border-cyan-500/30 rounded-2xl space-y-2 flex flex-col justify-between">
+              <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-cyan-500/30 rounded-2xl space-y-2 flex flex-col justify-between">
                 <div>
                   <div className="text-[9px] font-sans text-cyan-400 font-bold uppercase flex items-center gap-1">
                     <Sparkles className="w-3 h-3" /> 1. Action Start (शुरुआत)
@@ -221,7 +221,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
               </div>
 
               {/* 2. Success Speech */}
-              <div className="p-3 bg-black/30 backdrop-blur-xl border border-emerald-500/30 rounded-2xl space-y-2 flex flex-col justify-between">
+              <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-emerald-500/30 rounded-2xl space-y-2 flex flex-col justify-between">
                 <div>
                   <div className="text-[9px] font-sans text-emerald-400 font-bold uppercase flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> 2. Success (सफलता)
@@ -239,7 +239,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
               </div>
 
               {/* 3. Failure Speech */}
-              <div className="p-3 bg-black/30 backdrop-blur-xl border border-rose-500/30 rounded-2xl space-y-2 flex flex-col justify-between">
+              <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-rose-500/30 rounded-2xl space-y-2 flex flex-col justify-between">
                 <div>
                   <div className="text-[9px] font-sans text-rose-400 font-bold uppercase flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" /> 3. Failure (विफलता)
@@ -261,7 +261,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
             {(rule.disarmSuccessSpeech || rule.disarmFailureSpeech) && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] pt-1">
                 {rule.disarmSuccessSpeech && (
-                  <div className="p-2.5 bg-black/30 backdrop-blur-xl border border-emerald-500/30 rounded-2xl flex items-center justify-between">
+                  <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl border border-emerald-500/30 rounded-2xl flex items-center justify-between">
                     <div>
                       <span className="text-[9px] font-sans text-emerald-400 font-bold uppercase">Owner Voice Disarm:</span>
                       <p className="text-purple-200/80 italic text-[10px] font-sans">"{manager.formatDialogue(rule.disarmSuccessSpeech)}"</p>
@@ -275,7 +275,7 @@ export const AutomationDialogueStudioView: React.FC<AutomationDialogueStudioView
                   </div>
                 )}
                 {rule.disarmFailureSpeech && (
-                  <div className="p-2.5 bg-black/30 backdrop-blur-xl border border-rose-500/30 rounded-2xl flex items-center justify-between">
+                  <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl border border-rose-500/30 rounded-2xl flex items-center justify-between">
                     <div>
                       <span className="text-[9px] font-sans text-rose-400 font-bold uppercase">Unknown Voice Alert:</span>
                       <p className="text-purple-200/80 italic text-[10px] font-sans">"{manager.formatDialogue(rule.disarmFailureSpeech)}"</p>

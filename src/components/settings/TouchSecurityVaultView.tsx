@@ -71,7 +71,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
       isAlarming ? 'bg-rose-950/90' : 'bg-transparent'
     }`}>
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -125,7 +125,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
                   value={disarmVoiceInput}
                   onChange={(e) => setDisarmVoiceInput(e.target.value)}
                   placeholder="Voice Passcode: Type 'stonicx' or 'disarm'"
-                  className="flex-1 bg-black/60 border border-white/30 rounded-2xl px-3 py-2 text-white font-sans text-xs outline-none focus:border-white"
+                  className="flex-1 bg-white/[0.1] border border-white/30 rounded-2xl px-3 py-2 text-white font-sans text-xs outline-none focus:border-white"
                 />
                 <button
                   onClick={handleArmToggle}
@@ -150,7 +150,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
             ? 'bg-emerald-950/30 border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
             : isCounting
             ? 'bg-amber-950/30 border-amber-500/40 animate-pulse'
-            : 'bg-black/35 border-white/15'
+            : 'bg-white/[0.07] border-white/15'
         }`}>
           <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 transition-transform duration-300 ${
             isArmed
@@ -209,7 +209,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
         </div>
 
         {/* 2. Security Toggles & Sensitivity - Magnifying Glass */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5" /> Guard Sensitivity & Protocols
           </span>
@@ -225,7 +225,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
                   className={`py-2 rounded-2xl border font-sans text-[10px] uppercase font-bold transition-all cursor-pointer ${
                     sensitivity === lvl
                       ? 'bg-purple-600 text-white border-purple-400 shadow-md backdrop-blur-xl'
-                      : 'bg-black/30 backdrop-blur-xl text-purple-300/60 border-white/10 hover:border-white/20'
+                      : 'bg-white/[0.06] backdrop-blur-xl text-purple-300/60 border-white/10 hover:border-white/20'
                   }`}
                 >
                   {lvl === 'high' ? '🔥 HIGH (8m/s²)' : lvl === 'medium' ? '⚡ MED (15m/s²)' : '🛡️ LOW (25m/s²)'}
@@ -235,7 +235,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
           </div>
 
           {/* God Mode Toggle */}
-          <div className="flex items-center justify-between p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div>
               <div className="font-semibold text-white text-xs flex items-center gap-1.5">
                 <Lock className="w-3 h-3 text-amber-400" /> God Mode (Owner Voice-Only Disarm)
@@ -255,7 +255,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
           </div>
 
           {/* Charger Pull-Out Alarm */}
-          <div className="flex items-center justify-between p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div>
               <div className="font-semibold text-white text-xs flex items-center gap-1.5">
                 <BatteryCharging className="w-3 h-3 text-emerald-400" /> Charger Cable Pull-Out Alarm
@@ -275,7 +275,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
           </div>
 
           {/* Stealth Mode Logging */}
-          <div className="flex items-center justify-between p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div>
               <div className="font-semibold text-white text-xs flex items-center gap-1.5">
                 <Camera className="w-3 h-3 text-purple-400" /> Stealth Capture Mode (Silent Trap)
@@ -296,7 +296,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
         </div>
 
         {/* 3. 'Who Touched It' History Gallery (Feature 54) */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-sans font-bold text-rose-400 uppercase flex items-center gap-1.5">
               <Camera className="w-3.5 h-3.5" /> 'Who Touched It' Intruder Gallery ({logs.length})
@@ -312,7 +312,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
           </div>
 
           {logs.length === 0 ? (
-            <div className="p-6 text-center text-purple-300/50 font-sans text-[11px] bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+            <div className="p-6 text-center text-purple-300/50 font-sans text-[11px] bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               No unauthorized touches or intruder captures recorded yet.
             </div>
           ) : (
@@ -321,7 +321,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
                 <div
                   key={log.id}
                   onClick={() => log.photoDataUrl && setSelectedPhoto(log.photoDataUrl)}
-                  className="p-2 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col gap-1.5 cursor-pointer hover:border-purple-400/50 transition-all shadow-md"
+                  className="p-2 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col gap-1.5 cursor-pointer hover:border-purple-400/50 transition-all shadow-md"
                 >
                   <div className="w-full h-24 bg-black/60 rounded-xl overflow-hidden flex items-center justify-center relative">
                     {log.photoDataUrl ? (

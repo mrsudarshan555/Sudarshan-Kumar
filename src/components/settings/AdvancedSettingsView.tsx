@@ -71,7 +71,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -104,7 +104,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
             <div className="flex-1 h-[1px] bg-gradient-to-r from-rose-500/30 to-transparent" />
           </div>
 
-          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             {/* Voice Guardian */}
             <button
               onClick={() => onNavigateSubScreen?.('voice_guardian')}
@@ -213,7 +213,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
             <div className="flex-1 h-[1px] bg-gradient-to-r from-cyan-500/30 to-transparent" />
           </div>
 
-          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             
             {/* Live Hardware Telemetry Panel */}
             <div className="p-3.5 space-y-3">
@@ -236,7 +236,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
 
               {/* 4 Live Hardware Gauges */}
               <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                <div className="p-2.5 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10 flex items-center justify-between">
+                <div className="p-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/10 flex items-center justify-between">
                   <div>
                     <span className="text-[9px] text-purple-300/70 font-sans block">CPU Core Load</span>
                     <span className="text-sm font-mono font-bold text-white">{telemetryLive.cpuLoad}%</span>
@@ -246,7 +246,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10 flex items-center justify-between">
+                <div className="p-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/10 flex items-center justify-between">
                   <div>
                     <span className="text-[9px] text-purple-300/70 font-sans block">Thermal Sensor</span>
                     <span className="text-sm font-mono font-bold text-amber-300">{telemetryLive.cpuTemp}°C</span>
@@ -256,7 +256,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10 flex items-center justify-between">
+                <div className="p-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/10 flex items-center justify-between">
                   <div>
                     <span className="text-[9px] text-purple-300/70 font-sans block">RAM Allocation</span>
                     <span className="text-sm font-mono font-bold text-emerald-300">{telemetryLive.ramAllocatedMb} MB</span>
@@ -266,7 +266,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10 flex items-center justify-between">
+                <div className="p-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/10 flex items-center justify-between">
                   <div>
                     <span className="text-[9px] text-purple-300/70 font-sans block">Battery & Health</span>
                     <span className="text-sm font-mono font-bold text-purple-200">{telemetryLive.batteryLevel}%</span>
@@ -314,7 +314,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
             <div className="flex-1 h-[1px] bg-gradient-to-r from-emerald-500/30 to-transparent" />
           </div>
 
-          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             {/* AI Toolkit, Scanner & Whiteboard */}
             <button
               onClick={() => onNavigateSubScreen?.('ai_toolkit_scanner')}
@@ -366,7 +366,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
         </div>
 
         {/* 4. BACKGROUND HAND GESTURE & FLOATING CHAT HEAD */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20">
@@ -397,7 +397,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
           </div>
 
           {/* Today's Usage Badge */}
-          <div className="flex items-center justify-between p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div className="flex items-center gap-2">
               <div className="p-1 rounded-lg bg-rose-500/20 text-rose-300">
                 <Activity className="w-3.5 h-3.5" />
@@ -439,7 +439,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
         </div>
 
         {/* 5. SAFETY & DEVELOPER OPTIONS */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-mono font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <ShieldAlert className="w-3.5 h-3.5 text-purple-400" /> Safety & Content Filtering
           </div>
@@ -456,7 +456,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
                 className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   config.safetyLevel === lvl.id
                     ? 'bg-purple-600/30 border-purple-400 text-white font-bold shadow-[0_0_12px_rgba(168,85,247,0.3)]'
-                    : 'bg-black/30 border-white/10 text-purple-200/60 hover:text-white'
+                    : 'bg-white/[0.06] border-white/10 text-purple-200/60 hover:text-white'
                 }`}
               >
                 <div className="text-xs">{lvl.label}</div>
@@ -471,7 +471,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
               Kernel & Background Service
             </div>
 
-            <div className="flex items-center justify-between p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+            <div className="flex items-center justify-between p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div>
                 <div className="text-white font-medium text-xs">Background Service Keeper</div>
                 <div className="text-[9px] text-purple-300/60">Keep assistant listening and timers active</div>
@@ -484,7 +484,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-between p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+            <div className="flex items-center justify-between p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div>
                 <div className="text-white font-medium text-xs">Battery Optimization Ignore</div>
                 <div className="text-[9px] text-purple-300/60">Prevents Android OS from killing background tasks</div>
@@ -497,7 +497,7 @@ export const AdvancedSettingsView: React.FC<AdvancedSettingsViewProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-between p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+            <div className="flex items-center justify-between p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="flex items-center gap-2">
                 <Bug className="w-3.5 h-3.5 text-purple-400" />
                 <div>

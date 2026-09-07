@@ -33,6 +33,7 @@ fun MayraSettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val settingsItems = listOf(
+        SettingsCategory("Memory Vault", "memories", Icons.Default.Psychology, "Root Memory Index, Living Profile, Daily Notes & Jobs"),
         SettingsCategory("Permissions Center", "settings/permissions", Icons.Default.Security, "Manage system permissions & service access"),
         SettingsCategory("Personal Profile", "settings/personal", Icons.Default.Person, "Name, identity, and personal preferences"),
         SettingsCategory("Country Code & Region", "settings/country_code", Icons.Default.Public, "Telecom, phone dialer & regional formats"),

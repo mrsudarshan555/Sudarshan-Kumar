@@ -93,7 +93,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -118,26 +118,26 @@ export const BackupView: React.FC<BackupViewProps> = ({
         
         {/* Status banner */}
         {statusMessage && (
-          <div className="p-3 bg-emerald-950/60 backdrop-blur-2xl border border-emerald-500/40 rounded-2xl text-emerald-300 text-xs font-sans flex items-center gap-2 animate-in fade-in shadow-lg">
+          <div className="p-3 bg-emerald-500/20 backdrop-blur-2xl border border-emerald-400/30 rounded-2xl text-emerald-300 text-xs font-sans flex items-center gap-2 animate-in fade-in shadow-lg">
             <CheckCircle2 className="w-4 h-4 shrink-0 stroke-[2]" />
             <span>{statusMessage}</span>
           </div>
         )}
 
         {/* Local Storage Metrics - Magnifying Glass */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <HardDrive className="w-3.5 h-3.5 text-purple-300" /> Local Storage Breakdown
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+            <div className="p-3 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="text-[10px] text-purple-300/70 uppercase">Context Memories</div>
               <div className="text-sm font-bold text-white font-mono mt-0.5">{memories.length} facts</div>
               <div className="text-[9px] text-purple-300/50">~{Math.round(JSON.stringify(memories).length / 1024 * 10) / 10} KB</div>
             </div>
 
-            <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+            <div className="p-3 bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="text-[10px] text-purple-300/70 uppercase">Chat History</div>
               <div className="text-sm font-bold text-white font-mono mt-0.5">{messages.length} messages</div>
               <div className="text-[9px] text-purple-300/50">~{Math.round(JSON.stringify(messages).length / 1024 * 10) / 10} KB</div>
@@ -148,12 +148,12 @@ export const BackupView: React.FC<BackupViewProps> = ({
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3 text-purple-400" /> Last Export: {lastBackup}
             </span>
-            <span className="text-emerald-400 font-sans">SQLite / Room Ready</span>
+            <span className="text-emerald-400 font-sans font-bold">SQLite / Room Ready</span>
           </div>
         </div>
 
         {/* Export Controls */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <Download className="w-3.5 h-3.5" /> Export Data
           </div>
@@ -161,14 +161,14 @@ export const BackupView: React.FC<BackupViewProps> = ({
           <div className="space-y-2">
             <button
               onClick={handleExportComprehensive}
-              className="w-full p-2.5 bg-black/30 hover:bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer group"
+              className="w-full p-3 bg-white/[0.05] hover:bg-white/[0.1] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer group"
             >
               <div className="flex items-center gap-2.5">
-                <Package className="w-4 h-4 text-purple-400" />
+                <Package className="w-4 h-4 text-purple-300" />
                 <div>
                   <div className="text-white font-medium text-xs flex items-center gap-1.5">
                     <span>Full Comprehensive Backup (.json)</span>
-                    <span className="text-[9px] font-sans text-purple-300 bg-purple-900/60 px-1.5 py-0.2 rounded-full border border-purple-400/30">Recommended</span>
+                    <span className="text-[9px] font-sans text-purple-300 bg-purple-900/60 px-2 py-0.5 rounded-full border border-purple-400/30 font-bold">Recommended</span>
                   </div>
                   <div className="text-[9px] text-purple-200/60">All memories, chat history, contacts & settings into one archive</div>
                 </div>
@@ -178,10 +178,10 @@ export const BackupView: React.FC<BackupViewProps> = ({
 
             <button
               onClick={handleExportMemories}
-              className="w-full p-2.5 bg-black/30 hover:bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer group"
+              className="w-full p-3 bg-white/[0.05] hover:bg-white/[0.1] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer group"
             >
               <div className="flex items-center gap-2.5">
-                <FileJson className="w-4 h-4 text-blue-400" />
+                <FileJson className="w-4 h-4 text-blue-300" />
                 <div>
                   <div className="text-white font-medium text-xs">Export Memories (.json)</div>
                   <div className="text-[9px] text-purple-200/60">Save all personal facts and system preferences</div>
@@ -192,10 +192,10 @@ export const BackupView: React.FC<BackupViewProps> = ({
 
             <button
               onClick={handleExportChats}
-              className="w-full p-2.5 bg-black/30 hover:bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer group"
+              className="w-full p-3 bg-white/[0.05] hover:bg-white/[0.1] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between transition-colors text-left cursor-pointer group"
             >
               <div className="flex items-center gap-2.5">
-                <FileJson className="w-4 h-4 text-cyan-400" />
+                <FileJson className="w-4 h-4 text-cyan-300" />
                 <div>
                   <div className="text-white font-medium text-xs">Export Chat Logs (.json)</div>
                   <div className="text-[9px] text-purple-200/60">Export conversational transcript history</div>
@@ -207,7 +207,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
         </div>
 
         {/* Restore Data */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <Upload className="w-3.5 h-3.5 text-purple-400" /> Restore Data from File
           </div>
@@ -216,7 +216,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
             Import a previously exported MAYRA JSON backup file to restore memories.
           </p>
 
-          <label className="w-full p-2.5 bg-black/30 hover:bg-white/[0.08] backdrop-blur-xl border border-white/10 hover:border-purple-500/40 rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-colors text-purple-300 font-sans text-xs">
+          <label className="w-full p-3 bg-white/[0.05] hover:bg-white/[0.1] backdrop-blur-xl border border-white/10 hover:border-purple-400/40 rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-colors text-purple-300 font-sans text-xs">
             <Upload className="w-3.5 h-3.5" />
             <span>Select Backup File (.json)</span>
             <input
@@ -229,7 +229,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
         </div>
 
         {/* Danger Zone: Clear / Reset */}
-        <div className="p-3.5 bg-rose-950/20 backdrop-blur-2xl border border-rose-500/25 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-rose-500/10 backdrop-blur-2xl border border-rose-500/25 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-rose-400 uppercase flex items-center gap-1.5">
             <Trash2 className="w-3.5 h-3.5" /> Clear All Local Data
           </div>
@@ -241,12 +241,12 @@ export const BackupView: React.FC<BackupViewProps> = ({
           {!showConfirmClear ? (
             <button
               onClick={() => setShowConfirmClear(true)}
-              className="w-full py-2 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 text-rose-300 rounded-2xl text-xs font-sans font-bold uppercase tracking-wider transition-colors cursor-pointer backdrop-blur-md"
+              className="w-full py-2.5 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 text-rose-300 rounded-2xl text-xs font-sans font-bold uppercase tracking-wider transition-colors cursor-pointer backdrop-blur-md"
             >
               Clear & Reset MAYRA Data
             </button>
           ) : (
-            <div className="p-3.5 bg-black/75 backdrop-blur-3xl border border-rose-500/60 rounded-2xl space-y-2 animate-in fade-in shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+            <div className="p-4 bg-white/[0.08] backdrop-blur-3xl border border-rose-500/50 rounded-2xl space-y-3 animate-in fade-in shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
               <div className="text-xs text-white font-bold flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-400" /> Confirm Irreversible Deletion?
               </div>

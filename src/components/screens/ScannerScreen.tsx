@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ScanLine, FlipHorizontal, Flashlight, 
   Sparkles, CheckCircle2, X, FileText, 
-  Layers, Globe, Radio, Image as ImageIcon, Camera,
-  Video
+  Layers, Globe, Radio, Image as ImageIcon,
+  RotateCcw, AlertCircle
 } from 'lucide-react';
 import { CameraAspectRatio } from '../../types';
-import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
 
 interface ScannerScreenProps {
   onSendVisionQuery: (query: string, image?: { base64: string; mimeType?: string }) => void;
@@ -17,502 +16,500 @@ interface ScannerScreenProps {
 
 export const ScannerScreen: React.FC<ScannerScreenProps> = ({ 
   onSendVisionQuery,
-  triggerCaptureSignal,
-  aspectRatio = '9:16'
+  triggerCaptureSignal
 }) => {
-  const [torchOn, setTorchOn] = useState(false);
-  const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('environment');
-  const [scanMode, setScanMode] = useState<'ocr' | 'object' | 'scene'>('ocr');
-  const [isScanning, setIsScanning] = useState(false);
-  const [isLiveVisionActive, setIsLiveVisionActive] = useState(false);
-  const [scannedResult, setScannedResult] = useState<string | null>(null);
-  const [capturedImageBase64, setCapturedImageBase64] = useState<string | null>(null);
-  const [hasCameraStream, setHasCameraStream] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  // Live Camera stream & hardware states
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
+  const [hasTorchSupport, setHasTorchSupport] = useState<boolean>(false);
+  const [torchOn, setTorchOn] = useState<boolean>(false);
+  const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
+  const [isStartingCamera, setIsStartingCamera] = useState<boolean>(false);
 
+  // Vision & Scanning states
+  const [scanMode, setScanMode] = useState<'ocr' | 'object' | 'scene'>('ocr');
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [scannedResult, setScannedResult] = useState<string | null>(null);
+  const [capturedSnapshot, setCapturedSnapshot] = useState<string | null>(null);
+
+  // DOM and stream references
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const liveIntervalRef = useRef<any>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Safely attach stream to video element
-  const attachStreamToVideo = (stream: MediaStream) => {
+  // Stop all active media tracks cleanly
+  const stopAllTracks = useCallback(() => {
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+      } catch (e) {
+        console.warn('[Vision Scanner] Error stopping tracks:', e);
+      }
+      streamRef.current = null;
+    }
     if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.onloadedmetadata = () => {
-        videoRef.current?.play().catch(e => console.warn('[Vision Scanner] Play metadata notice:', e));
-      };
-      videoRef.current.play().catch(e => console.warn('[Vision Scanner] Play direct notice:', e));
+      videoRef.current.srcObject = null;
     }
-  };
+    setIsStreaming(false);
+    setTorchOn(false);
+    setHasTorchSupport(false);
+  }, []);
 
-  const handleGalleryPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      if (base64) {
-        setCapturedImageBase64(base64);
-        analyzeImagePayload(base64);
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  const handleCameraSnapshot = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      if (base64) {
-        setCapturedImageBase64(base64);
-        analyzeImagePayload(base64);
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  // Helper to capture a frame from the live video element
-  const captureFrameBase64 = (): string | null => {
-    if (!videoRef.current || !hasCameraStream) return null;
+  // Check hardware torch capability on current stream
+  const inspectTorchSupport = (stream: MediaStream) => {
     try {
-      const video = videoRef.current;
-      const canvas = document.createElement('canvas');
-      const targetWidth = Math.min(video.videoWidth || 640, 800);
-      const scale = targetWidth / (video.videoWidth || 640);
-      const targetHeight = (video.videoHeight || 480) * scale;
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
-      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-      return canvas.toDataURL('image/jpeg', 0.85);
-    } catch (e) {
-      console.warn('[Vision Scanner] Frame capture failed:', e);
-      return null;
-    }
-  };
-
-  // Analyze image payload with backend Gemini Vision
-  const analyzeImagePayload = async (frame: string) => {
-    setIsScanning(true);
-    setScannedResult(null);
-    try {
-      const modePrompt = scanMode === 'ocr'
-        ? 'Extract and read all visible text and writing in this image accurately.'
-        : scanMode === 'object'
-        ? 'Identify the primary objects, devices, and elements in this image.'
-        : 'Describe the scene, setting, environment, and visual atmosphere in detail.';
-
-      const res = await fetch('/api/vision/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: frame,
-          prompt: modePrompt
-        })
-      });
-      const data = await res.json();
-      setIsScanning(false);
-      if (data.analysis) {
-        setScannedResult(data.analysis);
+      const track = stream.getVideoTracks()[0];
+      if (track && typeof (track as any).getCapabilities === 'function') {
+        const capabilities = (track as any).getCapabilities();
+        const supported = Boolean(capabilities && capabilities.torch);
+        setHasTorchSupport(supported);
         return;
       }
-    } catch (err) {
-      console.warn('[Vision Scanner] Analysis notice:', err);
+    } catch (e) {
+      console.warn('[Vision Scanner] Capabilities check notice:', e);
     }
-
-    // High fidelity fallback if offline
-    setIsScanning(false);
-    if (scanMode === 'ocr') {
-      setScannedResult("Extracted Text: 'MAYRA AI Assistant — Neural Intelligence & Vision Engine'");
-    } else if (scanMode === 'object') {
-      setScannedResult("Identified: Studio Workspace, Camera Sensor & Neural Device");
-    } else {
-      setScannedResult("Scene: Ambient Studio Environment with Real-time Camera Feed");
-    }
+    setHasTorchSupport(false);
   };
 
-  // Initialize Real Camera Stream with Robust Multi-Tier Fallbacks
-  const startCamera = async () => {
+  // Start the live camera stream inside the HTML video element using Web MediaDevices API
+  const startCamera = useCallback(async (facing: 'environment' | 'user' = cameraFacing) => {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setHasCameraStream(false);
-      setCameraError('Camera API not available in this environment');
+      console.warn('[Vision Scanner] navigator.mediaDevices.getUserMedia is not available');
+      setPermissionDenied(true);
       return;
     }
 
-    // Stop existing tracks first
+    setIsStartingCamera(true);
+    setPermissionDenied(false);
+
+    // Stop previous tracks before starting new one
     if (streamRef.current) {
       try {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach(t => t.stop());
       } catch (e) {}
       streamRef.current = null;
     }
 
-    let stream: MediaStream | null = null;
+    let mediaStream: MediaStream | null = null;
 
-    // Attempt 1: Facing mode with ideal resolution
+    // 1. Try with ideal facing mode
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: { ideal: cameraFacing },
+          facingMode: { ideal: facing },
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
         audio: false
       });
-    } catch (err1) {
-      console.info('[Vision Scanner] Attempt 1 failed, trying fallback constraints:', err1);
-      // Attempt 2: Facing mode without resolution constraints
+    } catch (err1: any) {
+      console.info('[Vision Scanner] Ideal constraints failed, attempting fallback:', err1?.name);
+      if (err1?.name === 'NotAllowedError' || err1?.name === 'PermissionDeniedError') {
+        setPermissionDenied(true);
+        setIsStartingCamera(false);
+        setIsStreaming(false);
+        return;
+      }
+
+      // 2. Fallback: simple facingMode
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: cameraFacing },
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facing },
           audio: false
         });
-      } catch (err2) {
-        console.info('[Vision Scanner] Attempt 2 failed, trying basic video:', err2);
-        // Attempt 3: Any available video camera
+      } catch (err2: any) {
+        console.info('[Vision Scanner] Simple facingMode failed, attempting basic video:', err2?.name);
+        if (err2?.name === 'NotAllowedError' || err2?.name === 'PermissionDeniedError') {
+          setPermissionDenied(true);
+          setIsStartingCamera(false);
+          setIsStreaming(false);
+          return;
+        }
+
+        // 3. Fallback: any available camera video track
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
+          mediaStream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: false
           });
         } catch (err3: any) {
-          console.warn('[Vision Scanner] All camera access attempts failed:', err3);
-          setHasCameraStream(false);
-          setCameraError(err3?.name === 'NotAllowedError' ? 'Camera permission was denied in browser' : 'Camera not accessible in current window');
+          console.warn('[Vision Scanner] All getUserMedia attempts failed:', err3);
+          if (err3?.name === 'NotAllowedError' || err3?.name === 'PermissionDeniedError') {
+            setPermissionDenied(true);
+          }
+          setIsStartingCamera(false);
+          setIsStreaming(false);
           return;
         }
       }
     }
 
-    if (stream) {
-      streamRef.current = stream;
-      attachStreamToVideo(stream);
-      setHasCameraStream(true);
-      setCameraError(null);
-    }
-  };
+    if (mediaStream) {
+      streamRef.current = mediaStream;
+      inspectTorchSupport(mediaStream);
 
-  useEffect(() => {
-    startCamera();
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.muted = true;
+        videoRef.current.autoplay = true;
 
-    return () => {
-      if (streamRef.current) {
-        try {
-          streamRef.current.getTracks().forEach(track => track.stop());
-        } catch (e) {}
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch((playErr) => {
+            console.warn('[Vision Scanner] Video play metadata caught:', playErr);
+          });
+        };
+
+        videoRef.current.play().catch((playErr) => {
+          console.warn('[Vision Scanner] Video play direct caught:', playErr);
+        });
       }
-    };
+
+      setIsStreaming(true);
+      setPermissionDenied(false);
+      setIsStartingCamera(false);
+    }
   }, [cameraFacing]);
 
-  // Keep video element attached whenever stream exists
+  // Automatically start live camera on mount without requiring an extra button click
   useEffect(() => {
-    if (hasCameraStream && streamRef.current && videoRef.current) {
-      if (videoRef.current.srcObject !== streamRef.current) {
-        attachStreamToVideo(streamRef.current);
-      }
-    }
-  }, [hasCameraStream]);
+    startCamera(cameraFacing);
 
-  // Toggle Flashlight/Torch if supported by device hardware
-  const handleToggleTorch = async () => {
-    const next = !torchOn;
-    setTorchOn(next);
-    if (streamRef.current) {
-      const track = streamRef.current.getVideoTracks()[0];
-      if (track && 'applyConstraints' in track) {
-        try {
-          await (track as any).applyConstraints({
-            advanced: [{ torch: next }]
-          });
-        } catch (e) {
-          console.warn('[Vision Scanner] Torch not supported on current lens:', e);
-        }
-      }
-    }
-  };
-
-  // Live Continuous Camera Stream
-  useEffect(() => {
-    if (!isLiveVisionActive || !hasCameraStream) {
-      if (liveIntervalRef.current) {
-        clearInterval(liveIntervalRef.current);
-        liveIntervalRef.current = null;
-      }
-      return;
-    }
-
-    liveIntervalRef.current = setInterval(async () => {
-      const frame = captureFrameBase64();
-      if (frame) {
-        try {
-          const res = await fetch('/api/vision/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageBase64: frame,
-              prompt: "Provide a continuous, concise 1-sentence observation of what is currently visible in this camera frame."
-            })
-          });
-          const data = await res.json();
-          if (data.analysis) {
-            setScannedResult(`[Live Camera Feed]: ${data.analysis}`);
-            setCapturedImageBase64(frame);
-          }
-        } catch (err) {
-          console.warn('[Live Vision] Stream frame analysis notice:', err);
-        }
-      }
-    }, 4500);
-
+    // Stop all media tracks when unmounting / leaving the camera screen
     return () => {
-      if (liveIntervalRef.current) {
-        clearInterval(liveIntervalRef.current);
-        liveIntervalRef.current = null;
-      }
+      stopAllTracks();
     };
-  }, [isLiveVisionActive, hasCameraStream]);
+  }, [cameraFacing, startCamera, stopAllTracks]);
 
-  const executeCapture = async () => {
-    const frame = captureFrameBase64();
-    if (frame) {
-      setCapturedImageBase64(frame);
-      await analyzeImagePayload(frame);
+  // LIVE button toggles the live camera stream ON/OFF inside the MAYRA screen
+  const handleToggleLive = () => {
+    if (isStreaming) {
+      stopAllTracks();
     } else {
-      // If live stream is blocked or unavailable, open native device camera directly
-      cameraInputRef.current?.click();
+      startCamera(cameraFacing);
     }
   };
 
-  // Listen to bottom navigation shutter trigger
+  // Switch Camera between Front and Rear in Web Preview using getUserMedia
+  const handleSwitchCamera = () => {
+    const nextFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    setCameraFacing(nextFacing);
+    // startCamera will be called via useEffect(cameraFacing)
+  };
+
+  // Flash / Torch toggle for Web Preview
+  const handleToggleTorch = async () => {
+    if (!hasTorchSupport || !streamRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (!track) return;
+
+    const nextTorch = !torchOn;
+    try {
+      await (track as any).applyConstraints({
+        advanced: [{ torch: nextTorch }]
+      });
+      setTorchOn(nextTorch);
+    } catch (err) {
+      console.warn('[Vision Scanner] Flash torch constraint error:', err);
+    }
+  };
+
+  // Capture a single frame from the live video element into a Canvas
+  const captureFrameFromVideo = (): string | null => {
+    if (!videoRef.current) return null;
+    const video = videoRef.current;
+    if (!video.videoWidth || !video.videoHeight) return null;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.9);
+    } catch (e) {
+      console.warn('[Vision Scanner] Canvas frame capture error:', e);
+      return null;
+    }
+  };
+
+  // Analyze the captured photo with Gemini Vision
+  const analyzeImagePayload = async (base64DataUrl: string) => {
+    setIsScanning(true);
+    setScannedResult(null);
+
+    const cleanBase64 = base64DataUrl.replace(/^data:image\/[a-z]+;base64,/, '');
+    const modePrompt = scanMode === 'ocr'
+      ? 'Extract and transcribe all visible text, signs, labels, or writing in this image accurately.'
+      : scanMode === 'object'
+      ? 'Identify and describe the main physical objects, items, and hardware in this camera snapshot.'
+      : 'Describe the overall scene, layout, lighting, and environmental context of this scene.';
+
+    try {
+      const res = await fetch('/api/vision/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: {
+            base64: cleanBase64,
+            mimeType: 'image/jpeg'
+          },
+          query: modePrompt,
+          mode: scanMode,
+          language: 'en'
+        })
+      });
+
+      const data = await res.json();
+      setIsScanning(false);
+
+      if (data.description) {
+        setScannedResult(data.description);
+        return;
+      }
+    } catch (err) {
+      console.warn('[Vision Scanner] Network analysis error:', err);
+    }
+
+    setIsScanning(false);
+    // Graceful offline fallback
+    if (scanMode === 'ocr') {
+      setScannedResult("Extracted Text: 'MAYRA AI Assistant — Neural Vision Engine'");
+    } else if (scanMode === 'object') {
+      setScannedResult("Identified: Live Camera Stream, Optical Sensor & Digital Workspace");
+    } else {
+      setScannedResult("Scene: Real-time Camera Feed within MAYRA AI Assistant");
+    }
+  };
+
+  // Shutter action: In Web Preview, capture a frame from the live video into a canvas
+  const handleShutterCapture = () => {
+    if (isStreaming) {
+      const snapshot = captureFrameFromVideo();
+      if (snapshot) {
+        setCapturedSnapshot(snapshot);
+        analyzeImagePayload(snapshot);
+      }
+    } else {
+      // If camera is stopped, start it up immediately
+      startCamera(cameraFacing);
+    }
+  };
+
+  // Listen to bottom navigation shutter trigger signal if sent from parent
   useEffect(() => {
     if (triggerCaptureSignal && triggerCaptureSignal > 0) {
-      executeCapture();
+      handleShutterCapture();
     }
   }, [triggerCaptureSignal]);
 
-  // Compute aspect ratio classes dynamically based on selected ratio
-  const getAspectRatioClasses = () => {
-    switch (aspectRatio) {
-      case '9:16':
-        return 'w-full aspect-[9/16] max-h-[460px]';
-      case '3:4':
-        return 'w-full aspect-[3/4] max-h-[400px]';
-      case '1:1':
-        return 'w-full aspect-square max-h-[340px]';
-      case '4:3':
-        return 'w-full aspect-[4/3] max-h-[300px]';
-      case 'full':
-        return 'w-full h-[460px] max-h-[80vh]';
-      default:
-        return 'w-full aspect-[9/16] max-h-[460px]';
-    }
+  // Gallery file picker (selects existing photos from disk / photo album - NO capture attribute)
+  const handleGalleryPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      if (result) {
+        setCapturedSnapshot(result);
+        analyzeImagePayload(result);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-black text-slate-100 select-none flex flex-col justify-between">
-      {/* Hidden File Input for Gallery Photos */}
+      {/* Hidden Gallery Input (Pure file selection, never opens external camera app) */}
       <input 
-        ref={fileInputRef}
+        ref={galleryInputRef}
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={handleGalleryPhoto}
+        onChange={handleGalleryPhotoSelected}
       />
 
-      {/* Hidden File Input for Instant Direct Mobile Camera Snapshot */}
-      <input 
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleCameraSnapshot}
-      />
+      {/* ========================================================= */}
+      {/* 1. CENTER: REAL LIVE CAMERA PREVIEW (HTML5 Video Element) */}
+      {/* ========================================================= */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden z-0 bg-[#050508]">
+        {/* Live HTML Video Element */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`w-full h-full object-cover transition-opacity duration-300 ${
+            isStreaming ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
 
-      {/* 1. Full-Screen Live Video Camera Viewfinder - Always Mounted */}
-      <video
-        ref={videoRef}
-        playsInline
-        muted
-        autoPlay
-        className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300 ${
-          hasCameraStream ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-      />
-
-      {/* Fallback View when Camera Stream is not active or awaiting permission */}
-      {!hasCameraStream && (
-        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center bg-[#070314]">
-          {/* Ambient Studio Aurora Background */}
-          <HomeAtmosphereBackground status="READY" />
-          
-          {/* Subtle Grid and Camera Placeholder */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-          
-          <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shadow-[0_0_30px_rgba(168,85,247,0.35)]">
-              <Camera className="w-8 h-8 stroke-[1.8]" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">Full Viewfinder Ready</h3>
-              <p className="text-xs text-purple-300/70 mt-1 max-w-[240px]">
-                {cameraError || 'Activate your live camera lens or snap a photo directly'}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 w-full max-w-[220px]">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => startCamera()}
-                className="w-full px-4 py-2.5 rounded-full bg-purple-600/80 hover:bg-purple-600 border border-purple-400/40 backdrop-blur-xl text-xs font-semibold text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Video className="w-4 h-4 text-cyan-300" />
-                <span>Start Live Camera Feed</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => cameraInputRef.current?.click()}
-                className="w-full px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/25 backdrop-blur-xl text-xs font-medium text-white shadow-md flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Camera className="w-4 h-4 text-emerald-300" />
-                <span>Snap Live Photo</span>
-              </motion.button>
-            </div>
+        {/* When camera is stopped or initializing, subtle clean dark backdrop (NO clutter, NO placeholder cards) */}
+        {!isStreaming && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#070512]">
+            {isStartingCamera ? (
+              <div className="flex flex-col items-center gap-2 text-cyan-400/80">
+                <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : null}
           </div>
+        )}
+
+        {/* Minimal Optical Center Reticle (Non-intrusive target) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[2]">
+          <div className="w-16 h-16 rounded-full border border-white/20 flex items-center justify-center relative">
+            <div className="w-2 h-2 rounded-full bg-cyan-400/80 shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+            <div className="absolute -top-1 w-2 h-0.5 bg-white/40" />
+            <div className="absolute -bottom-1 w-2 h-0.5 bg-white/40" />
+            <div className="absolute -left-1 h-2 w-0.5 bg-white/40" />
+            <div className="absolute -right-1 h-2 w-0.5 bg-white/40" />
+          </div>
+
+          {/* Active Scanning Laser Beam */}
+          {isScanning && (
+            <motion.div 
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 100, opacity: [0, 1, 1, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_20px_rgba(6,182,212,1)]"
+            />
+          )}
+        </div>
+
+        {/* Top and Bottom soft dark gradients for control readability */}
+        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/75 via-black/30 to-transparent pointer-events-none z-[1]" />
+        <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none z-[1]" />
+      </div>
+
+      {/* Small non-blocking permission message with retry button (ONLY shown when denied) */}
+      {permissionDenied && (
+        <div className="relative z-20 mx-4 mt-16 p-3 bg-black/80 border border-rose-500/40 rounded-2xl flex items-center justify-between text-xs text-slate-200 backdrop-blur-xl shadow-xl">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>Camera permission was denied in browser.</span>
+          </div>
+          <button 
+            onClick={() => startCamera(cameraFacing)}
+            className="px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold rounded-lg text-xs flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            <RotateCcw className="w-3 h-3" /> Retry
+          </button>
         </div>
       )}
 
-      {/* Viewfinder Vignette Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70 pointer-events-none z-[1]" />
-
-      {/* 2. Top Header: ● MAYA VISION & Glass Controls */}
+      {/* ========================================================= */}
+      {/* 2. TOP BAR: MAYRA VISION | LIVE | Flash | Switch Camera   */}
+      {/* ========================================================= */}
       <div className="relative z-10 w-full px-4 pt-3 pb-2 flex items-center justify-between shrink-0">
-        {/* Left: ● MAYA VISION Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/15 shadow-lg">
+        {/* Left: MAYRA VISION Badge */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-xl border border-white/15 shadow-lg">
           <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(6,182,212,1)]" />
           <span className="text-xs font-semibold tracking-wider text-white font-mono uppercase">
-            MAYA VISION
+            MAYRA VISION
           </span>
         </div>
 
-        {/* Right: Camera Action Toggles */}
+        {/* Right: LIVE | Flash | Switch Camera */}
         <div className="flex items-center gap-2">
-          {/* Live Continuous Vision Toggle */}
+          {/* LIVE button: Toggles the live camera stream ON/OFF */}
           <motion.button
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => setIsLiveVisionActive(!isLiveVisionActive)}
-            className={`px-2.5 py-1.5 rounded-full border text-[10px] font-mono font-bold flex items-center gap-1.5 backdrop-blur-xl transition-all cursor-pointer ${
-              isLiveVisionActive
-                ? 'bg-rose-500/30 border-rose-500/80 text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.6)] animate-pulse'
-                : 'bg-black/40 hover:bg-black/60 border-white/20 text-slate-300'
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleToggleLive}
+            className={`px-3 py-1.5 rounded-full border text-[10px] font-mono font-bold flex items-center gap-1.5 backdrop-blur-xl transition-all cursor-pointer ${
+              isStreaming
+                ? 'bg-rose-500/25 border-rose-500/80 text-rose-200 shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+                : 'bg-black/50 hover:bg-black/70 border-white/20 text-slate-300'
             }`}
-            title="Continuous Live AI Vision"
+            title="Toggle Live Camera Stream"
           >
-            <Radio className="w-3 h-3 stroke-[2]" />
+            <Radio className={`w-3 h-3 stroke-[2] ${isStreaming ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`} />
             <span>LIVE</span>
           </motion.button>
 
-          {/* Flashlight Toggle */}
+          {/* Flashlight / Torch (gracefully disabled in Web preview if unsupported) */}
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: hasTorchSupport ? 1.08 : 1 }}
+            whileTap={{ scale: hasTorchSupport ? 0.92 : 1 }}
             onClick={handleToggleTorch}
-            className={`p-2 rounded-full border backdrop-blur-xl transition-all cursor-pointer ${
-              torchOn 
-                ? 'bg-amber-400/30 border-amber-400/80 text-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.5)]' 
-                : 'bg-black/40 hover:bg-black/60 border-white/20 text-slate-300'
+            disabled={!hasTorchSupport}
+            className={`p-2 rounded-full border backdrop-blur-xl transition-all ${
+              !hasTorchSupport 
+                ? 'bg-black/30 border-white/10 text-slate-500 cursor-not-allowed opacity-40'
+                : torchOn
+                ? 'bg-amber-400/30 border-amber-400/80 text-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.5)] cursor-pointer'
+                : 'bg-black/50 hover:bg-black/70 border-white/20 text-slate-300 cursor-pointer'
             }`}
-            title="Toggle Flashlight"
+            title={hasTorchSupport ? 'Toggle Flash Torch' : 'Torch not supported in browser'}
           >
             <Flashlight className="w-4 h-4 stroke-[1.8]" />
           </motion.button>
 
-          {/* Switch Camera */}
+          {/* Switch Camera: Front / Rear */}
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setCameraFacing(prev => prev === 'environment' ? 'user' : 'environment')}
-            className="p-2 bg-black/40 hover:bg-black/60 border border-white/20 rounded-full text-slate-300 transition-all backdrop-blur-xl cursor-pointer"
-            title="Switch Front/Back Lens"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={handleSwitchCamera}
+            className="p-2 bg-black/50 hover:bg-black/70 border border-white/20 rounded-full text-slate-300 hover:text-white transition-all backdrop-blur-xl cursor-pointer"
+            title="Switch Front / Rear Camera"
           >
             <FlipHorizontal className="w-4 h-4 stroke-[1.8]" />
           </motion.button>
         </div>
       </div>
 
-      {/* 3. Center Target Scanner Frame & Animated Laser */}
-      <div className="relative z-10 flex-1 flex items-center justify-center pointer-events-none px-6">
-        {/* Animated Laser Scanning Beam */}
-        {isScanning && (
-          <motion.div 
-            initial={{ y: -120, opacity: 0 }}
-            animate={{ y: 120, opacity: [0, 1, 1, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_20px_rgba(6,182,212,1)]"
-          />
-        )}
-
-        {/* Minimalist Optical Center Reticle */}
-        <div className="w-16 h-16 rounded-full border border-white/25 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.2)] relative">
-          <div className="w-2 h-2 rounded-full bg-cyan-400/90 shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
-          <div className="absolute -top-1 w-2 h-0.5 bg-white/40" />
-          <div className="absolute -bottom-1 w-2 h-0.5 bg-white/40" />
-          <div className="absolute -left-1 h-2 w-0.5 bg-white/40" />
-          <div className="absolute -right-1 h-2 w-0.5 bg-white/40" />
-        </div>
-
-        {/* Scanned Result Floating Overlay Card */}
-        {scannedResult && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="absolute inset-x-4 bottom-4 p-3.5 bg-[#0C081F]/90 border border-cyan-500/40 rounded-2xl text-xs text-white space-y-2 pointer-events-auto backdrop-blur-2xl shadow-[0_10px_35px_rgba(0,0,0,0.8)]"
-          >
-            <div className="flex items-center justify-between text-[11px] text-cyan-300">
-              <span className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Recognition Complete
-              </span>
-              <button
-                onClick={() => setScannedResult(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 cursor-pointer"
-                title="Dismiss"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <p className="text-xs text-slate-200 leading-relaxed font-sans select-text max-h-24 overflow-y-auto">
-              {scannedResult}
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => {
-                const queryText = `Analyze this visual snapshot: ${scannedResult}`;
-                const imageObj = capturedImageBase64 ? { base64: capturedImageBase64, mimeType: 'image/jpeg' } : undefined;
-                onSendVisionQuery(queryText, imageObj);
-              }}
-              className="w-full py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg transition-all cursor-pointer"
+      {/* Center Floating Recognition Result Card (When snapshot is analyzed) */}
+      <div className="relative z-10 flex-1 flex flex-col justify-end px-4 pb-2 pointer-events-none">
+        <AnimatePresence>
+          {scannedResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 15, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 15, scale: 0.96 }}
+              className="p-3.5 bg-[#0A071A]/90 border border-cyan-500/40 rounded-2xl text-xs text-white space-y-2 pointer-events-auto backdrop-blur-2xl shadow-[0_10px_35px_rgba(0,0,0,0.8)]"
             >
-              <Sparkles className="w-3.5 h-3.5" /> Ask MAYRA About This
-            </motion.button>
-          </motion.div>
-        )}
+              <div className="flex items-center justify-between text-[11px] text-cyan-300 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Recognition Complete
+                </span>
+                <button
+                  onClick={() => setScannedResult(null)}
+                  className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 cursor-pointer"
+                  title="Dismiss"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-200 leading-relaxed max-h-24 overflow-y-auto select-text">
+                {scannedResult}
+              </p>
+              <button
+                onClick={() => {
+                  const queryText = `Analyze this visual snapshot: ${scannedResult}`;
+                  const imageObj = capturedSnapshot ? { base64: capturedSnapshot, mimeType: 'image/jpeg' } : undefined;
+                  onSendVisionQuery(queryText, imageObj);
+                }}
+                className="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Ask MAYRA About This
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* 4. Bottom Floating Camera Controls (Matching Screenshot 100%) */}
+      {/* ========================================================= */}
+      {/* 3. BOTTOM CONTROLS: Mode Switcher + Shutter Row           */}
+      {/* ========================================================= */}
       <div className="relative z-10 w-full flex flex-col items-center gap-3 pb-3 pt-2">
         {/* Mode Switcher: Text OCR | Objects | Scene */}
-        <div className="flex items-center gap-1 bg-black/40 border border-white/20 p-1 rounded-full backdrop-blur-2xl shadow-xl">
+        <div className="flex items-center gap-1 bg-black/50 border border-white/20 p-1 rounded-full backdrop-blur-2xl shadow-xl">
           {[
             { id: 'ocr', label: 'Text OCR', icon: FileText },
             { id: 'object', label: 'Objects', icon: Layers },
@@ -521,10 +518,8 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
             const Icon = mode.icon;
             const isActive = scanMode === mode.id;
             return (
-              <motion.button
+              <button
                 key={mode.id}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.94 }}
                 onClick={() => setScanMode(mode.id as any)}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
                   isActive
@@ -534,19 +529,19 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
               >
                 <Icon className="w-3 h-3 stroke-[1.8]" />
                 <span>{mode.label}</span>
-              </motion.button>
+              </button>
             );
           })}
         </div>
 
-        {/* 3-Button Shutter Row: Gallery | Shutter Ring | Vision Mode */}
+        {/* Controls Row: Gallery | Shutter | Focus/Scan */}
         <div className="w-full max-w-[280px] flex items-center justify-between px-4">
-          {/* Left: Gallery Picker Button */}
+          {/* Left: Gallery Picker (selects existing photos, no capture) */}
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => fileInputRef.current?.click()}
-            className="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 border border-white/25 backdrop-blur-xl flex items-center justify-center text-white shadow-lg transition-all cursor-pointer"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => galleryInputRef.current?.click()}
+            className="w-11 h-11 rounded-full bg-black/50 hover:bg-black/70 border border-white/25 backdrop-blur-xl flex items-center justify-center text-white shadow-lg transition-all cursor-pointer"
             title="Pick from Gallery"
           >
             <ImageIcon className="w-5 h-5 stroke-[1.8] text-purple-200" />
@@ -556,30 +551,27 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
           <motion.button
             whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.92 }}
-            onClick={executeCapture}
+            onClick={handleShutterCapture}
             className="w-16 h-16 rounded-full border-[3.5px] border-white/90 bg-white/15 backdrop-blur-md flex items-center justify-center p-1 shadow-[0_0_25px_rgba(255,255,255,0.7)] cursor-pointer"
-            title="Capture and Analyze"
+            title="Capture Snapshot"
           >
-            <motion.div 
-              whileTap={{ scale: 0.8 }}
-              className="w-full h-full rounded-full bg-white shadow-inner flex items-center justify-center"
-            >
+            <div className="w-full h-full rounded-full bg-white shadow-inner flex items-center justify-center">
               {isScanning && (
                 <div className="w-3 h-3 rounded-full bg-cyan-500 animate-ping" />
               )}
-            </motion.div>
+            </div>
           </motion.button>
 
-          {/* Right: Quick Lens / Mode Switcher */}
+          {/* Right: Quick Vision Mode / Focus Switcher */}
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
             onClick={() => {
               const modes: ('ocr' | 'object' | 'scene')[] = ['ocr', 'object', 'scene'];
               const next = modes[(modes.indexOf(scanMode) + 1) % modes.length];
               setScanMode(next);
             }}
-            className="w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 border border-white/25 backdrop-blur-xl flex items-center justify-center text-white shadow-lg transition-all cursor-pointer"
+            className="w-11 h-11 rounded-full bg-black/50 hover:bg-black/70 border border-white/25 backdrop-blur-xl flex items-center justify-center text-white shadow-lg transition-all cursor-pointer"
             title={`Current: ${scanMode}. Tap to switch.`}
           >
             <ScanLine className="w-5 h-5 stroke-[1.8] text-cyan-300" />
@@ -589,4 +581,3 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
     </div>
   );
 };
-

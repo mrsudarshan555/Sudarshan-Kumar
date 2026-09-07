@@ -103,7 +103,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -134,7 +134,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
       </div>
 
       {/* Navigation Sub-Tabs - Magnifying Glass Bar */}
-      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-black/20 backdrop-blur-xl">
+      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-white/[0.06] backdrop-blur-xl">
         {[
           { id: 'messages', label: 'Messages & Spam', icon: MessageSquare },
           { id: 'alarms', label: 'Alarms & Timers', icon: Clock },
@@ -168,7 +168,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
         {activeTab === 'messages' && (
           <div className="space-y-4">
             {/* Quick Dispatch Composer - Magnifying Glass */}
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
                   <Send className="w-3.5 h-3.5 text-purple-400" /> Voice & Quick Messenger Dispatch
@@ -184,7 +184,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
                     className={`py-2 rounded-2xl border font-sans text-[10px] uppercase font-bold transition-all cursor-pointer ${
                       targetApp === app
                         ? 'bg-purple-600 text-white border-purple-400 shadow-md backdrop-blur-xl'
-                        : 'bg-black/30 backdrop-blur-xl text-purple-300/60 border-white/10 hover:border-white/20'
+                        : 'bg-white/[0.06] backdrop-blur-xl text-purple-300/60 border-white/10 hover:border-white/20'
                     }`}
                   >
                     {app}
@@ -198,14 +198,14 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
                   placeholder="Recipient Name / Number"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
+                  className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
                 />
                 <textarea
                   rows={2}
                   placeholder={`Write ${targetApp} message...`}
                   value={msgContent}
                   onChange={(e) => setMsgContent(e.target.value)}
-                  className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
+                  className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
                 />
                 <button
                   onClick={handleSendMessage}
@@ -217,7 +217,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
             </div>
 
             {/* Unified Inbox & Truecaller Spam Radar - Magnifying Glass */}
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-sans font-bold text-slate-200 uppercase flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5 text-purple-400" /> Unified Inbox & Truecaller Radar
@@ -244,7 +244,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
                     className={`p-3 rounded-2xl border flex flex-col gap-1 backdrop-blur-xl ${
                       m.isSpam
                         ? 'bg-rose-950/40 border-rose-500/40 shadow-sm'
-                        : 'bg-black/30 border-white/10'
+                        : 'bg-white/[0.06] border-white/10'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -279,7 +279,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
         {/* TAB 2: ALARMS & TIMERS */}
         {activeTab === 'alarms' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-purple-400" /> Set Smart Alarm
               </span>
@@ -289,14 +289,14 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
                   value={alarmTime}
                   onChange={(e) => setAlarmTime(e.target.value)}
                   placeholder="e.g. 07:00 AM"
-                  className="w-32 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
+                  className="w-32 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
                 />
                 <input
                   type="text"
                   value={alarmLabel}
                   onChange={(e) => setAlarmLabel(e.target.value)}
                   placeholder="Alarm Label"
-                  className="flex-1 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400/50"
+                  className="flex-1 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400/50"
                 />
                 <button
                   onClick={handleAddAlarm}
@@ -307,11 +307,11 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
               </div>
             </div>
 
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-slate-200 uppercase">Active Alarms & Timers</span>
               <div className="space-y-2">
                 {alarms.map(a => (
-                  <div key={a.id} className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
+                  <div key={a.id} className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-mono font-bold text-white">{a.time}</div>
                       <div className="text-[10px] text-purple-200/60">{a.label}</div>
@@ -344,7 +344,7 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
         {/* TAB 3: CALENDAR */}
         {activeTab === 'calendar' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-indigo-300 uppercase flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" /> Quick Schedule Event
               </span>
@@ -354,14 +354,14 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
                   placeholder="Meeting / Event Title"
-                  className="flex-1 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-400/50"
+                  className="flex-1 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-indigo-400/50"
                 />
                 <input
                   type="text"
                   value={eventTime}
                   onChange={(e) => setEventTime(e.target.value)}
                   placeholder="04:00 PM"
-                  className="w-28 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-indigo-400/50"
+                  className="w-28 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-indigo-400/50"
                 />
                 <button
                   onClick={handleAddEvent}
@@ -372,11 +372,11 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
               </div>
             </div>
 
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-slate-200 uppercase">Upcoming Schedule</span>
               <div className="space-y-2">
                 {events.map(ev => (
-                  <div key={ev.id} className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
+                  <div key={ev.id} className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
                     <div>
                       <div className="font-bold text-white text-xs">{ev.title}</div>
                       <div className="text-[10px] text-indigo-300 font-medium">{ev.date} at {ev.time}</div>
@@ -396,14 +396,14 @@ export const UnifiedAppHubView: React.FC<UnifiedAppHubViewProps> = ({ onBack }) 
 
         {/* TAB 4: GALLERY */}
         {activeTab === 'gallery' && (
-          <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
               <Image className="w-3.5 h-3.5 text-purple-400" /> Media Vault & AI Semantic Search
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {gallery.map(g => (
-                <div key={g.id} className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 space-y-1.5 shadow-md">
-                  <div className="w-full h-24 rounded-xl overflow-hidden bg-black/60">
+                <div key={g.id} className="p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 space-y-1.5 shadow-md">
+                  <div className="w-full h-24 rounded-xl overflow-hidden bg-black/40">
                     <img src={g.url} alt={g.title} className="w-full h-full object-cover" />
                   </div>
                   <div className="font-bold text-[10px] text-white truncate">{g.title}</div>

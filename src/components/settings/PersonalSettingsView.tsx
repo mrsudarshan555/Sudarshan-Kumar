@@ -49,7 +49,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-100 scrollbar-thin scrollbar-thumb-purple-500/20">
       
       {/* Top Header with Back Arrow - Liquid Magnifying Frosted Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -78,7 +78,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
       <div className="p-4 space-y-4 text-xs font-sans pb-8">
         
         {/* Connected Cloud Account Status Card - Magnifying Glass */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-purple-300" /> Account Status
@@ -123,7 +123,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
         </div>
 
         {/* User Identity & Editable Details Section - Magnifying Glass */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <User className="w-3.5 h-3.5" /> User Profile & Details
           </div>
@@ -142,7 +142,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 triggerSaveNotification();
               }}
               placeholder="e.g. Zafer"
-              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+              className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
             />
           </div>
 
@@ -156,7 +156,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 triggerSaveNotification();
               }}
               placeholder="e.g. Zafer"
-              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+              className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
             />
           </div>
 
@@ -172,7 +172,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   triggerSaveNotification();
                 }}
                 placeholder="e.g. Software Engineer, Designer, Student, Doctor..."
-                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-9 pr-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+                className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl pl-9 pr-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
               />
             </div>
           </div>
@@ -189,7 +189,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   triggerSaveNotification();
                 }}
                 placeholder="e.g. zafer@example.com"
-                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-9 pr-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+                className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl pl-9 pr-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
               />
             </div>
           </div>
@@ -208,7 +208,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   triggerSaveNotification();
                 }}
                 placeholder="Interests, tech stack, daily goals, or lifestyle notes..."
-                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40 resize-none"
+                className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40 resize-none"
               />
             </div>
           </div>
@@ -218,7 +218,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
             <label className="text-[10px] font-sans text-purple-300/80 uppercase block mb-1">Country & Region</label>
             <button
               onClick={onOpenCountryPicker}
-              className="w-full bg-[#1c0d36]/60 hover:bg-[#25104d] border border-white/15 hover:border-purple-400/50 rounded-2xl px-3.5 py-2.5 flex items-center justify-between transition-all text-left shadow-sm cursor-pointer"
+              className="w-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-purple-400/50 rounded-2xl px-3.5 py-2.5 flex items-center justify-between transition-all text-left shadow-sm cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-purple-300" />
@@ -231,7 +231,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
         </div>
 
         {/* Assistant Greeting Style */}
-        <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" /> Greeting Preference
           </div>
@@ -251,7 +251,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                   config.greetingStyle === item.id
                     ? 'bg-purple-600/30 border-purple-400 text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.3)]'
-                    : 'bg-[#1c0d36]/40 border-white/10 text-purple-300/70 hover:text-white hover:bg-[#1c0d36]/70'
+                    : 'bg-white/[0.05] border-white/10 text-purple-300/70 hover:text-white hover:bg-white/[0.1]'
                 }`}
               >
                 <div className="font-bold text-white">{item.title}</div>
@@ -262,7 +262,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
         </div>
 
         {/* Music & Audio Entertainment Preferences */}
-        <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
               <Music className="w-3.5 h-3.5" /> Music & Playback Preferences
@@ -285,7 +285,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 triggerSaveNotification();
               }}
               placeholder="e.g. Lofi & Ambient Bollywood, Synthwave, Classical..."
-              className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+              className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl px-3.5 py-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
             />
           </div>
 
@@ -301,7 +301,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 className={`text-[9px] px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
                   config.favoriteMusicGenre === tag
                     ? 'bg-purple-600/30 border-purple-400 text-purple-200'
-                    : 'bg-[#1c0d36]/40 border-white/10 text-purple-300/70 hover:text-white'
+                    : 'bg-white/[0.05] border-white/10 text-purple-300/70 hover:text-white hover:bg-white/[0.1]'
                 }`}
               >
                 {tag}
@@ -311,7 +311,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
         </div>
 
         {/* AI Provider & API Key Configuration */}
-        <div className="p-4 bg-[#160b29]/50 backdrop-blur-2xl border border-purple-500/30 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-purple-500/30 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5" /> API Keys & AI Engine
@@ -336,7 +336,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   triggerSaveNotification();
                 }}
                 placeholder="AIzaSy... (Default server-side key enabled)"
-                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-3.5 pr-9 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+                className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl pl-3.5 pr-9 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
               />
               <button
                 type="button"
@@ -364,7 +364,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   triggerSaveNotification();
                 }}
                 placeholder="AIzaSy... (Direct YouTube Data API v3 key)"
-                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl pl-3.5 pr-9 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/70 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] placeholder:text-purple-300/40"
+                className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl pl-3.5 pr-9 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
               />
               <button
                 type="button"
@@ -385,7 +385,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   onChange({ geminiModel: e.target.value });
                   triggerSaveNotification();
                 }}
-                className="w-full bg-[#1c0d36]/60 border border-white/15 rounded-2xl p-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 cursor-pointer"
+                className="w-full bg-purple-950/80 border border-white/15 rounded-2xl p-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 cursor-pointer"
               >
                 <option value="gemini-3.7-flash">Gemini 3.7 Flash (Default • Fast)</option>
                 <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Ultra Fast)</option>

@@ -255,4 +255,107 @@ class MayraWebInterface(
     fun isOfflineWakeWordActive(): Boolean {
         return MayraMicrophoneForegroundService.isWakeWordActive
     }
+
+    // ==========================================
+    // Persistent AI Memory Vault Bridge
+    // ==========================================
+    @JavascriptInterface
+    fun getMemoryRootIndex(): String {
+        return com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context).getRootMemoryIndex()
+    }
+
+    @JavascriptInterface
+    fun getTodayDailyNote(): String {
+        return com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context).getTodayDailyNote()
+    }
+
+    @JavascriptInterface
+    fun getLivingProfileJson(): String {
+        val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+        val map = engine.getLivingProfile()
+        val json = JSONObject()
+        for ((k, v) in map) {
+            json.put(k, v)
+        }
+        return json.toString()
+    }
+
+    @JavascriptInterface
+    fun getActivePrioritiesJson(): String {
+        val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+        val list = engine.getActivePriorities(includeDone = true)
+        val arr = org.json.JSONArray()
+        for (item in list) {
+            arr.put(JSONObject().apply {
+                put("id", item.id)
+                put("task", item.task)
+                put("projectSlug", item.projectSlug)
+                put("isDone", item.isDone)
+                put("createdAt", item.createdAt)
+            })
+        }
+        return arr.toString()
+    }
+
+    @JavascriptInterface
+    fun getJobsJson(): String {
+        val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+        val list = engine.getAllJobs()
+        val arr = org.json.JSONArray()
+        for (job in list) {
+            arr.put(JSONObject().apply {
+                put("jobId", job.jobId)
+                put("name", job.name)
+                put("projectSlug", job.projectSlug)
+                put("procedure", job.procedure)
+                put("qualityBar", job.qualityBar)
+                put("lessons", job.lessons)
+                put("status", job.status)
+            })
+        }
+        return arr.toString()
+    }
+
+    @JavascriptInterface
+    fun retrieveMemoryOnDemand(query: String): String {
+        return runBlocking(Dispatchers.IO) {
+            val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+            val result = engine.retrieveMemoryOnDemand(query)
+            JSONObject().apply {
+                put("promptInjection", result.promptInjection)
+                put("matchedJobName", result.matchedJobName ?: JSONObject.NULL)
+                put("matchedNotesCount", result.matchedNotesCount)
+                put("activePrioritiesCount", result.activePrioritiesCount)
+                put("indexTags", org.json.JSONArray(result.indexTags))
+            }.toString()
+        }
+    }
+
+    @JavascriptInterface
+    fun executeMemoryCheckpoint(topic: String, outcome: String, notePath: String?, noteAddition: String?): Boolean {
+        return runBlocking(Dispatchers.IO) {
+            val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+            engine.executeCheckpointPersistence(topic, outcome, notePath, noteAddition)
+        }
+    }
+
+    @JavascriptInterface
+    fun updateLivingProfile(sectionName: String, newFact: String): Boolean {
+        return runBlocking(Dispatchers.IO) {
+            val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+            engine.updateProfileFact(sectionName, newFact)
+        }
+    }
+
+    @JavascriptInterface
+    fun toggleActivePriority(id: String, isDone: Boolean): Boolean {
+        return try {
+            val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+            engine.togglePriority(id, isDone)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
+

@@ -32,7 +32,7 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -42,7 +42,7 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
             <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/30 shadow-md">
+            <div className="p-1.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-400/30 shadow-md">
               <Bot className="w-4 h-4" />
             </div>
             <div>
@@ -52,7 +52,7 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
           </div>
         </div>
 
-        <span className="text-[9px] font-sans text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
+        <span className="text-[9px] font-sans text-cyan-300 bg-cyan-950/80 border border-cyan-400/40 px-2.5 py-0.5 rounded-full font-bold">
           Architecture Ready
         </span>
       </div>
@@ -68,20 +68,20 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
           {subAgents.map((agent) => (
             <div
               key={agent.id}
-              className={`p-4 bg-black/35 backdrop-blur-2xl border rounded-3xl transition-all space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
-                agent.enabled ? 'border-indigo-500/40 ring-1 ring-indigo-500/20' : 'border-white/10 opacity-60'
+              className={`p-4 bg-white/[0.07] backdrop-blur-2xl border rounded-3xl transition-all space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
+                agent.enabled ? 'border-purple-400/40 ring-1 ring-purple-400/20' : 'border-white/10 opacity-60'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+                  <div className="p-2.5 bg-white/[0.08] backdrop-blur-xl rounded-2xl border border-white/10">
                     {getAgentIcon(agent.id)}
                   </div>
                   <div>
                     <div className="text-white font-bold text-xs flex items-center gap-1.5 font-sans">
                       {agent.name}
                     </div>
-                    <div className="text-[9px] font-sans text-indigo-400">{agent.role}</div>
+                    <div className="text-[9px] font-sans text-purple-300">{agent.role}</div>
                   </div>
                 </div>
 
@@ -89,7 +89,7 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
                   type="checkbox"
                   checked={agent.enabled}
                   onChange={() => onToggleAgent(agent.id)}
-                  className="w-4 h-4 accent-indigo-500 rounded mt-1 cursor-pointer"
+                  className="w-4 h-4 accent-purple-500 rounded mt-1 cursor-pointer"
                 />
               </div>
 
@@ -117,7 +117,7 @@ export const SubAgentsView: React.FC<SubAgentsViewProps> = ({
                 {agent.capabilities.map((cap) => (
                   <span
                     key={cap}
-                    className="text-[8px] font-sans text-purple-200/80 bg-black/30 backdrop-blur-xl border border-white/10 px-2.5 py-0.5 rounded-full"
+                    className="text-[8px] font-sans text-purple-200/80 bg-white/[0.05] backdrop-blur-xl border border-white/10 px-2.5 py-0.5 rounded-full"
                   >
                     • {cap}
                   </span>

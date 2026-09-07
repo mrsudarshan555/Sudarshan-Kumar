@@ -1171,7 +1171,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
               .filter(sec => sec.category === selectedCategory)
               .map((section, sIdx) => (
                 <div key={`cat-detail-${section.category}-${sIdx}`} className="space-y-2">
-                  <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-[#160b29]/50 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                  <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                     {section.items.map((item, itemIdx) => (
                       <button
                         key={`cat-item-${section.category}-${item.id}-${itemIdx}`}
@@ -1227,7 +1227,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
 
                         {/* Android Home-Screen Watchlist / Widget Stack: Compact One-Line Live Summary Card */}
                         {item.oneLineSummary && (
-                          <div className="w-full mt-1 px-3 py-2 rounded-2xl bg-[#0d051d]/90 border border-white/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] flex items-center justify-between gap-2 group-hover:border-purple-400/40 transition-colors">
+                          <div className="w-full mt-1 px-3 py-2 rounded-2xl bg-white/[0.05] backdrop-blur-md border border-white/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] flex items-center justify-between gap-2 group-hover:border-purple-400/40 transition-colors">
                             <div className="flex items-center gap-2 min-w-0 overflow-hidden">
                               {item.oneLineSummary.isLive && (
                                 <span className="relative flex h-2 w-2 shrink-0">

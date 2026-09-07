@@ -56,7 +56,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -90,7 +90,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
 
       <div className="p-4 space-y-4 text-xs font-sans pb-12">
         {/* Unlock Method Selector */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-sans font-bold text-cyan-400 uppercase flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5" /> 1. Screen Unlock Mechanism
@@ -112,7 +112,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
                 className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all backdrop-blur-xl cursor-pointer ${
                   config.unlockType === m.id
                     ? 'bg-cyan-950/50 border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                    : 'bg-black/30 border-white/10 text-slate-300 hover:border-white/20'
+                    : 'bg-white/[0.06] border-white/10 text-slate-300 hover:border-white/20'
                 }`}
               >
                 <m.icon className="w-4 h-4 text-cyan-400" />
@@ -130,7 +130,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
                 maxLength={6}
                 value={config.pinCode}
                 onChange={(e) => handleUpdate({ pinCode: e.target.value })}
-                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white font-mono text-xs tracking-widest outline-none focus:border-cyan-500 transition-all"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white font-mono text-xs tracking-widest outline-none focus:border-cyan-500 transition-all"
                 placeholder="Enter PIN"
               />
             </div>
@@ -140,7 +140,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
           {config.unlockType === 'pattern' && (
             <div className="space-y-1.5 pt-2">
               <label className="text-[10px] text-purple-200/70 font-sans">Pattern Node Sequence (0-8 Matrix):</label>
-              <div className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
+              <div className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
                 <span className="font-mono text-cyan-300 font-bold">
                   {config.patternNodes.join(' ➔ ')}
                 </span>
@@ -151,7 +151,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
         </div>
 
         {/* Calibration Tuning (Features 60 & 61) */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <span className="text-[11px] font-sans font-bold text-white uppercase flex items-center gap-1.5">
             <Sliders className="w-3.5 h-3.5 text-indigo-400" /> 2. Gesture & Coordinate Calibration
           </span>
@@ -166,7 +166,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
                   className={`py-2 rounded-2xl border font-sans text-[10px] uppercase font-bold transition-all backdrop-blur-xl cursor-pointer ${
                     config.swipeDistance === d
                       ? 'bg-indigo-600 text-white border-indigo-400 shadow-md ring-1 ring-indigo-400'
-                      : 'bg-black/30 text-purple-200/70 border-white/10 hover:text-white'
+                      : 'bg-white/[0.06] text-purple-200/70 border-white/10 hover:text-white'
                   }`}
                 >
                   {d}
@@ -177,7 +177,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
         </div>
 
         {/* Live Simulation Test */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-sans font-bold text-indigo-400 uppercase flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" /> 3. Live Voice Unlock Simulator
@@ -192,7 +192,7 @@ export const SystemUnlockAutomationView: React.FC<SystemUnlockAutomationViewProp
           </div>
 
           {simulationLog && (
-            <div className="p-3.5 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl font-mono text-[11px] text-cyan-300 shadow-inner">
+            <div className="p-3.5 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl font-mono text-[11px] text-cyan-300 shadow-inner">
               {simulationLog}
             </div>
           )}

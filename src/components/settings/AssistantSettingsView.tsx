@@ -37,7 +37,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
       {/* Header with Top-Left Back Arrow - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -61,7 +61,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
       <div className="p-4 space-y-4 text-xs font-sans pb-8">
         
         {/* AI Assistant Core Engine Selector (MAYRA vs STONICX) - Magnifying Glass */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" /> AI Assistant Core Engine
@@ -78,7 +78,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
               className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden ${
                 (config.activeMode || 'mayra') === 'mayra'
                   ? 'bg-purple-600/25 border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.25)]'
-                  : 'bg-[#070913] border-white/10 text-slate-400 hover:text-slate-200'
+                  : 'bg-white/[0.05] border-white/10 text-slate-400 hover:text-slate-200'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -100,7 +100,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
               className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden ${
                 config.activeMode === 'stonicx'
                   ? 'bg-amber-500/20 border-amber-400 text-white shadow-[0_0_15px_rgba(245,158,11,0.25)]'
-                  : 'bg-[#070913] border-white/10 text-slate-400 hover:text-slate-200'
+                  : 'bg-white/[0.05] border-white/10 text-slate-400 hover:text-slate-200'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
@@ -119,7 +119,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         </div>
 
         {/* Assistant Persona Tone */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-purple-300" /> Persona & Personality
           </div>
@@ -137,7 +137,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                   config.personaTone === item.id
                     ? 'bg-purple-600/30 border-purple-400 text-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.3)]'
-                    : 'bg-black/30 border-white/10 text-purple-300/70 hover:text-white hover:bg-black/50'
+                    : 'bg-white/[0.06] border-white/10 text-purple-300/70 hover:text-white hover:bg-white/[0.12]'
                 }`}
               >
                 <div className="font-semibold text-white">{item.title}</div>
@@ -148,7 +148,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         </div>
 
         {/* 3D Character Skin Tone Slider (ONLY Skin Tone Slider per design spec) */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-4 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-sans font-bold text-amber-300 uppercase flex items-center gap-1.5">
               <Palette className="w-3.5 h-3.5 text-amber-300" /> Character Complexion
@@ -159,7 +159,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
           </div>
 
           {/* Character Skin Tone Slider */}
-          <div className="p-3 bg-black/40 rounded-2xl border border-white/10 space-y-2">
+          <div className="p-3 bg-white/[0.06] rounded-2xl border border-white/10 space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5 text-amber-400" />
@@ -191,7 +191,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         </div>
 
         {/* Voice & Synthesis Settings */}
-        <div className="p-3.5 bg-[#0C1021] border border-blue-500/20 rounded-2xl space-y-3">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-mono font-bold text-blue-400 uppercase flex items-center gap-1.5">
               <Volume2 className="w-3.5 h-3.5" /> Neural Voice Studio (Mayra & Stonicx)
@@ -203,12 +203,12 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
 
           <MtManagerVoiceStudio config={config} onChange={onChange} />
 
-          <div className="pt-2 border-t border-white/5">
+          <div className="pt-2 border-t border-white/10">
             <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Primary Assistant Language</label>
             <select
               value={config.language}
               onChange={(e) => onChange({ language: e.target.value })}
-              className="w-full bg-[#070913] border border-white/10 rounded-xl p-2 text-white font-mono text-xs outline-none focus:border-blue-500"
+              className="w-full bg-white/[0.08] backdrop-blur-md border border-white/15 rounded-xl p-2 text-white font-mono text-xs outline-none focus:border-blue-500"
             >
               <option value="en-IN">English (India / Hinglish) • Default</option>
               <option value="hi-IN">Hindi (हिंदी)</option>
@@ -254,17 +254,17 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         </div>
 
         {/* Incoming Calls & Messages Voice Alerts */}
-        <div className="p-3.5 bg-[#0C1021] border border-cyan-500/20 rounded-2xl space-y-2.5">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase flex items-center gap-1.5">
             <Bell className="w-3.5 h-3.5" /> Call & Message Voice Alerts
           </div>
-          <p className="text-[10px] text-slate-400">MAYRA speaks aloud to notify you of incoming calls, texts, and WhatsApp messages.</p>
+          <p className="text-[10px] text-purple-200/70">MAYRA speaks aloud to notify you of incoming calls, texts, and WhatsApp messages.</p>
 
           <div className="space-y-2 pt-1">
-            <div className="flex items-center justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+            <div className="flex items-center justify-between p-2 bg-white/[0.06] backdrop-blur-xl rounded-xl border border-white/10">
               <div>
                 <div className="text-white font-medium text-xs">Announce Incoming Calls</div>
-                <div className="text-[9px] text-slate-400">Speak caller name & prompt to answer or decline</div>
+                <div className="text-[9px] text-purple-300/60">Speak caller name & prompt to answer or decline</div>
               </div>
               <input
                 type="checkbox"
@@ -274,10 +274,10 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+            <div className="flex items-center justify-between p-2 bg-white/[0.06] backdrop-blur-xl rounded-xl border border-white/10">
               <div>
                 <div className="text-white font-medium text-xs">Read Incoming Messages</div>
-                <div className="text-[9px] text-slate-400">Speak message sender & preview aloud</div>
+                <div className="text-[9px] text-purple-300/60">Speak message sender & preview aloud</div>
               </div>
               <input
                 type="checkbox"
@@ -287,10 +287,10 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+            <div className="flex items-center justify-between p-2 bg-white/[0.06] backdrop-blur-xl rounded-xl border border-white/10">
               <div>
                 <div className="text-white font-medium text-xs">Proactive Silence Check-In</div>
-                <div className="text-[9px] text-slate-400">MAYRA speaks up if silent for 1–2 min, matching your conversation's language</div>
+                <div className="text-[9px] text-purple-300/60">MAYRA speaks up if silent for 1–2 min, matching your conversation's language</div>
               </div>
               <input
                 type="checkbox"
@@ -303,17 +303,17 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         </div>
 
         {/* Interaction & Feedback Toggles */}
-        <div className="p-3.5 bg-[#0C1021] border border-white/10 rounded-2xl space-y-2.5">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5" /> Interaction & Feedback
           </div>
 
-          <div className="flex items-center justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+          <div className="flex items-center justify-between p-2 bg-white/[0.06] backdrop-blur-xl rounded-xl border border-white/10">
             <div className="flex items-center gap-2">
               <Vibrate className="w-3.5 h-3.5 text-slate-400" />
               <div>
                 <div className="text-white font-medium text-xs">Haptic Touch Feedback</div>
-                <div className="text-[9px] text-slate-400">Vibrate on speech recognition events</div>
+                <div className="text-[9px] text-purple-300/60">Vibrate on speech recognition events</div>
               </div>
             </div>
             <input
@@ -324,12 +324,12 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+          <div className="flex items-center justify-between p-2 bg-white/[0.06] backdrop-blur-xl rounded-xl border border-white/10">
             <div className="flex items-center gap-2">
               <Bell className="w-3.5 h-3.5 text-slate-400" />
               <div>
                 <div className="text-white font-medium text-xs">Audio Chimes on Wake</div>
-                <div className="text-[9px] text-slate-400">Play subtle futuristic tone when listening</div>
+                <div className="text-[9px] text-purple-300/60">Play subtle futuristic tone when listening</div>
               </div>
             </div>
             <input
@@ -340,12 +340,12 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-between p-2 bg-[#070913] rounded-xl border border-white/5">
+          <div className="flex items-center justify-between p-2 bg-white/[0.06] backdrop-blur-xl rounded-xl border border-white/10">
             <div className="flex items-center gap-2">
               <Volume2 className="w-3.5 h-3.5 text-slate-400" />
               <div>
                 <div className="text-white font-medium text-xs">Auto-Readback Text Answers</div>
-                <div className="text-[9px] text-slate-400">Automatically synthesize voice responses</div>
+                <div className="text-[9px] text-purple-300/60">Automatically synthesize voice responses</div>
               </div>
             </div>
             <input
@@ -358,7 +358,7 @@ export const AssistantSettingsView: React.FC<AssistantSettingsViewProps> = ({
         </div>
 
         {/* Conversation Context Window */}
-        <div className="p-3.5 bg-[#0C1021] border border-white/10 rounded-2xl space-y-2">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex justify-between items-center">
             <div className="text-[11px] font-mono font-bold text-slate-300 uppercase flex items-center gap-1.5">
               <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> Context Window Size

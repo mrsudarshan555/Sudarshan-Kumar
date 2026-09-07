@@ -5,22 +5,22 @@ import android.accessibilityservice.GestureDescription
 import android.content.Context
 import android.content.Intent
 import android.graphics.Path
-import android.graphics.Rect
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.mayra.assistant.engine.MayraContactResolver
+import com.mayra.assistant.engine.MayraSafeMessagingPipeline
 
 /**
  * MAYRA Task Automation & Accessibility Service
  * 
  * Capabilities:
- * 1. Open any app by name or package with fallback mechanisms.
- * 2. Simulate taps and gestures on specific UI nodes.
- * 3. Automate WhatsApp message sending after intent pre-fill.
- * 4. Intercept UI state to verify task completion.
+ * 1. Safe Multi-App Messaging Pipeline (WhatsApp, SMS, Gmail) using Search-First Verification.
+ * 2. ContactsContract disambiguation handler to prevent blind-sending to wrong numbers.
+ * 3. Fallback gesture dispatch and system-level app navigation.
  */
 class MayraAccessibilityService : AccessibilityService() {
 
@@ -35,100 +35,94 @@ class MayraAccessibilityService : AccessibilityService() {
         fun isRunning(): Boolean = instance != null
     }
 
-    private var pendingWhatsAppAutoSend = false
-    private var pendingTargetPackage: String? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var messagingPipeline: MayraSafeMessagingPipeline? = null
+    private var contactResolver: MayraContactResolver? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
-        Log.i(TAG, "Mayra Accessibility Service Connected successfully.")
+        messagingPipeline = MayraSafeMessagingPipeline(this, mainHandler)
+        contactResolver = MayraContactResolver(this)
+        Log.i(TAG, "Mayra Accessibility Service Connected with Safe Messaging Pipeline.")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         val packageName = event.packageName?.toString() ?: return
 
-        // 1. WhatsApp Auto-Send Handler
-        if (pendingWhatsAppAutoSend && (packageName.contains("whatsapp", ignoreCase = true))) {
-            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-                event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-                attemptWhatsAppSendButtonTap()
+        // Forward event to active messaging automation pipeline
+        messagingPipeline?.onAccessibilityEventReceived(packageName)
+    }
+
+    /**
+     * Executes safe messaging flow across WhatsApp, SMS, or Gmail with
+     * strict Search-First verification and contact disambiguation.
+     */
+    fun sendVerifiedMessage(
+        targetApp: MayraSafeMessagingPipeline.TargetApp,
+        recipientName: String,
+        messageText: String,
+        subject: String = "",
+        onVocalClarificationNeeded: (prompt: String, candidates: List<MayraContactResolver.ContactRecord>) -> Unit,
+        onProgress: (status: String) -> Unit,
+        onDone: (success: Boolean, message: String) -> Unit
+    ) {
+        val resolver = contactResolver ?: MayraContactResolver(this).also { contactResolver = it }
+        val pipeline = messagingPipeline ?: MayraSafeMessagingPipeline(this, mainHandler).also { messagingPipeline = it }
+
+        val forEmail = (targetApp == MayraSafeMessagingPipeline.TargetApp.GMAIL)
+        val resolution = resolver.resolveContact(recipientName, forEmail = forEmail)
+
+        when (resolution) {
+            is MayraContactResolver.ResolutionResult.NotFound -> {
+                onDone(false, resolution.message)
+            }
+            is MayraContactResolver.ResolutionResult.Ambiguous -> {
+                // Pause and request vocal clarification from user
+                onVocalClarificationNeeded(resolution.promptMessage, resolution.candidates)
+            }
+            is MayraContactResolver.ResolutionResult.ExactMatch -> {
+                val verifiedContact = resolution.contact
+                val targetAddress = if (forEmail) verifiedContact.emailAddress else verifiedContact.phoneNumber
+                
+                pipeline.startPipeline(
+                    targetApp = targetApp,
+                    contactName = verifiedContact.displayName,
+                    verifiedAddress = targetAddress,
+                    messageBody = messageText,
+                    subject = subject,
+                    onStatusUpdate = onProgress,
+                    onCompleted = onDone
+                )
             }
         }
     }
 
     /**
-     * Request automated send click for WhatsApp
+     * Resumes an ambiguous messaging task after the user has vocally picked a candidate.
      */
-    fun scheduleWhatsAppAutoSend() {
-        pendingWhatsAppAutoSend = true
-        // Set a timeout of 5 seconds to cancel if not found
-        mainHandler.postDelayed({
-            if (pendingWhatsAppAutoSend) {
-                attemptWhatsAppSendButtonTap()
-                // Turn off flag after 5 seconds
-                mainHandler.postDelayed({ pendingWhatsAppAutoSend = false }, 2000)
-            }
-        }, 600)
-    }
+    fun resumeWithSelectedCandidate(
+        targetApp: MayraSafeMessagingPipeline.TargetApp,
+        candidate: MayraContactResolver.ContactRecord,
+        messageText: String,
+        subject: String = "",
+        onProgress: (status: String) -> Unit,
+        onDone: (success: Boolean, message: String) -> Unit
+    ) {
+        val pipeline = messagingPipeline ?: MayraSafeMessagingPipeline(this, mainHandler).also { messagingPipeline = it }
+        val forEmail = (targetApp == MayraSafeMessagingPipeline.TargetApp.GMAIL)
+        val targetAddress = if (forEmail) candidate.emailAddress else candidate.phoneNumber
 
-    /**
-     * Finds and taps the Send button inside WhatsApp
-     */
-    private fun attemptWhatsAppSendButtonTap(): Boolean {
-        val rootNode = rootInActiveWindow ?: return false
-        try {
-            // Search by View ID (WhatsApp send button ID)
-            val sendById = rootNode.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send")
-            if (sendById != null && sendById.isNotEmpty()) {
-                for (node in sendById) {
-                    if (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                        Log.i(TAG, "WhatsApp Send button clicked by View ID")
-                        pendingWhatsAppAutoSend = false
-                        return true
-                    }
-                }
-            }
-
-            // Search by Content Description ("Send", "भेजें", etc.)
-            val sendByDesc = rootNode.findAccessibilityNodeInfosByText("Send")
-            if (sendByDesc != null && sendByDesc.isNotEmpty()) {
-                for (node in sendByDesc) {
-                    if (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                        Log.i(TAG, "WhatsApp Send button clicked by Text match")
-                        pendingWhatsAppAutoSend = false
-                        return true
-                    }
-                }
-            }
-
-            // Search through nodes recursively for send icon or button
-            return searchAndClickSendNode(rootNode)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error executing WhatsApp auto-send tap", e)
-            return false
-        }
-    }
-
-    private fun searchAndClickSendNode(node: AccessibilityNodeInfo): Boolean {
-        val contentDesc = node.contentDescription?.toString()?.lowercase() ?: ""
-        val viewId = node.viewIdResourceName?.lowercase() ?: ""
-        
-        if (contentDesc.contains("send") || viewId.contains("send")) {
-            if (node.isClickable && node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                pendingWhatsAppAutoSend = false
-                return true
-            }
-        }
-
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            if (searchAndClickSendNode(child)) {
-                return true
-            }
-        }
-        return false
+        pipeline.startPipeline(
+            targetApp = targetApp,
+            contactName = candidate.displayName,
+            verifiedAddress = targetAddress,
+            messageBody = messageText,
+            subject = subject,
+            onStatusUpdate = onProgress,
+            onCompleted = onDone
+        )
     }
 
     /**
@@ -162,7 +156,6 @@ class MayraAccessibilityService : AccessibilityService() {
      */
     fun launchAppByNameOrPackage(context: Context, query: String): Boolean {
         val pm = context.packageManager
-        // Check if query is already a valid package name
         var launchIntent = pm.getLaunchIntentForPackage(query)
         if (launchIntent != null) {
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -170,7 +163,6 @@ class MayraAccessibilityService : AccessibilityService() {
             return true
         }
 
-        // Search installed applications by label
         val installedApps = pm.getInstalledApplications(0)
         for (appInfo in installedApps) {
             val appLabel = pm.getApplicationLabel(appInfo).toString()
@@ -186,7 +178,6 @@ class MayraAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Accessibility Fallback: perform GLOBAL_ACTION_HOME
         performGlobalAction(GLOBAL_ACTION_HOME)
         return false
     }
@@ -197,6 +188,8 @@ class MayraAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        messagingPipeline = null
+        contactResolver = null
         instance = null
     }
 }

@@ -107,7 +107,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -133,7 +133,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
       </div>
 
       {/* Navigation Sub-Tabs - Liquid Frosted Glass */}
-      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-black/25 backdrop-blur-xl overflow-x-auto">
+      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-white/[0.04] backdrop-blur-xl overflow-x-auto">
         {[
           { id: 'memory', label: 'Memory Vault', icon: Brain },
           { id: 'vision', label: 'Multi-Modal Lens', icon: Eye },
@@ -167,7 +167,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
         {activeTab === 'memory' && (
           <div className="space-y-4">
             {/* Add Memory Fact */}
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-400 uppercase flex items-center gap-1.5">
                 <Plus className="w-3.5 h-3.5" /> Teach STONICX a Fact or Preference
               </span>
@@ -178,20 +178,20 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
                   value={newFact}
                   onChange={(e) => setNewFact(e.target.value)}
                   placeholder="e.g. Always order vegetarian food; prefers meeting alerts 15m early..."
-                  className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
+                  className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
                 />
 
                 <div className="flex gap-2">
                   <select
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value as any)}
-                    className="bg-black/30 backdrop-blur-xl border border-white/10 text-purple-300 font-sans text-xs rounded-2xl px-3 py-2 outline-none cursor-pointer"
+                    className="bg-white/[0.06] backdrop-blur-xl border border-white/10 text-purple-300 font-sans text-xs rounded-2xl px-3 py-2 outline-none cursor-pointer"
                   >
-                    <option value="preference">Preference</option>
-                    <option value="personal_fact">Personal Fact</option>
-                    <option value="work">Work & Career</option>
-                    <option value="habit">Habit / Routine</option>
-                    <option value="security">Security Note</option>
+                    <option value="preference" className="bg-slate-900 text-white">Preference</option>
+                    <option value="personal_fact" className="bg-slate-900 text-white">Personal Fact</option>
+                    <option value="work" className="bg-slate-900 text-white">Work & Career</option>
+                    <option value="habit" className="bg-slate-900 text-white">Habit / Routine</option>
+                    <option value="security" className="bg-slate-900 text-white">Security Note</option>
                   </select>
 
                   <button
@@ -219,7 +219,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
               </div>
 
               {memories.map(m => (
-                <div key={m.id} className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl flex items-start justify-between gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                <div key={m.id} className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl flex items-start justify-between gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="px-2.5 py-0.5 bg-purple-950/80 border border-purple-500/30 text-purple-300 font-sans text-[9px] uppercase font-bold rounded-full">
@@ -255,7 +255,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
         {/* TAB 2: MULTI-MODAL VISION LENS */}
         {activeTab === 'vision' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-400 uppercase flex items-center gap-1.5">
                 <Camera className="w-3.5 h-3.5" /> Neural Optical Scanner
               </span>
@@ -273,7 +273,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
                     className={`p-2.5 rounded-2xl flex flex-col items-center gap-1 font-sans text-[10px] border transition-all backdrop-blur-xl cursor-pointer ${
                       scanMode === item.mode
                         ? 'bg-purple-950/80 border-purple-500 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
-                        : 'bg-black/30 border-white/10 text-purple-200/70 hover:text-white'
+                        : 'bg-white/[0.06] border-white/10 text-purple-200/70 hover:text-white'
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -288,7 +288,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
                   value={scanObject}
                   onChange={(e) => setScanObject(e.target.value)}
                   placeholder="Target object or food to scan..."
-                  className="flex-1 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
+                  className="flex-1 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
                 />
                 <button
                   onClick={handlePerformVisionScan}
@@ -302,7 +302,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
             {/* Vision Results */}
             <div className="space-y-3">
               {visionScans.map(s => (
-                <div key={s.id} className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                <div key={s.id} className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                   <div className="flex items-center justify-between">
                     <div className="font-bold text-white text-sm font-sans">{s.title}</div>
                     <span className="px-2.5 py-0.5 bg-purple-950/80 border border-purple-500/30 text-purple-300 font-sans text-[10px] font-bold rounded-full">
@@ -314,19 +314,19 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
 
                   {s.nutrition && (
                     <div className="grid grid-cols-4 gap-2 pt-2 border-t border-white/10 text-center font-sans">
-                      <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+                      <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
                         <div className="text-purple-400 font-bold text-xs">{s.nutrition.calories}</div>
                         <div className="text-[9px] text-purple-300/60">Calories</div>
                       </div>
-                      <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+                      <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
                         <div className="text-emerald-400 font-bold text-xs">{s.nutrition.protein}</div>
                         <div className="text-[9px] text-purple-300/60">Protein</div>
                       </div>
-                      <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+                      <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
                         <div className="text-amber-400 font-bold text-xs">{s.nutrition.carbs}</div>
                         <div className="text-[9px] text-purple-300/60">Carbs</div>
                       </div>
-                      <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+                      <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
                         <div className="text-rose-400 font-bold text-xs">{s.nutrition.fats}</div>
                         <div className="text-[9px] text-purple-300/60">Fats</div>
                       </div>
@@ -341,7 +341,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
         {/* TAB 3: DOCUMENT AI SUMMARIZER */}
         {activeTab === 'summarizer' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-400 uppercase flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5" /> Instant Document & PDF AI Summarizer
               </span>
@@ -350,7 +350,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
                 value={docText}
                 onChange={(e) => setDocText(e.target.value)}
                 placeholder="Paste document text, research paper, or meeting notes here..."
-                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-3 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-3 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
               />
               <button
                 onClick={handleSummarizeDoc}
@@ -361,10 +361,10 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
             </div>
 
             {summaryResult && (
-              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-purple-500/30 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-purple-500/30 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                 <span className="text-[11px] font-sans font-bold text-cyan-400 uppercase">Executive Summary</span>
                 <p className="text-purple-100 text-xs leading-relaxed font-sans">{summaryResult.summary}</p>
-                <div className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 space-y-1.5">
+                <div className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 space-y-1.5">
                   <span className="text-[10px] font-sans text-purple-300 font-bold uppercase">Key Action Items:</span>
                   {summaryResult.actions.map((act, i) => (
                     <div key={i} className="text-[11px] text-purple-200 flex items-center gap-2 font-sans">
@@ -381,7 +381,7 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
         {/* TAB 4: VOICE MEMOS & NOTES */}
         {activeTab === 'memos' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-400 uppercase flex items-center gap-1.5">
                 <Mic className="w-3.5 h-3.5" /> Record & Transcribe Voice Memo
               </span>
@@ -390,14 +390,14 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
                 value={memoTitle}
                 onChange={(e) => setMemoTitle(e.target.value)}
                 placeholder="Memo Title (e.g. Sprint Planning)"
-                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-purple-500 transition-all"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3.5 py-2 text-white font-sans text-xs outline-none focus:border-purple-500 transition-all"
               />
               <textarea
                 rows={2}
                 value={memoTranscript}
                 onChange={(e) => setMemoTranscript(e.target.value)}
                 placeholder="Voice transcription note..."
-                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white text-xs outline-none focus:border-purple-500 font-sans transition-all"
               />
               <button
                 onClick={handleCreateMemo}
@@ -409,13 +409,13 @@ export const QuantumMemoryVisionView: React.FC<QuantumMemoryVisionViewProps> = (
 
             <div className="space-y-3">
               {memos.map(m => (
-                <div key={m.id} className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                <div key={m.id} className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                   <div className="flex items-center justify-between">
                     <div className="font-bold text-white text-xs font-sans">{m.title}</div>
                     <span className="text-[10px] font-sans text-purple-300/60">{m.timestamp} • {m.durationSec}s</span>
                   </div>
                   <p className="text-purple-200/80 text-xs italic font-sans">"{m.transcript}"</p>
-                  <div className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 space-y-1">
+                  <div className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 space-y-1">
                     <span className="text-[9px] font-sans text-purple-300 uppercase font-bold">Key Takeaways:</span>
                     {m.keyTakeaways.map((t, idx) => (
                       <div key={idx} className="text-[10px] text-purple-200/70 flex items-center gap-1.5 font-sans">

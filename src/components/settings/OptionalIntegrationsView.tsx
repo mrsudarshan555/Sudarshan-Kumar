@@ -43,7 +43,7 @@ export const OptionalIntegrationsView: React.FC<OptionalIntegrationsViewProps> =
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -76,11 +76,11 @@ export const OptionalIntegrationsView: React.FC<OptionalIntegrationsViewProps> =
             return (
               <div
                 key={integ.id}
-                className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all"
+                className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+                    <div className="p-2.5 bg-white/[0.08] backdrop-blur-xl rounded-2xl border border-white/10">
                       {getIntegrationIcon(integ.icon)}
                     </div>
                     <div>

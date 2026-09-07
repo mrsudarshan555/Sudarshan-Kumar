@@ -97,7 +97,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
     <div className="flex-1 flex flex-col h-full overflow-hidden select-none bg-transparent text-slate-100">
       
       {/* Top App Bar - Liquid Magnifying Glass */}
-      <div className="h-14 px-4 border-b border-white/10 bg-black/30 backdrop-blur-3xl flex items-center justify-between z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="h-14 px-4 border-b border-white/10 bg-white/[0.06] backdrop-blur-3xl flex items-center justify-between z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -133,7 +133,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10">
 
         {/* (a) LARGE LIVE PREVIEW BOX - Liquid Magnifying Glass */}
-        <section className="p-4 rounded-3xl border border-cyan-500/30 bg-black/35 backdrop-blur-2xl relative overflow-hidden transition-all shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <section className="p-4 rounded-3xl border border-cyan-500/30 bg-white/[0.07] backdrop-blur-2xl relative overflow-hidden transition-all shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           {/* Subtle Ambient Radial Glow */}
           <div 
             className="absolute inset-0 pointer-events-none opacity-40 blur-2xl transition-all duration-500"
@@ -227,7 +227,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                   className={`p-3.5 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between group backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] cursor-pointer ${
                     isSelected
                       ? 'bg-cyan-950/40 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                      : 'bg-black/35 border-white/15 hover:border-cyan-400/50 hover:bg-black/45'
+                      : 'bg-white/[0.07] border-white/15 hover:border-cyan-400/50 hover:bg-white/[0.12]'
                   }`}
                 >
                   {/* Top Badge for Video Special */}
@@ -241,7 +241,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
 
                   {/* Live Mini Orb Preview */}
                   <div className="w-full flex items-center justify-center py-2">
-                    <div className="p-1 rounded-full bg-black/40 border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
+                    <div className="p-1 rounded-full bg-white/[0.06] border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
                       <MayraOrb
                         style={styleDef.id}
                         color={config.orbColor}
@@ -297,7 +297,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                   className={`p-3.5 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] cursor-pointer ${
                     isSelected
                       ? 'bg-cyan-950/40 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400'
-                      : 'bg-black/35 border-white/15 hover:bg-black/45 hover:border-cyan-400/40'
+                      : 'bg-white/[0.07] border-white/15 hover:bg-white/[0.12] hover:border-cyan-400/40'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-1">
@@ -323,7 +323,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         </section>
 
         {/* (c) ADJUST ORB SIZE SLIDER - Liquid Magnifying Glass */}
-        <section className="p-4 rounded-3xl border border-white/15 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
+        <section className="p-4 rounded-3xl border border-white/15 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <AppIconTile icon={Sliders} color="blue" size="xs" />
@@ -361,7 +361,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
         </section>
 
         {/* (d) ADJUST COLOR HUE: CONTINUOUS RAINBOW GRADIENT SLIDER */}
-        <section className="p-4 rounded-3xl border border-white/15 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
+        <section className="p-4 rounded-3xl border border-white/15 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <AppIconTile icon={Palette} color="pink" size="xs" />
@@ -444,7 +444,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
             </span>
           </div>
 
-          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-black/35 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 bg-white/[0.07] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             
             {/* (e) Voice Visualizer Toggle */}
             <div className="p-4 flex items-center justify-between">
@@ -540,7 +540,7 @@ export const OrbCustomizationView: React.FC<OrbCustomizationViewProps> = ({
                   className={`p-3.5 rounded-3xl border text-left transition-all relative flex flex-col items-center text-center backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] cursor-pointer ${
                     isSelected
                       ? 'bg-cyan-950/40 border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400'
-                      : 'bg-black/35 border-white/15 hover:bg-black/45 hover:border-cyan-400/40'
+                      : 'bg-white/[0.07] border-white/15 hover:bg-white/[0.12] hover:border-cyan-400/40'
                   }`}
                 >
                   <div className="mb-2">

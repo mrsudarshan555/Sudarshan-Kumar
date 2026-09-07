@@ -84,7 +84,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
     <div className="flex-1 flex flex-col h-full bg-transparent text-slate-100 relative select-none">
       
       {/* Top Header matching iPhone Liquid Frosted Glass */}
-      <div className="h-14 px-4 bg-black/30 backdrop-blur-3xl border-b border-white/10 flex items-center justify-between z-20 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="h-14 px-4 bg-white/[0.06] backdrop-blur-3xl border-b border-white/10 flex items-center justify-between z-20 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -137,7 +137,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
           return (
             <div
               key={perm.id}
-              className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 rounded-3xl flex items-center justify-between gap-3 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]"
+              className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 rounded-3xl flex items-center justify-between gap-3 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]"
             >
               {/* Left Details */}
               <div className="flex-1 pr-1 space-y-1">
@@ -202,10 +202,10 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
 
       {/* 1. Android Floating Windows / Display Over Other Apps Settings Screen */}
       {activeSystemModal === 'floating_windows' && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-3xl text-white z-50 flex flex-col animate-in fade-in duration-200">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-3xl text-white z-50 flex flex-col animate-in fade-in duration-200">
           
           {/* Android System Top Bar - Liquid Magnifying Glass */}
-          <div className="h-14 px-4 bg-black/40 backdrop-blur-2xl border-b border-white/10 flex items-center justify-between shrink-0">
+          <div className="h-14 px-4 bg-white/[0.06] backdrop-blur-2xl border-b border-white/10 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
@@ -223,7 +223,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
           </div>
 
-          <div className="px-4 py-2 text-[11px] text-purple-300/80 border-b border-white/10 bg-black/20 backdrop-blur-md">
+          <div className="px-4 py-2 text-[11px] text-purple-300/80 border-b border-white/10 bg-white/[0.06] backdrop-blur-md">
             14 turned on. Allows overlaying assistant UI above active applications.
           </div>
 
@@ -231,7 +231,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
           <div className="flex-1 overflow-y-auto p-4 space-y-3 font-sans text-xs">
             
             {/* Airtel */}
-            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-red-600 text-white font-black text-xs flex items-center justify-center shadow-sm">airtel</div>
                 <span className="font-medium text-white text-sm">Airtel</span>
@@ -242,7 +242,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
 
             {/* CapCut */}
-            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-slate-800 text-white font-bold text-xs flex items-center justify-center shadow-sm">CC</div>
                 <span className="font-medium text-white text-sm">CapCut</span>
@@ -253,7 +253,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
 
             {/* Instagram */}
-            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">IG</div>
                 <span className="font-medium text-white text-sm">Instagram</span>
@@ -284,7 +284,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
 
             {/* Meesho */}
-            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-pink-700 text-white font-bold text-xs flex items-center justify-center shadow-sm">m</div>
                 <span className="font-medium text-white text-sm">Meesho</span>
@@ -295,7 +295,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
             </div>
 
             {/* Telegram */}
-            <div className="flex items-center justify-between py-1.5 px-3 bg-black/30 rounded-2xl border border-white/5">
+            <div className="flex items-center justify-between py-1.5 px-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-sky-500 text-white font-bold text-xs flex items-center justify-center shadow-sm">TG</div>
                 <span className="font-medium text-white text-sm">Telegram</span>
@@ -307,7 +307,7 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
 
           </div>
 
-          <div className="p-4 bg-black/40 backdrop-blur-2xl border-t border-white/10">
+          <div className="p-4 bg-white/[0.06] backdrop-blur-2xl border-t border-white/10">
             <button
               onClick={() => {
                 if (floatingWindowToggle) {
@@ -397,10 +397,10 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
                 <label
                   key={item.id}
                   onClick={() => setSelectedDefaultAssistant(item.id)}
-                  className={`flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-colors backdrop-blur-xl ${
                     selectedDefaultAssistant === item.id
                       ? 'bg-purple-600/30 border-purple-400 text-white shadow-[0_0_14px_rgba(168,85,247,0.3)]'
-                      : 'bg-black/30 border-white/10 text-slate-300 hover:bg-black/50'
+                      : 'bg-white/[0.06] border-white/10 text-slate-300 hover:bg-white/[0.12]'
                   }`}
                 >
                   <div>

@@ -137,7 +137,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
     <div className="flex-1 flex flex-col h-full overflow-hidden select-none transition-colors duration-200 bg-transparent text-slate-100">
       
       {/* Top App Bar - Liquid Magnifying Glass */}
-      <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-black/30 backdrop-blur-3xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-white/[0.06] backdrop-blur-3xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -289,9 +289,9 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
         )}
 
         {/* 3. DARK MODE CARD */}
-        <section className={`p-4 rounded-2xl border transition-all ${
+        <section className={`p-4 rounded-3xl border transition-all ${
           isDark 
-            ? 'bg-[#0C1021] border-white/10 shadow-lg' 
+            ? 'bg-white/[0.07] backdrop-blur-2xl border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]' 
             : 'bg-white border-slate-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
@@ -366,10 +366,10 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
                   className={`w-full p-3 rounded-2xl border flex items-center justify-between relative transition-all active:scale-[0.99] text-left ${
                     isSelected
                       ? isDark
-                        ? 'bg-[#10162E] border-cyan-500/60 shadow-[0_0_16px_rgba(6,182,212,0.18)] ring-1 ring-cyan-400/40'
+                        ? 'bg-purple-950/70 border-purple-400/80 shadow-[0_4px_20px_rgba(168,85,247,0.3)] ring-1 ring-purple-400/50 backdrop-blur-xl'
                         : 'bg-cyan-50/60 border-cyan-500 shadow-sm ring-2 ring-cyan-400/30'
                       : isDark
-                        ? 'bg-[#0C1021] border-white/10 hover:border-white/20'
+                        ? 'bg-white/[0.06] backdrop-blur-xl border-white/10 hover:border-white/20'
                         : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
                   }`}
                 >
@@ -450,10 +450,10 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
                   className={`p-3 rounded-2xl border flex flex-col items-center gap-2 relative transition-all active:scale-[0.98] ${
                     isSelected
                       ? isDark
-                        ? 'bg-[#121832] border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.35)] ring-1 ring-cyan-400'
+                        ? 'bg-purple-950/70 border-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.35)] ring-1 ring-cyan-400 backdrop-blur-xl'
                         : 'bg-cyan-50/80 border-cyan-500 shadow-md ring-2 ring-cyan-400/30'
                       : isDark
-                        ? 'bg-[#0C1021] border-white/10 hover:border-white/20'
+                        ? 'bg-white/[0.06] backdrop-blur-xl border-white/10 hover:border-white/20'
                         : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
                   }`}
                 >
@@ -540,8 +540,8 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
           </div>
 
           {/* Color Swatch Row with Gradient First */}
-          <div className={`p-3.5 rounded-2xl border flex items-center justify-between gap-2 overflow-x-auto scrollbar-none ${
-            isDark ? 'bg-[#0C1021] border-white/10' : 'bg-white border-slate-200 shadow-sm'
+          <div className={`p-3.5 rounded-3xl border flex items-center justify-between gap-2 overflow-x-auto scrollbar-none ${
+            isDark ? 'bg-white/[0.07] backdrop-blur-2xl border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]' : 'bg-white border-slate-200 shadow-sm'
           }`}>
             {colorEntries.map((colorItem) => {
               const isSelected = config.orbColor === colorItem.id && config.customHue === undefined;
@@ -583,8 +583,8 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
         </section>
 
         {/* 6. FLOATING ORB SIZE SLIDER */}
-        <section className={`p-4 rounded-2xl border space-y-3.5 ${
-          isDark ? 'bg-[#0C1021] border-white/10 shadow-lg' : 'bg-white border-slate-200 shadow-sm'
+        <section className={`p-4 rounded-3xl border space-y-3.5 ${
+          isDark ? 'bg-white/[0.07] backdrop-blur-2xl border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]' : 'bg-white border-slate-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -623,7 +623,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
 
           {/* Live Floating Avatar Preview Box */}
           <div className={`p-4 rounded-xl border flex items-center justify-center min-h-[110px] relative overflow-hidden ${
-            isDark ? 'bg-[#070914] border-white/5' : 'bg-slate-100 border-slate-200'
+            isDark ? 'bg-white/[0.04] backdrop-blur-md border-white/10' : 'bg-slate-100 border-slate-200'
           }`}>
             <div className="flex flex-col items-center gap-2">
               <MayraOrb
@@ -642,8 +642,8 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
         </section>
 
         {/* 7. USE ORB ON HOME TOGGLE */}
-        <section className={`p-4 rounded-2xl border transition-all ${
-          isDark ? 'bg-[#0C1021] border-white/10 shadow-lg' : 'bg-white border-slate-200 shadow-sm'
+        <section className={`p-4 rounded-3xl border transition-all ${
+          isDark ? 'bg-white/[0.07] backdrop-blur-2xl border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]' : 'bg-white border-slate-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3.5">
@@ -676,8 +676,8 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
         </section>
 
         {/* 8. VISION SCANNER CAMERA ASPECT RATIO */}
-        <section className={`p-4 rounded-2xl border space-y-3.5 ${
-          isDark ? 'bg-[#0C1021] border-white/10 shadow-lg' : 'bg-white border-slate-200 shadow-sm'
+        <section className={`p-4 rounded-3xl border space-y-3.5 ${
+          isDark ? 'bg-white/[0.07] backdrop-blur-2xl border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]' : 'bg-white border-slate-200 shadow-sm'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -707,7 +707,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
                     isSelected
                       ? 'bg-cyan-500/15 border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400/50'
                       : isDark
-                      ? 'bg-[#070914] border-white/5 hover:border-white/15 text-slate-300'
+                      ? 'bg-white/[0.05] backdrop-blur-md border-white/10 hover:border-white/20 text-slate-300'
                       : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700'
                   }`}
                 >
@@ -736,19 +736,19 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
       {/* ALL 15 ORB STYLES MODAL SHEET / DIALOG */}
       <AnimatePresence>
         {isMoreStylesOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.95 }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
               className={`w-full max-w-lg max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-3xl border shadow-2xl overflow-hidden ${
-                isDark ? 'bg-[#0B0F22] border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'
+                isDark ? 'bg-[#120626]/90 backdrop-blur-3xl border-white/20 text-white' : 'bg-white border-slate-200 text-slate-900'
               }`}
             >
               {/* Header */}
               <div className={`p-4 border-b flex items-center justify-between shrink-0 ${
-                isDark ? 'bg-[#0E142C] border-white/10' : 'bg-slate-50 border-slate-200'
+                isDark ? 'bg-white/[0.06] backdrop-blur-xl border-white/10' : 'bg-slate-50 border-slate-200'
               }`}>
                 <div className="flex items-center gap-2.5">
                   <AppIconTile icon={Sparkles} color="purple" size="sm" />

@@ -42,7 +42,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -80,7 +80,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search installed skills or tools..."
-            className="w-full bg-black/40 border border-white/15 rounded-2xl pl-9 pr-3 py-2 text-xs text-white placeholder-purple-300/50 outline-none focus:border-purple-400 font-sans backdrop-blur-md"
+            className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl pl-9 pr-3 py-2 text-xs text-white placeholder-purple-300/50 outline-none focus:border-purple-400 font-sans backdrop-blur-md shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]"
           />
         </div>
 
@@ -93,7 +93,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({
               className={`px-3 py-1 rounded-full text-[10px] font-sans uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
                 filterCategory === cat
                   ? 'bg-purple-600/40 border border-purple-400 text-white font-bold shadow-[0_0_12px_rgba(168,85,247,0.3)]'
-                  : 'bg-black/30 text-purple-300/70 hover:text-white border border-white/10'
+                  : 'bg-white/[0.06] text-purple-300/70 hover:text-white border border-white/10'
               }`}
             >
               {cat}
@@ -106,13 +106,13 @@ export const SkillsView: React.FC<SkillsViewProps> = ({
           {filteredSkills.map((skill) => (
             <div
               key={skill.id}
-              className={`p-4 bg-black/35 backdrop-blur-2xl border rounded-3xl transition-all space-y-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)] ${
+              className={`p-4 bg-white/[0.07] backdrop-blur-2xl border rounded-3xl transition-all space-y-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
                 skill.enabled ? 'border-purple-500/40' : 'border-white/10 opacity-70'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-black/40 rounded-2xl border border-white/10">
+                  <div className="p-2 bg-white/[0.08] rounded-2xl border border-white/10">
                     {getSkillIcon(skill.id)}
                   </div>
                   <div>
@@ -143,7 +143,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({
                 {skill.permissionsRequired.map((perm) => (
                   <span
                     key={perm}
-                    className="text-[8px] font-sans text-purple-200/80 bg-black/40 border border-white/10 px-2 py-0.5 rounded-full"
+                    className="text-[8px] font-sans text-purple-200/80 bg-white/[0.08] border border-white/10 px-2 py-0.5 rounded-full"
                   >
                     {perm}
                   </span>
@@ -155,7 +155,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({
 
         {/* Skill Store Sheet Simulation - Magnifying Glass */}
         {showStoreSheet && (
-          <div className="p-4 bg-black/60 backdrop-blur-3xl border border-purple-500/40 rounded-3xl space-y-3 animate-in fade-in shadow-2xl">
+          <div className="p-4 bg-white/[0.08] backdrop-blur-3xl border border-purple-500/40 rounded-3xl space-y-3 animate-in fade-in shadow-2xl">
             <div className="flex justify-between items-center">
               <span className="text-xs font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
                 <Store className="w-4 h-4" /> MAYRA Skill Hub (Future Store)
@@ -167,7 +167,7 @@ export const SkillsView: React.FC<SkillsViewProps> = ({
             <p className="text-[11px] text-purple-200/80">
               Future integration pipeline to install community-verified skills, MCP servers, and custom tool bridges.
             </p>
-            <div className="p-3 bg-black/40 border border-white/10 rounded-2xl flex items-center justify-between text-xs">
+            <div className="p-3 bg-white/[0.06] border border-white/10 rounded-2xl flex items-center justify-between text-xs">
               <div>
                 <div className="text-white font-medium">Home Assistant BLE Bridge</div>
                 <div className="text-[9px] text-purple-300/70">Control 50+ smart home brands</div>

@@ -67,7 +67,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
   return (
     <div className={`flex-1 flex flex-col overflow-y-auto text-slate-200 transition-colors duration-500 bg-transparent`}>
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -119,7 +119,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
         <div className={`p-5 rounded-3xl border text-center flex flex-col items-center gap-3 transition-all backdrop-blur-2xl ${
           isSosActive
             ? 'bg-red-900/60 border-red-500 shadow-[0_8px_32px_rgba(239,68,68,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
-            : 'bg-black/35 border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
+            : 'bg-white/[0.07] border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
         }`}>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-sans text-[9px] font-bold">
@@ -168,7 +168,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
         )}
 
         {/* Priority Emergency Contacts List - Magnifying Glass */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-sans font-bold text-slate-200 uppercase flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-red-400" /> Priority Emergency Contacts ({contacts.length}/5)
@@ -185,20 +185,20 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
 
           {/* Add Contact Modal Form */}
           {showAddForm && (
-            <div className="p-3.5 bg-black/30 backdrop-blur-xl border border-red-500/30 rounded-2xl space-y-2">
+            <div className="p-3.5 bg-white/[0.06] backdrop-blur-xl border border-red-500/30 rounded-2xl space-y-2">
               <input
                 type="text"
                 placeholder="Full Name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-red-400/50"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-red-400/50"
               />
               <input
                 type="text"
                 placeholder="Phone Number (e.g. +91 98765 43210)"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none font-mono focus:border-red-400/50"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none font-mono focus:border-red-400/50"
               />
               <div className="flex justify-end gap-2 pt-1">
                 <button
@@ -221,7 +221,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
             {contacts.map((contact, idx) => (
               <div
                 key={contact.id}
-                className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between"
+                className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-full bg-red-950/60 border border-red-500/40 text-red-400 flex items-center justify-center font-sans font-bold text-xs">

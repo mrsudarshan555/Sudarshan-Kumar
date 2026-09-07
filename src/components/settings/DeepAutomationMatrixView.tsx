@@ -81,7 +81,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -107,7 +107,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
       </div>
 
       {/* Navigation Sub-Tabs - Magnifying Glass */}
-      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-black/20 backdrop-blur-xl overflow-x-auto">
+      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-white/[0.04] backdrop-blur-xl overflow-x-auto">
         {[
           { id: 'macros', label: 'Voice Routines', icon: Sparkles },
           { id: 'gestures', label: 'Air Gestures', icon: Smartphone },
@@ -141,7 +141,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
         {activeTab === 'macros' && (
           <div className="space-y-4">
             {/* Macro Builder */}
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
                 <Plus className="w-3.5 h-3.5" /> Create Custom Voice Routine Macro
               </span>
@@ -151,21 +151,21 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
                   value={newTrigger}
                   onChange={(e) => setNewTrigger(e.target.value)}
                   placeholder="Voice Trigger (e.g. Good Morning STONICX)"
-                  className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400 transition-colors"
+                  className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400 transition-colors"
                 />
                 <input
                   type="text"
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="Routine Description"
-                  className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400 transition-colors"
+                  className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400 transition-colors"
                 />
                 <textarea
                   rows={3}
                   value={newActionInput}
                   onChange={(e) => setNewActionInput(e.target.value)}
                   placeholder="Automated actions (One step per line)"
-                  className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white text-xs outline-none focus:border-purple-400 transition-colors resize-none"
+                  className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white text-xs outline-none focus:border-purple-400 transition-colors resize-none"
                 />
                 <button
                   onClick={handleCreateMacro}
@@ -179,7 +179,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
             {/* List of Active Macros */}
             <div className="space-y-3">
               {macros.map(m => (
-                <div key={m.id} className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+                <div key={m.id} className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 px-3 bg-purple-950/50 backdrop-blur-xl border border-purple-400/30 text-purple-200 rounded-full font-bold text-xs">
@@ -202,7 +202,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
                     </div>
                   </div>
                   <p className="text-purple-200/60 text-[11px]">{m.description}</p>
-                  <div className="p-2.5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 space-y-1">
+                  <div className="p-2.5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 space-y-1">
                     <span className="text-[9px] text-purple-300/70 uppercase font-bold">Execution Chain:</span>
                     {m.actions.map((act, i) => (
                       <div key={i} className="text-[10px] text-purple-200 flex items-center gap-1.5">
@@ -219,7 +219,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
         {/* TAB 2: AIR GESTURES */}
         {activeTab === 'gestures' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-300 uppercase">Proximity & Accelerometer Gestures</span>
               
               <div className="space-y-2.5">
@@ -230,7 +230,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
                   { key: 'flipToMuteCall', label: 'Flip Phone Down to Silence Incoming Calls', desc: 'Instantly mutes ringer when placed face-down on a desk.' },
                   { key: 'threeFingerScreenshot', label: '3-Finger Swipe Instant Screenshot', desc: 'Capture screenshot and immediately run OCR Text Extractor.' }
                 ].map(item => (
-                  <div key={item.key} className="p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
+                  <div key={item.key} className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between">
                     <div>
                       <div className="font-bold text-white text-xs">{item.label}</div>
                       <div className="text-[10px] text-purple-200/60">{item.desc}</div>
@@ -255,7 +255,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
         {/* TAB 3: HARDWARE TELEMETRY */}
         {activeTab === 'telemetry' && (
           <div className="space-y-4">
-            <div className="p-3 bg-black/30 backdrop-blur-xl border border-white/15 rounded-2xl text-[10px] text-purple-300 font-sans flex items-center justify-between shadow-lg">
+            <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-[10px] text-purple-300 font-sans flex items-center justify-between shadow-lg">
               <span>HARDWARE TELEMETRY DIAGNOSTICS</span>
               <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/30 font-bold">
                 HYBRID (REAL SENSORS + SIM ESTIMATION)
@@ -264,7 +264,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
 
             <div className="grid grid-cols-2 gap-3">
               {/* CPU Card */}
-              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                 <div className="flex items-center justify-between text-purple-300 font-sans text-[10px]">
                   <span className="flex items-center gap-1"><Cpu className="w-3.5 h-3.5" /> CPU Load</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-amber-300">ESTIMATED</span>
@@ -280,7 +280,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
               </div>
 
               {/* Battery Card */}
-              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-emerald-500/20 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-emerald-500/20 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                 <div className="flex items-center justify-between text-emerald-400 font-sans text-[10px]">
                   <span className="flex items-center gap-1"><BatteryCharging className="w-3.5 h-3.5" /> Battery</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">REAL API</span>
@@ -294,7 +294,7 @@ export const DeepAutomationMatrixView: React.FC<DeepAutomationMatrixViewProps> =
             </div>
 
             {/* RAM & Storage Telemetry */}
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-white uppercase">Memory & Storage Matrix</span>
               <div className="space-y-2">
                 <div>

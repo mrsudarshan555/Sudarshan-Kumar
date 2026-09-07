@@ -27,7 +27,7 @@ export const CountryCodeView: React.FC<CountryCodeViewProps> = ({
     <div className="flex-1 flex flex-col overflow-hidden bg-transparent text-slate-200">
       
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center gap-3 sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center gap-3 sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <button
           onClick={onBack}
           className="p-1.5 bg-white/[0.08] hover:bg-white/[0.16] text-purple-200 hover:text-white rounded-full border border-white/15 transition-all flex items-center justify-center active:scale-95 cursor-pointer"
@@ -41,7 +41,7 @@ export const CountryCodeView: React.FC<CountryCodeViewProps> = ({
       </div>
 
       {/* Search Input - Magnifying Glass */}
-      <div className="p-3 border-b border-white/10 bg-black/20 backdrop-blur-md">
+      <div className="p-3 border-b border-white/10 bg-white/[0.06] backdrop-blur-xl">
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-purple-300/70 absolute left-3 top-3" />
           <input
@@ -49,7 +49,7 @@ export const CountryCodeView: React.FC<CountryCodeViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search country name or code..."
-            className="w-full bg-black/40 border border-white/15 rounded-2xl pl-9 pr-3 py-2 text-xs text-white placeholder-purple-300/50 outline-none focus:border-purple-400 font-sans shadow-inner backdrop-blur-md"
+            className="w-full bg-white/[0.06] border border-white/15 rounded-2xl pl-9 pr-3 py-2 text-xs text-white placeholder-purple-300/50 outline-none focus:border-purple-400 font-sans shadow-inner backdrop-blur-xl"
             autoFocus
           />
         </div>
@@ -66,10 +66,10 @@ export const CountryCodeView: React.FC<CountryCodeViewProps> = ({
                 onSelectCountry(country);
                 onBack();
               }}
-              className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all text-left cursor-pointer border ${
+              className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all text-left cursor-pointer border backdrop-blur-xl ${
                 isSelected
                   ? 'bg-purple-600/30 border-purple-400 text-white shadow-[0_0_14px_rgba(168,85,247,0.3)]'
-                  : 'bg-black/30 hover:bg-black/50 border-white/10 text-slate-200'
+                  : 'bg-white/[0.07] hover:bg-white/[0.12] border-white/10 text-slate-200 shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
               }`}
             >
               <div className="flex items-center gap-3">

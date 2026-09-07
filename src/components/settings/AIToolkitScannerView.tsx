@@ -132,7 +132,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -158,7 +158,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
       </div>
 
       {/* Navigation Sub-Tabs - Magnifying Glass Bar */}
-      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-black/20 backdrop-blur-xl">
+      <div className="flex border-b border-white/10 px-4 gap-2 pt-2 bg-white/[0.04] backdrop-blur-xl">
         {[
           { id: 'ocr', label: 'OCR Scanner', icon: ScanText },
           { id: 'qr', label: 'QR & Barcode', icon: QrCode },
@@ -184,7 +184,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
         {/* TAB 1: OCR & DOCUMENT SCANNER */}
         {activeTab === 'ocr' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
                   <Camera className="w-3.5 h-3.5 text-purple-400" /> Neural Document & Text Scanner
@@ -217,7 +217,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
               </div>
 
               {ocrLoading && (
-                <div className="p-4 bg-black/30 backdrop-blur-xl rounded-2xl border border-purple-500/30 text-center font-sans text-purple-300 animate-pulse">
+                <div className="p-4 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-purple-500/30 text-center font-sans text-purple-300 animate-pulse">
                   Neural Engine analyzing image matrix and extracting text glyphs...
                 </div>
               )}
@@ -238,7 +238,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                     rows={6}
                     value={extractedText}
                     onChange={(e) => setExtractedText(e.target.value)}
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-3 text-white font-mono text-xs outline-none focus:border-purple-400/50"
+                    className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-3 text-white font-mono text-xs outline-none focus:border-purple-400/50"
                   />
                 </div>
               )}
@@ -249,7 +249,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
         {/* TAB 2: QR & BARCODE STUDIO */}
         {activeTab === 'qr' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
                 <QrCode className="w-3.5 h-3.5 text-purple-400" /> QR Code & Barcode Studio
               </span>
@@ -260,7 +260,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                   value={qrText}
                   onChange={(e) => setQrText(e.target.value)}
                   placeholder="Enter URL, Text or UPI ID"
-                  className="flex-1 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/50"
+                  className="flex-1 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-sans text-xs outline-none focus:border-purple-400/50"
                 />
                 <button
                   onClick={handleGenerateQR}
@@ -271,7 +271,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
               </div>
 
               {qrGeneratedUrl && (
-                <div className="p-5 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col items-center gap-3">
+                <div className="p-5 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col items-center gap-3">
                   <div className="p-3 bg-white rounded-2xl shadow-xl">
                     <img src={qrGeneratedUrl} alt="Generated QR" className="w-44 h-44 object-contain" />
                   </div>
@@ -287,7 +287,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
         {/* TAB 3: LIVE TRANSLATOR */}
         {activeTab === 'translate' && (
           <div className="space-y-4">
-            <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
               <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
                 <Languages className="w-3.5 h-3.5 text-purple-400" /> 15+ Indian & Global Dialect Translator
               </span>
@@ -298,7 +298,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                   <select
                     value={transSourceLang}
                     onChange={(e) => setTransSourceLang(e.target.value)}
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-purple-100 text-xs outline-none mt-1 cursor-pointer"
+                    className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-purple-100 text-xs outline-none mt-1 cursor-pointer"
                   >
                     <option value="en" className="bg-slate-900 text-white">English</option>
                     <option value="hi" className="bg-slate-900 text-white">हिन्दी (Hindi)</option>
@@ -312,7 +312,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                   <select
                     value={transTargetLang}
                     onChange={(e) => setTransTargetLang(e.target.value)}
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-purple-100 text-xs outline-none mt-1 cursor-pointer"
+                    className="w-full bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-purple-100 text-xs outline-none mt-1 cursor-pointer"
                   >
                     <option value="hi" className="bg-slate-900 text-white">हिन्दी (Hindi)</option>
                     <option value="bhojpuri" className="bg-slate-900 text-white">भोजपुरी (Bhojpuri)</option>
@@ -332,7 +332,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                 value={transSourceText}
                 onChange={(e) => setTransSourceText(e.target.value)}
                 placeholder="Enter text to translate..."
-                className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
               />
 
               <button
@@ -344,7 +344,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
               </button>
 
               {transResultText && (
-                <div className="p-3 bg-black/30 backdrop-blur-xl border border-purple-500/30 rounded-2xl space-y-2">
+                <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-purple-500/30 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-sans text-purple-300 font-bold">Translated Output:</span>
                     <button
@@ -376,7 +376,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                   className={`py-2 rounded-2xl border font-sans text-[10px] uppercase font-bold transition-all cursor-pointer ${
                     convType === c.id
                       ? 'bg-purple-600 text-white border-purple-400 shadow-md backdrop-blur-xl'
-                      : 'bg-black/30 backdrop-blur-xl text-purple-300/60 border-white/10 hover:border-white/20'
+                      : 'bg-white/[0.06] backdrop-blur-xl text-purple-300/60 border-white/10 hover:border-white/20'
                   }`}
                 >
                   {c.label}
@@ -386,19 +386,19 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
 
             {/* Sub-View: Currency */}
             {convType === 'currency' && (
-              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                 <span className="text-[11px] font-sans font-bold text-purple-300 uppercase">Live Forex & Crypto Rates</span>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     value={currAmount}
                     onChange={(e) => setCurrAmount(Number(e.target.value))}
-                    className="w-24 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
+                    className="w-24 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
                   />
                   <select
                     value={currFrom}
                     onChange={(e) => setCurrFrom(e.target.value)}
-                    className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
+                    className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
                   >
                     <option value="USD" className="bg-slate-900 text-white">USD ($)</option>
                     <option value="INR" className="bg-slate-900 text-white">INR (₹)</option>
@@ -410,7 +410,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                   <select
                     value={currTo}
                     onChange={(e) => setCurrTo(e.target.value)}
-                    className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
+                    className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
                   >
                     <option value="INR" className="bg-slate-900 text-white">INR (₹)</option>
                     <option value="USD" className="bg-slate-900 text-white">USD ($)</option>
@@ -427,7 +427,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                 </div>
 
                 {convFormatted && (
-                  <div className="p-3 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl font-mono text-xs text-emerald-300 font-bold">
+                  <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl font-mono text-xs text-emerald-300 font-bold">
                     {convFormatted}
                   </div>
                 )}
@@ -436,19 +436,19 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
 
             {/* Sub-View: Metric Units */}
             {convType === 'metric' && (
-              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                 <span className="text-[11px] font-sans font-bold text-purple-300 uppercase">Unit Conversion</span>
                 <div className="flex gap-2">
                   <input
                     type="number"
                     value={metricVal}
                     onChange={(e) => setMetricVal(Number(e.target.value))}
-                    className="w-24 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
+                    className="w-24 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
                   />
                   <select
                     value={metricFrom}
                     onChange={(e) => setMetricFrom(e.target.value)}
-                    className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
+                    className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
                   >
                     <option value="km/h" className="bg-slate-900 text-white">km/h</option>
                     <option value="mph" className="bg-slate-900 text-white">mph</option>
@@ -458,7 +458,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                   <select
                     value={metricTo}
                     onChange={(e) => setMetricTo(e.target.value)}
-                    className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
+                    className="bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-2 text-purple-100 text-xs cursor-pointer"
                   >
                     <option value="mph" className="bg-slate-900 text-white">mph</option>
                     <option value="km/h" className="bg-slate-900 text-white">km/h</option>
@@ -473,7 +473,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                 </div>
 
                 {metricFormatted && (
-                  <div className="p-3 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl font-mono text-xs text-purple-300 font-bold">
+                  <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl font-mono text-xs text-purple-300 font-bold">
                     {metricFormatted}
                   </div>
                 )}
@@ -482,7 +482,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
 
             {/* Sub-View: Math Solver */}
             {convType === 'math' && (
-              <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+              <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
                 <span className="text-[11px] font-sans font-bold text-purple-300 uppercase">Math & Equation Solver</span>
                 <div className="flex gap-2">
                   <input
@@ -490,7 +490,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                     value={mathExpr}
                     onChange={(e) => setMathExpr(e.target.value)}
                     placeholder="Enter arithmetic expression"
-                    className="flex-1 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
+                    className="flex-1 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/50"
                   />
                   <button
                     onClick={handleSolveMath}
@@ -501,7 +501,7 @@ export const AIToolkitScannerView: React.FC<AIToolkitScannerViewProps> = ({ onBa
                 </div>
 
                 {mathOutput && (
-                  <div className="p-3 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl space-y-1.5">
+                  <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl space-y-1.5">
                     <div className="font-mono text-xs text-emerald-300 font-bold">
                       Result: {String(mathOutput.result)}
                     </div>

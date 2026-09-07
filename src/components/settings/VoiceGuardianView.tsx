@@ -69,7 +69,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -92,7 +92,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
         <div className={`px-2.5 py-1 rounded-full border text-[9px] font-sans font-bold backdrop-blur-md ${
           config.enabled 
             ? 'bg-purple-950/60 border-purple-500/40 text-purple-300' 
-            : 'bg-black/40 border-white/10 text-purple-300/50'
+            : 'bg-white/[0.06] border-white/10 text-purple-300/50'
         }`}>
           {config.enabled ? 'ACTIVE' : 'DISABLED'}
         </div>
@@ -101,9 +101,9 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
       <div className="p-4 space-y-4 text-xs font-sans pb-8">
         
         {/* Master Toggles - Magnifying Glass */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-3.5 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           
-          <div className="flex items-center justify-between p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div>
               <div className="text-white font-extrabold text-xs flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-400" /> Voice Guardian Master Shield
@@ -118,7 +118,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div>
               <div className="text-white font-extrabold text-xs flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5 text-amber-400" /> Away / Guard Mode
@@ -136,7 +136,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
         </div>
 
         {/* Listen Mode Policy */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-3.5 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="text-[10px] font-sans font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
             <UserCheck className="w-3.5 h-3.5 text-purple-400" /> Authorized Listen Mode
           </div>
@@ -153,7 +153,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
                 className={`p-2.5 rounded-2xl border text-center transition-colors cursor-pointer ${
                   config.listenMode === mode.id
                     ? 'bg-purple-950/60 border-purple-500 text-purple-200 font-extrabold ring-1 ring-purple-400/40 backdrop-blur-xl'
-                    : 'bg-black/30 backdrop-blur-xl border-white/10 text-purple-300/60 hover:text-white font-normal'
+                    : 'bg-white/[0.06] backdrop-blur-xl border-white/10 text-purple-300/60 hover:text-white font-normal'
                 }`}
               >
                 <div className="text-xs font-extrabold">{mode.label}</div>
@@ -164,7 +164,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
         </div>
 
         {/* Voice Matching Strictness Slider */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-3.5 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-2 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex justify-between items-center">
             <div className="text-[10px] font-sans font-bold text-purple-300 uppercase tracking-wider">
               Voice Matching Strictness
@@ -194,7 +194,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
         </div>
 
         {/* Enrolled Voices List & Management */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-3.5 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex justify-between items-center">
             <div className="text-[10px] font-sans font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
               <Mic className="w-3.5 h-3.5 text-purple-400" /> Enrolled Voice Profiles ({config.enrolledVoices.length})
@@ -211,7 +211,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
             {config.enrolledVoices.map((voice) => (
               <div
                 key={voice.id}
-                className="p-3 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between"
+                className="p-3 bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl flex items-center justify-between"
               >
                 <div>
                   <div className="text-white font-medium text-xs flex items-center gap-1.5">
@@ -243,7 +243,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
             <button
               onClick={testVoiceSample}
               disabled={isTestingVoice}
-              className="flex-1 py-2.5 bg-black/30 hover:bg-white/[0.08] backdrop-blur-xl border border-white/10 rounded-2xl text-[11px] font-sans text-purple-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="flex-1 py-2.5 bg-white/[0.06] hover:bg-white/[0.12] backdrop-blur-xl border border-white/10 rounded-2xl text-[11px] font-sans text-purple-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-3 h-3 text-purple-400 ${isTestingVoice ? 'animate-spin' : ''}`} />
               {isTestingVoice ? 'Listening & Analyzing...' : 'Test My Voice Match'}
@@ -262,7 +262,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
 
         {/* Interactive Voice Enrollment Dialog */}
         {isEnrolling && (
-          <div className="p-4 bg-black/60 backdrop-blur-3xl border border-purple-500/40 rounded-3xl space-y-3 animate-in fade-in shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="p-4 bg-white/[0.08] backdrop-blur-3xl border border-purple-500/40 rounded-3xl space-y-3 animate-in fade-in shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             <div className="flex justify-between items-center">
               <span className="text-[11px] font-sans font-bold text-purple-300 uppercase">
                 Acoustic Enrollment Calibration (Step {enrollStep} of 5)
@@ -276,7 +276,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
               Please speak the prompt clearly:
             </p>
 
-            <div className="p-3 bg-black/40 backdrop-blur-xl border border-purple-500/20 rounded-2xl text-center text-purple-200 font-sans text-xs italic">
+            <div className="p-3 bg-white/[0.06] backdrop-blur-xl border border-purple-500/20 rounded-2xl text-center text-purple-200 font-sans text-xs italic">
               {enrollStep === 1 && '"Hey MAYRA, wake up and activate personal assistant."'}
               {enrollStep === 2 && '"MAYRA, what is the current device status?"'}
               {enrollStep === 3 && '"Voice Guardian biometric authentication sample three."'}
@@ -298,7 +298,7 @@ export const VoiceGuardianView: React.FC<VoiceGuardianViewProps> = ({
         )}
 
         {/* Security Notice */}
-        <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl text-[10px] text-purple-200/70 leading-relaxed space-y-1 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-3.5 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl text-[10px] text-purple-200/70 leading-relaxed space-y-1 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="font-bold flex items-center gap-1 text-purple-300">
             <AlertTriangle className="w-3 h-3 text-amber-400" /> Voice Guardian Architecture Status:
           </div>

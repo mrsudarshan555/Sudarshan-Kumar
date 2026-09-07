@@ -72,7 +72,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
   return (
     <div className="space-y-4 font-sans">
       {/* Target Assistant Switcher (MAYRA vs STONICX) - Liquid Magnifying Glass */}
-      <div className="p-1.5 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl flex items-center gap-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+      <div className="p-1.5 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl flex items-center gap-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
         <button
           type="button"
           onClick={() => setTargetAssistant('mayra')}
@@ -104,7 +104,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
 
       {/* Gender Filters (All, Female, Male) - Inspired by MT Manager file classification */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 p-1 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+        <div className="flex items-center gap-1.5 p-1 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
           {(['All', 'Female', 'Male'] as const).map((filter) => {
             const count =
               filter === 'All'
@@ -152,7 +152,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
                   ? targetAssistant === 'mayra'
                     ? 'bg-purple-950/40 border-purple-400/60 shadow-lg shadow-purple-900/30'
                     : 'bg-cyan-950/40 border-cyan-400/60 shadow-lg shadow-cyan-900/30'
-                  : 'bg-black/30 border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
+                  : 'bg-white/[0.06] border-white/10 hover:border-white/20 hover:bg-white/[0.12]'
               }`}
             >
               {/* Top Row: Name, Badges, MT Manager File Reference */}
@@ -179,7 +179,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
                 </div>
 
                 {/* MT Manager Filename Tag */}
-                <div className="text-[10px] font-mono text-purple-200/70 bg-black/30 px-2.5 py-0.5 rounded-xl border border-white/10">
+                <div className="text-[10px] font-mono text-purple-200/70 bg-white/[0.08] px-2.5 py-0.5 rounded-xl border border-white/10">
                   📁 {mtFile}
                 </div>
               </div>

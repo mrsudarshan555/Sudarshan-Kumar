@@ -59,7 +59,7 @@ export const DrivingModeStudioView: React.FC<DrivingModeStudioViewProps> = ({ on
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-transparent text-slate-200">
       {/* Header - Liquid Magnifying Glass */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-white/[0.06] backdrop-blur-3xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -98,7 +98,7 @@ export const DrivingModeStudioView: React.FC<DrivingModeStudioViewProps> = ({ on
         <div className={`p-5 rounded-3xl border text-center flex flex-col items-center gap-3 transition-all backdrop-blur-2xl ${
           config.isEnabled
             ? 'bg-amber-950/40 border-amber-500/40 shadow-[0_8px_32px_rgba(245,158,11,0.25),inset_0_1px_1px_rgba(255,255,255,0.2)]'
-            : 'bg-black/35 border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
+            : 'bg-white/[0.07] border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
         }`}>
           <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 backdrop-blur-xl ${
             config.isEnabled ? 'bg-amber-600/30 border-amber-400 text-amber-400' : 'bg-white/10 border-white/20 text-purple-200'
@@ -136,19 +136,19 @@ export const DrivingModeStudioView: React.FC<DrivingModeStudioViewProps> = ({ on
         </div>
 
         {testLog && (
-          <div className="p-3.5 bg-black/35 backdrop-blur-2xl border border-amber-500/40 rounded-2xl font-sans text-[11px] text-amber-300 shadow-md">
+          <div className="p-3.5 bg-white/[0.07] backdrop-blur-2xl border border-amber-500/40 rounded-2xl font-sans text-[11px] text-amber-300 shadow-md">
             {testLog}
           </div>
         )}
 
         {/* Driving Protocols Configuration - Magnifying Glass */}
-        <div className="p-4 bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <span className="text-[11px] font-sans font-bold text-amber-300 uppercase flex items-center gap-1.5">
             <PhoneOff className="w-3.5 h-3.5 text-amber-400" /> Call Rejection & SMS Template
           </span>
 
           {/* Caller Announcement */}
-          <div className="flex items-center justify-between p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div>
               <div className="font-semibold text-white text-xs flex items-center gap-1.5">
                 <Volume2 className="w-3.5 h-3.5 text-purple-400" /> Caller Name Announcement
@@ -168,7 +168,7 @@ export const DrivingModeStudioView: React.FC<DrivingModeStudioViewProps> = ({ on
           </div>
 
           {/* Auto Reject Calls */}
-          <div className="flex items-center justify-between p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10">
+          <div className="flex items-center justify-between p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
             <div>
               <div className="font-semibold text-white text-xs flex items-center gap-1.5">
                 <PhoneOff className="w-3.5 h-3.5 text-rose-400" /> Auto-Reject Incoming Calls
@@ -196,7 +196,7 @@ export const DrivingModeStudioView: React.FC<DrivingModeStudioViewProps> = ({ on
               rows={2}
               value={config.smsTemplate}
               onChange={(e) => handleUpdate({ smsTemplate: e.target.value })}
-              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
+              className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-2.5 text-white font-sans text-xs outline-none focus:border-purple-400/50"
             />
           </div>
         </div>

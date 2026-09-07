@@ -196,7 +196,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
     <div className="flex-1 flex flex-col h-full bg-transparent text-slate-100 relative select-none">
       
       {/* Top Bar Header - Liquid Magnifying Glass */}
-      <div className="h-14 px-4 bg-black/30 border-b border-white/10 backdrop-blur-3xl flex items-center justify-between z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="h-14 px-4 bg-white/[0.06] border-b border-white/10 backdrop-blur-3xl flex items-center justify-between z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -249,7 +249,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
         )}
 
         {/* Device Resource Status & Active Model Highlight - Magnifying Glass */}
-        <div className="bg-black/35 backdrop-blur-2xl border border-white/15 rounded-3xl p-4 space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+        <div className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl p-4 space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-sans font-bold text-purple-200/80 uppercase tracking-wider flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-blue-400 stroke-[1.8]" />
@@ -292,7 +292,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
 
           <div className="grid grid-cols-2 gap-2.5">
             {/* RAM Stats */}
-            <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+            <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 shrink-0 border border-blue-500/20">
                 <Cpu className="w-4 h-4 stroke-[1.8]" />
               </div>
@@ -308,7 +308,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
             </div>
 
             {/* Storage Stats */}
-            <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+            <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 shrink-0 border border-emerald-500/20">
                 <HardDrive className="w-4 h-4 stroke-[1.8]" />
               </div>
@@ -381,12 +381,12 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                   }}
                   className={`backdrop-blur-2xl border rounded-3xl p-4 space-y-3 transition-all cursor-pointer relative overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] ${
                     isSelected
-                      ? 'border-blue-400 ring-2 ring-blue-500/20 bg-black/45'
+                      ? 'border-blue-400 ring-2 ring-blue-500/20 bg-white/[0.12]'
                       : isLoaded 
-                      ? 'border-emerald-500/40 bg-black/35' 
+                      ? 'border-emerald-500/40 bg-white/[0.08]' 
                       : isReady
-                      ? 'border-white/15 hover:border-white/25 bg-black/35'
-                      : 'border-white/10 hover:border-white/20 bg-black/30'
+                      ? 'border-white/15 hover:border-white/25 bg-white/[0.07]'
+                      : 'border-white/10 hover:border-white/20 bg-white/[0.05]'
                   }`}
                 >
                   {/* Selected Indicator Top Border Bar */}
@@ -453,7 +453,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                   </div>
 
                   {/* Model Metadata Spec Grid */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10 text-[10px] font-sans text-purple-200/70">
+                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/10 text-[10px] font-sans text-purple-200/70">
                     <div>
                       <span className="text-purple-300/50 block text-[9px]">FILE SIZE</span>
                       <span className="text-slate-100 font-mono font-semibold">{model.sizeFormatted}</span>
@@ -654,7 +654,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
 
         {/* Diagnostic Test Output Display Panel - Magnifying Glass */}
         {diagnosticResult && (
-          <div className="bg-black/35 backdrop-blur-2xl border border-purple-500/30 rounded-3xl p-4 space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+          <div className="bg-white/[0.07] backdrop-blur-2xl border border-purple-500/30 rounded-3xl p-4 space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-sans font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Terminal className="w-3.5 h-3.5 stroke-[1.8]" />
@@ -669,7 +669,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
             </div>
 
             <div className="space-y-2 text-xs font-sans">
-              <div className="p-3 rounded-2xl bg-black/30 backdrop-blur-xl border border-white/10">
+              <div className="p-3 rounded-2xl bg-white/[0.06] backdrop-blur-xl border border-white/10">
                 <span className="text-purple-300/50 block text-[9px]">TEST PROMPT</span>
                 <span className="text-slate-100 font-mono font-semibold">{diagnosticResult.prompt}</span>
               </div>
@@ -686,7 +686,7 @@ export const OfflineModelsView: React.FC<OfflineModelsViewProps> = ({ onBack }) 
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-slate-100 font-mono text-xs whitespace-pre-wrap">
+                  <div className="p-3 rounded-xl bg-white/[0.06] border border-white/10 text-slate-100 font-mono text-xs whitespace-pre-wrap">
                     {diagnosticResult.response || 'MAYRA OFFLINE TEST OK'}
                   </div>
                 </div>
