@@ -198,7 +198,21 @@ export class MemorySyncBridge {
    * Generates a lean, on-demand, ranked markdown context injection (< 300 words).
    * Strictly avoids dumping full MEMORY.md, DAILY-NOTE.md, or unrelated projects.
    */
-  public generateSystemContextPrompt(targetBrain: 'MAYRA' | 'STONICX' | string, userQuery?: string): string {
+  public generateSystemContextPrompt(targetBrainOrQuery: 'MAYRA' | 'STONICX' | string, userQueryOrBrain?: string): string {
+    let targetBrain = 'MAYRA';
+    let userQuery = '';
+    
+    if (targetBrainOrQuery === 'MAYRA' || targetBrainOrQuery === 'STONICX') {
+      targetBrain = targetBrainOrQuery;
+      userQuery = userQueryOrBrain || '';
+    } else if (userQueryOrBrain === 'MAYRA' || userQueryOrBrain === 'STONICX') {
+      targetBrain = userQueryOrBrain;
+      userQuery = targetBrainOrQuery;
+    } else {
+      userQuery = targetBrainOrQuery;
+      targetBrain = userQueryOrBrain || 'MAYRA';
+    }
+
     // 1. If running in Android APK with native SQLite vault available, try native on-demand slice first
     let nativeSlice = '';
     if (typeof window !== 'undefined' && (window as any).MayraNativeLLM?.retrieveMemoryOnDemand && userQuery) {
@@ -281,6 +295,13 @@ export class MemorySyncBridge {
       lines.push(`\n### Active Job Procedure (${relevantJob.name}):`);
       lines.push(`- Procedure: ${relevantJob.procedure}`);
       lines.push(`- Quality Bar: ${relevantJob.qualityBar}`);
+
+      // Boot-Chain Runtime Resolution & Priming
+      const bootChainSnippets = this.vault.resolveJobBootChain(relevantJob);
+      if (bootChainSnippets.length > 0) {
+        lines.push(`- Boot Chain Context:`);
+        bootChainSnippets.forEach(snip => lines.push(`  * ${snip}`));
+      }
     }
 
     lines.push(`----------------------------------------------------`);

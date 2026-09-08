@@ -483,6 +483,114 @@ export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestRep
     });
   }
 
+  // TEST 13: Job BootChain Runtime Traversal & Compact Priming
+  const t13Start = performance.now();
+  try {
+    const currentVault = MemoryVaultManager.getInstance();
+    const currentBridge = MemorySyncBridge.getInstance();
+
+    const job = currentVault.getJob('job-system-health');
+    const hasBootChain = Boolean(job && job.bootChain && job.bootChain.length > 0);
+
+    // Generate prompt for job trigger
+    const prompt = await currentBridge.generateSystemContextPrompt('Run diagnostic system health check', 'MAYRA');
+    const hasBootChainContext = prompt.includes('Boot Chain Context:') && prompt.includes('[[VAULT-INDEX]]');
+    const wordCount = prompt.split(/\s+/).length;
+    const isBounded = wordCount < 300;
+
+    const t13Passed = hasBootChain && hasBootChainContext && isBounded;
+
+    reports.push({
+      scenario: '13. Job BootChain Runtime Traversal & Compact Priming Context',
+      passed: t13Passed,
+      details: t13Passed
+        ? `Job bootChain links resolved at runtime and primed into model prompt (<300 words: actual=${wordCount} words)`
+        : `Job bootChain failure: hasBootChain=${hasBootChain}, hasContext=${hasBootChainContext}, isBounded=${isBounded}`,
+      durationMs: Math.round(performance.now() - t13Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '13. Job BootChain Runtime Traversal & Compact Priming Context',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t13Start)
+    });
+  }
+
+  // TEST 14: Minimal Wikilink Resolution
+  const t14Start = performance.now();
+  try {
+    const currentVault = MemoryVaultManager.getInstance();
+    const prioResolved = currentVault.resolveWikilink('[[Active Priorities]]');
+    const indexResolved = currentVault.resolveWikilink('[[VAULT-INDEX]]');
+    const sectionResolved = currentVault.resolveWikilink('[[MEMORY.md#4. Long-Term Facts & Knowledge]]');
+
+    const prioOk = typeof prioResolved === 'string' && prioResolved.length > 0;
+    const indexOk = typeof indexResolved === 'string' && indexResolved.length > 0;
+    const sectionOk = typeof sectionResolved === 'string' && sectionResolved.length > 0;
+
+    const t14Passed = prioOk && indexOk && sectionOk;
+
+    reports.push({
+      scenario: '14. Minimal Wikilink Resolution ([[VAULT-INDEX]], [[Active Priorities]], [[Note#Heading]])',
+      passed: t14Passed,
+      details: t14Passed
+        ? `Successfully parsed and resolved all core wikilinks to bounded relevant snippets`
+        : `Wikilink resolution incomplete: prioOk=${prioOk}, indexOk=${indexOk}, sectionOk=${sectionOk}`,
+      durationMs: Math.round(performance.now() - t14Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '14. Minimal Wikilink Resolution ([[VAULT-INDEX]], [[Active Priorities]], [[Note#Heading]])',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t14Start)
+    });
+  }
+
+  // TEST 15: Checkpoint Persistence Survives Complete Service Destruction & Reinitialization
+  const t15Start = performance.now();
+  try {
+    const originalVault = MemoryVaultManager.getInstance();
+    const testTopic = `Cold Destruction Checkpoint ${Date.now()}`;
+    const testOutcome = 'Verified persistent durable memory across Android lifecycle restart';
+
+    await originalVault.executeCheckpointPersistence(testTopic, testOutcome, 'DAILY-NOTE.md', 'Verification Payload');
+
+    // Completely destroy singletons and clear in-memory caches
+    MemoryVaultManager.resetInstance();
+    MemorySyncBridge.resetInstance();
+    MemoryQueryEngine.resetInstance();
+
+    // Reinitialize from storage
+    const reloadedVault = MemoryVaultManager.getInstance();
+    await reloadedVault.initializeVault();
+
+    const reloadedDaily = reloadedVault.getDocument('DAILY-NOTE.md');
+    const reloadedIndex = reloadedVault.getDocument('VAULT-INDEX.md');
+
+    const survivesInDaily = reloadedDaily.includes(testTopic) && reloadedDaily.includes(testOutcome);
+    const survivesInIndex = reloadedIndex.includes(testTopic.slice(0, 30));
+
+    const t15Passed = survivesInDaily && survivesInIndex;
+
+    reports.push({
+      scenario: '15. Checkpoint Persistence Survives Complete Service Destruction & Reinitialization',
+      passed: t15Passed,
+      details: t15Passed
+        ? `Checkpoint survived complete singleton destruction and reloaded flawlessly from durable storage`
+        : `Checkpoint did not survive cold reboot: inDaily=${survivesInDaily}, inIndex=${survivesInIndex}`,
+      durationMs: Math.round(performance.now() - t15Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '15. Checkpoint Persistence Survives Complete Service Destruction & Reinitialization',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t15Start)
+    });
+  }
+
   // Console Reporting
   console.log('📊 [MAYRA Memory Vault Harness] Verification Test Summary:');
   reports.forEach((r) => {
