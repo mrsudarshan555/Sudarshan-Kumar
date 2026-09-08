@@ -141,6 +141,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
   const lastUserActivityRef = useRef<number>(Date.now());
   const hasTriggeredIdleCheckinRef = useRef<boolean>(false);
   const lastSpokenLanguageRef = useRef<MayraLanguage>(getSavedLanguage());
+  const lastSubmittedPromptRef = useRef<string>('');
+  const accumulatedModelTurnTextRef = useRef<string>('');
 
   // Unified voice state lifecycle transitions
   const handleSpeechStart = useCallback(() => {
@@ -266,6 +268,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
               ? data.transcription.replace(/^(mayra|assistant|model):\s*/i, '')
               : data.transcription;
             if (cleanModelText) {
+              accumulatedModelTurnTextRef.current += cleanModelText;
               setMessages((prev) => {
                 if (activeModelMsgIdRef.current) {
                   const id = activeModelMsgIdRef.current;
@@ -329,8 +332,16 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
             }
           }
 
-          // 4. Turn Complete -> Reset active message trackers
+          // 4. Turn Complete -> Reset active message trackers & evaluate turn memory
           if (data.turnComplete) {
+            if (lastSubmittedPromptRef.current && accumulatedModelTurnTextRef.current) {
+              MemorySyncBridge.getInstance().syncConversationTurn(
+                'MAYRA',
+                lastSubmittedPromptRef.current,
+                accumulatedModelTurnTextRef.current
+              ).catch((err) => console.warn('[MemoryVault] Live turn sync notice:', err));
+            }
+            accumulatedModelTurnTextRef.current = '';
             activeModelMsgIdRef.current = null;
             activeUserMsgIdRef.current = null;
           }
@@ -736,12 +747,12 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     const ws = getOrConnectLiveWs();
     console.log(`[LIVE_WS_STATE] ReadyState: ${ws?.readyState}`);
 
-    // Inject relevant memory context for HTTP fallback and live prompts
-    const legacyMemoryContext = MemoryVaultService.buildPromptContext(memories, trimmed, 4);
-    const vaultQuery = MemoryQueryEngine.getInstance().queryVault(trimmed, 'MAYRA');
-    const recalledVaultContext = MemoryQueryEngine.getInstance().formatQueryResultForPrompt(vaultQuery);
-    const sharedVaultSystemPrompt = MemorySyncBridge.getInstance().generateSystemContextPrompt('MAYRA');
-    const memoryContext = `${legacyMemoryContext}\n${sharedVaultSystemPrompt}\n${recalledVaultContext}`;
+    // Record submitted turn prompt for post-turn persistence & evaluation
+    lastSubmittedPromptRef.current = trimmed;
+    accumulatedModelTurnTextRef.current = '';
+
+    // Unified On-Demand Memory Retrieval: Single clean context prompt (<300 words)
+    const memoryContext = MemorySyncBridge.getInstance().generateSystemContextPrompt('MAYRA', trimmed);
 
     const hasImagePayload = Boolean(image && image.base64);
     console.log(`[MAYRA_CLIENT_SEND_DISPATCH] Dispatching turn:`, {

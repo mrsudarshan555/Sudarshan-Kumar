@@ -138,10 +138,51 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
             );
             """.trimIndent()
         )
+
+        // 7. Vault Granular Memories Table (Deduplicated, superseding, structured long-term memory)
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS vault_memories (
+                id TEXT PRIMARY KEY,
+                category TEXT NOT NULL,
+                fact TEXT NOT NULL,
+                source TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                confidence REAL NOT NULL,
+                project_slug TEXT NOT NULL,
+                tags TEXT NOT NULL,
+                supersedes_id TEXT
+            );
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_cat ON vault_memories(category);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_status ON vault_memories(status);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_project ON vault_memories(project_slug);")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Future database migration handling
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS vault_memories (
+                id TEXT PRIMARY KEY,
+                category TEXT NOT NULL,
+                fact TEXT NOT NULL,
+                source TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                confidence REAL NOT NULL,
+                project_slug TEXT NOT NULL,
+                tags TEXT NOT NULL,
+                supersedes_id TEXT
+            );
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_cat ON vault_memories(category);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_status ON vault_memories(status);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_project ON vault_memories(project_slug);")
     }
 
     // ==========================================
@@ -573,9 +614,246 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
         }
         return list
     }
+
+    // ==========================================
+    // Vault Granular Memories (Deduplication & Superseding)
+    // ==========================================
+    private fun calculateTokenOverlap(a: String, b: String): Double {
+        val tokensA = a.split(" ").filter { it.length > 2 }.toSet()
+        val tokensB = b.split(" ").filter { it.length > 2 }.toSet()
+        if (tokensA.isEmpty() || tokensB.isEmpty()) return 0.0
+        val intersection = tokensA.intersect(tokensB).size
+        val union = tokensA.union(tokensB).size
+        return if (union == 0) 0.0 else intersection.toDouble() / union.toDouble()
+    }
+
+    private fun isPropertyContradiction(newFact: String, oldFact: String, category: String): Boolean {
+        val propertyPrefixes = listOf(
+            "preferred language", "language", "name is", "preferred name",
+            "call me", "model is", "uses model", "status is", "role is",
+            "theme is", "tone is", "voice is"
+        )
+        for (prefix in propertyPrefixes) {
+            if (newFact.contains(prefix) && oldFact.contains(prefix)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    fun upsertMemoryWithDeduplication(
+        category: String,
+        fact: String,
+        source: String = "user",
+        confidence: Double = 1.0,
+        projectSlug: String = "general",
+        tags: String = ""
+    ): VaultMemoryItem {
+        val db = writableDatabase
+        val cleanFact = fact.trim()
+        val normFact = cleanFact.lowercase().replace("[^a-z0-9]+".toRegex(), " ").trim()
+
+        val cursor = db.rawQuery(
+            """
+            SELECT id, category, fact, source, created_at, updated_at, status, confidence, project_slug, tags, supersedes_id
+            FROM vault_memories
+            WHERE status = 'active' AND (category = ? OR project_slug = ?)
+            ORDER BY updated_at DESC
+            """.trimIndent(),
+            arrayOf(category, projectSlug)
+        )
+
+        var exactMatch: VaultMemoryItem? = null
+        var contradictoryMatch: VaultMemoryItem? = null
+
+        cursor.use {
+            while (it.moveToNext()) {
+                val item = VaultMemoryItem(
+                    id = it.getString(0),
+                    category = it.getString(1),
+                    fact = it.getString(2),
+                    source = it.getString(3),
+                    createdAt = it.getLong(4),
+                    updatedAt = it.getLong(5),
+                    status = it.getString(6),
+                    confidence = it.getDouble(7),
+                    projectSlug = it.getString(8),
+                    tags = it.getString(9),
+                    supersedesId = it.getString(10)
+                )
+
+                val itemNorm = item.fact.lowercase().replace("[^a-z0-9]+".toRegex(), " ").trim()
+
+                if (itemNorm == normFact || calculateTokenOverlap(normFact, itemNorm) >= 0.85) {
+                    exactMatch = item
+                    break
+                }
+
+                if (isPropertyContradiction(normFact, itemNorm, category)) {
+                    contradictoryMatch = item
+                    break
+                }
+            }
+        }
+
+        val now = System.currentTimeMillis()
+
+        if (exactMatch != null) {
+            val cv = ContentValues().apply {
+                put("updated_at", now)
+                if (confidence > exactMatch!!.confidence) {
+                    put("confidence", confidence)
+                }
+            }
+            db.update("vault_memories", cv, "id = ?", arrayOf(exactMatch!!.id))
+            return exactMatch!!.copy(updatedAt = now)
+        }
+
+        var supersedesId: String? = null
+        if (contradictoryMatch != null) {
+            supersedesId = contradictoryMatch!!.id
+            val cv = ContentValues().apply {
+                put("status", "superseded")
+                put("updated_at", now)
+            }
+            db.update("vault_memories", cv, "id = ?", arrayOf(supersedesId))
+        }
+
+        val newId = "mem-${System.currentTimeMillis()}-${(1000..9999).random()}"
+        val cv = ContentValues().apply {
+            put("id", newId)
+            put("category", category)
+            put("fact", cleanFact)
+            put("source", source)
+            put("created_at", now)
+            put("updated_at", now)
+            put("status", "active")
+            put("confidence", confidence)
+            put("project_slug", projectSlug)
+            put("tags", tags)
+            put("supersedes_id", supersedesId)
+        }
+        db.insert("vault_memories", null, cv)
+
+        return VaultMemoryItem(
+            id = newId,
+            category = category,
+            fact = cleanFact,
+            source = source,
+            createdAt = now,
+            updatedAt = now,
+            status = "active",
+            confidence = confidence,
+            projectSlug = projectSlug,
+            tags = tags,
+            supersedesId = supersedesId
+        )
+    }
+
+    fun searchMemories(query: String, limit: Int = 5, projectSlug: String? = null): List<VaultMemoryItem> {
+        val db = readableDatabase
+        val cleanQuery = query.lowercase().trim()
+        val queryTokens = cleanQuery.split("[^a-z0-9]+".toRegex()).filter { it.length > 1 }
+
+        val cursor = db.rawQuery(
+            """
+            SELECT id, category, fact, source, created_at, updated_at, status, confidence, project_slug, tags, supersedes_id
+            FROM vault_memories
+            WHERE status = 'active'
+            ORDER BY updated_at DESC
+            LIMIT 100
+            """.trimIndent(),
+            null
+        )
+
+        val list = mutableListOf<Pair<VaultMemoryItem, Double>>()
+        cursor.use {
+            while (it.moveToNext()) {
+                val item = VaultMemoryItem(
+                    id = it.getString(0),
+                    category = it.getString(1),
+                    fact = it.getString(2),
+                    source = it.getString(3),
+                    createdAt = it.getLong(4),
+                    updatedAt = it.getLong(5),
+                    status = it.getString(6),
+                    confidence = it.getDouble(7),
+                    projectSlug = it.getString(8),
+                    tags = it.getString(9),
+                    supersedesId = it.getString(10)
+                )
+
+                val factLower = item.fact.lowercase()
+                var score = 0.0
+                if (factLower.contains(cleanQuery)) {
+                    score += 10.0
+                }
+                for (token in queryTokens) {
+                    if (factLower.contains(token) || item.tags.lowercase().contains(token)) {
+                        score += 2.0
+                    }
+                }
+                if (projectSlug != null && item.projectSlug.equals(projectSlug, ignoreCase = true)) {
+                    score += 5.0
+                }
+                if (score > 0.0) {
+                    list.add(item to score)
+                }
+            }
+        }
+
+        return list.sortedByDescending { it.second }.take(limit).map { it.first }
+    }
+
+    fun getAllActiveMemories(): List<VaultMemoryItem> {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            """
+            SELECT id, category, fact, source, created_at, updated_at, status, confidence, project_slug, tags, supersedes_id
+            FROM vault_memories
+            WHERE status = 'active'
+            ORDER BY updated_at DESC
+            """.trimIndent(),
+            null
+        )
+        val list = mutableListOf<VaultMemoryItem>()
+        cursor.use {
+            while (it.moveToNext()) {
+                list.add(
+                    VaultMemoryItem(
+                        id = it.getString(0),
+                        category = it.getString(1),
+                        fact = it.getString(2),
+                        source = it.getString(3),
+                        createdAt = it.getLong(4),
+                        updatedAt = it.getLong(5),
+                        status = it.getString(6),
+                        confidence = it.getDouble(7),
+                        projectSlug = it.getString(8),
+                        tags = it.getString(9),
+                        supersedesId = it.getString(10)
+                    )
+                )
+            }
+        }
+        return list
+    }
 }
 
 // Data models
+data class VaultMemoryItem(
+    val id: String,
+    val category: String,
+    val fact: String,
+    val source: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val status: String, // active | superseded | archived
+    val confidence: Double,
+    val projectSlug: String,
+    val tags: String,
+    val supersedesId: String?
+)
 data class VaultIndexItem(
     val tag: String,
     val category: String,

@@ -1427,6 +1427,20 @@ function parseCommandIntent(message: string, language: string = 'en'): { action:
   return null;
 }
 
+// Memory Dispatch Payloads (for runtime inspection & Phase 18 verification)
+export let lastDispatchedModelPayload: {
+  endpoint: string;
+  userPrompt: string;
+  systemInstruction?: string;
+  contextPrompt?: string;
+  model: string;
+  timestamp: number;
+} | null = null;
+
+app.get('/api/memory/last-dispatched-payload', (req, res) => {
+  res.json({ payload: lastDispatchedModelPayload });
+});
+
 // Chat endpoint for MAYRA UI Preview with unified Action Execution, Multimodal Image Vision & Auto Memory
 app.post('/api/chat', async (req, res) => {
   try {
@@ -1540,12 +1554,12 @@ app.post('/api/chat', async (req, res) => {
       ? 'CRITICAL LANGUAGE MANDATE: The user is writing/speaking in Hindi or Hinglish. You MUST respond ONLY in natural, fluent Hindi or conversational Hinglish.'
       : 'CRITICAL LANGUAGE MANDATE: The user is writing/speaking in English. You MUST respond ONLY in clean, fluent English. DO NOT respond in Hindi or Hinglish when the user writes in English.';
     
-    // Inject current active memories for high context awareness
+    // Inject on-demand retrieved memory vault context
     const serverMemories = memoryStore.slice(0, 8).map(m => `- ${m.key}: ${m.value}`).join('\n');
     const providedMemoryPrompt = typeof req.body.contextPrompt === 'string' && req.body.contextPrompt.trim()
       ? req.body.contextPrompt.trim()
       : '';
-    const contextMemories = [providedMemoryPrompt, serverMemories].filter(Boolean).join('\n');
+    const contextMemories = providedMemoryPrompt || serverMemories;
 
     const visionGuidance = image 
       ? 'MULTIMODAL VISION TASK: An image has been provided. Accurately identify the contents, read any visible text or typography, describe key objects and spatial arrangement, and answer the user query directly with high precision.'
@@ -1637,6 +1651,15 @@ ${langInstruction} Keep responses concise, direct and optimal for mobile screen 
       openRouter: (req.headers['x-openrouter-key'] as string) || req.body.fallbackKeys?.openRouter,
       nvidia: (req.headers['x-nvidia-key'] as string) || req.body.fallbackKeys?.nvidia,
       anthropic: (req.headers['x-anthropic-key'] as string) || req.body.fallbackKeys?.anthropic
+    };
+
+    lastDispatchedModelPayload = {
+      endpoint: '/api/chat',
+      userPrompt: safeMessage,
+      systemInstruction,
+      contextPrompt: providedMemoryPrompt,
+      model: selectedModel,
+      timestamp: Date.now()
     };
 
     const fallbackResult = await generateWithFallback(safeMessage, systemInstruction, temp, selectedModel, image, fallbackKeys);
@@ -2305,8 +2328,20 @@ async function startServer() {
           if (hasImage) {
             console.log('[MAYRA_SERVER] Routing attached image to Multimodal Gemini Vision Model');
             const lang = detectLang(userPrompt);
+            const memorySlice = (typeof parsed.contextPrompt === 'string' && parsed.contextPrompt.trim())
+              ? `\n\nRELEVANT MEMORY CONTEXT:\n${parsed.contextPrompt.trim()}\n`
+              : '';
             const visionInstruction = `You are MAYRA, an advanced personal Android AI assistant created by Zafer. 
-CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Carefully inspect every detail in the image. Read all visible text, identify objects, interpret diagrams or charts, and answer the user's prompt directly, thoroughly, and accurately. User creator is Zafer.`;
+CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Carefully inspect every detail in the image. Read all visible text, identify objects, interpret diagrams or charts, and answer the user's prompt directly, thoroughly, and accurately. User creator is Zafer.${memorySlice}`;
+
+            lastDispatchedModelPayload = {
+              endpoint: '/api/live-ws:image',
+              userPrompt,
+              systemInstruction: visionInstruction,
+              contextPrompt: parsed.contextPrompt,
+              model: 'gemini-3.1-flash-lite',
+              timestamp: Date.now()
+            };
 
             const replyText = await generateGeminiResponse(
               userPrompt,
@@ -2333,8 +2368,20 @@ CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Caref
           let sentToLive = false;
           if (session && typeof session.sendClientContent === 'function') {
             try {
+              const livePromptPayload = (typeof parsed.contextPrompt === 'string' && parsed.contextPrompt.trim())
+                ? `[RELEVANT MEMORY CONTEXT:\n${parsed.contextPrompt.trim()}]\n\n${userPrompt}`
+                : userPrompt;
+
+              lastDispatchedModelPayload = {
+                endpoint: '/api/live-ws:live-session',
+                userPrompt: livePromptPayload,
+                contextPrompt: parsed.contextPrompt,
+                model: 'gemini-2.5-flash-native-live',
+                timestamp: Date.now()
+              };
+
               session.sendClientContent({
-                turns: [{ role: 'user', parts: [{ text: userPrompt }] }],
+                turns: [{ role: 'user', parts: [{ text: livePromptPayload }] }],
                 turnComplete: true
               });
               sentToLive = true;
@@ -2348,9 +2395,22 @@ CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Caref
           if (!sentToLive) {
             console.log('[LIVE_FALLBACK_SYNTHESIS] Generating fast response + voice audio');
             const lang = detectLang(userPrompt);
+            const liveInstruction = (typeof parsed.contextPrompt === 'string' && parsed.contextPrompt.trim())
+              ? `You are MAYRA, an advanced personal Android AI assistant created by Zafer. Respond concisely, warmly and naturally with human speech rhythm. When addressed in Hindi or Hinglish, converse fluently in Hindi/Hinglish.\n\n${parsed.contextPrompt.trim()}`
+              : 'You are MAYRA, an advanced personal Android AI assistant created by Zafer. Respond concisely, warmly and naturally with human speech rhythm. When addressed in Hindi or Hinglish, converse fluently in Hindi/Hinglish.';
+
+            lastDispatchedModelPayload = {
+              endpoint: '/api/live-ws:fallback',
+              userPrompt,
+              systemInstruction: liveInstruction,
+              contextPrompt: parsed.contextPrompt,
+              model: 'gemini-3.1-flash-lite',
+              timestamp: Date.now()
+            };
+
             const replyText = detected?.reply || await generateGeminiResponse(
               userPrompt, 
-              'You are MAYRA, an advanced personal Android AI assistant created by Zafer. Respond concisely, warmly and naturally with human speech rhythm. When addressed in Hindi or Hinglish, converse fluently in Hindi/Hinglish.',
+              liveInstruction,
               0.7,
               'gemini-3.1-flash-lite'
             ) || `Hello Zafer, I have processed: "${userPrompt}".`;

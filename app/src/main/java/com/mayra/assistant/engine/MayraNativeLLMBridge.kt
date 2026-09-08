@@ -226,6 +226,22 @@ class MayraNativeLLMBridge(private val context: Context) {
         if (!isModelLoaded()) return false
         isGenerating.set(true)
 
+        // Retrieve on-demand memory slice without dumping the whole vault
+        val memoryEngine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+        val memorySlice = runBlocking(Dispatchers.IO) {
+            try {
+                memoryEngine.retrieveMemoryOnDemand(prompt).promptInjection
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
+        val enrichedSystemPrompt = if (memorySlice.isNotBlank()) {
+            "$systemPrompt\n\n$memorySlice"
+        } else {
+            systemPrompt
+        }
+
         val callback = object : NativeTokenCallback {
             override fun onToken(token: String, accumulated: String, tps: Double): Boolean {
                 if (!isGenerating.get()) return false
@@ -237,13 +253,22 @@ class MayraNativeLLMBridge(private val context: Context) {
                 isGenerating.set(false)
                 _tokenFlow.tryEmit(StreamTokenEvent("", fullText, true, tps))
                 onComplete(fullText, tps)
+
+                // Background evaluation & persistence of state changes / user facts
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        memoryEngine.evaluateAndPersistTurn(prompt, fullText, "MAYRA")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to evaluate turn memory: ${e.message}")
+                    }
+                }
             }
         }
 
         return try {
             MayraNativeLLMEngine.nativeGenerateStream(
                 promptStr = prompt,
-                systemPromptStr = systemPrompt,
+                systemPromptStr = enrichedSystemPrompt,
                 temperature = temperature,
                 topP = topP,
                 maxTokens = maxTokens,

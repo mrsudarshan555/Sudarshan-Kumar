@@ -412,78 +412,309 @@ class MayraMemoryVaultEngine private constructor(private val context: Context) {
      * Resolves context strictly on demand.
      * Rather than flooding the context window with the entire vault,
      * this queries the SQLite index and retrieves only the exact notes,
-     * living profile facts, active priorities, and job boot-chains relevant to the user query!
+     * living profile facts, active priorities, long-term memories, and job boot-chains relevant to the user query!
+     * Output is strictly compact (< 350 words) and relevant-only.
      */
     suspend fun retrieveMemoryOnDemand(query: String): MemoryContextResult = withContext(Dispatchers.IO) {
         val qLower = query.lowercase().trim()
 
-        // 1. Living Profile Snippet
+        // 1. Living Profile Snippet (Relevant facts only)
         val profile = db.getProfileSections()
         val whoIAm = profile["Who I Am"] ?: "Alex (Primary Operator)"
         val preferences = profile["Preferences"] ?: "Direct, concise, no flattery."
 
-        // 2. Open Active Priorities
-        val openPriorities = db.getActivePriorities(includeDone = false)
-            .take(4)
+        // 2. Open Active Priorities (Relevant to query or top active items)
+        val allOpenPriorities = db.getActivePriorities(includeDone = false)
+        val openPriorities = allOpenPriorities
+            .filter { qLower.contains(it.projectSlug.lowercase()) || it.task.lowercase().split(" ").any { w -> w.length > 3 && qLower.contains(w) } }
+            .ifEmpty { allOpenPriorities.take(3) }
+            .take(3)
             .map { "[${it.projectSlug}] ${it.task}" }
 
-        // 3. Match Jobs (e.g. "message", "whatsapp", "sms", "briefing", "scanner")
+        // 3. Structured Job Matching (Scan all available jobs by trigger tokens)
+        val allJobs = db.getAllJobs()
         var matchedJob: VaultJobItem? = null
-        if (qLower.contains("message") || qLower.contains("sms") || qLower.contains("whatsapp") || qLower.contains("bhejo")) {
-            matchedJob = db.getJob("send-safe-message")
-        } else if (qLower.contains("briefing") || qLower.contains("morning") || qLower.contains("update")) {
-            matchedJob = db.getJob("daily-briefing")
+        var highestJobScore = 0.0
+        val queryWords = qLower.split("[^a-z0-9]+".toRegex()).filter { it.length > 2 }
+
+        for (job in allJobs) {
+            var score = 0.0
+            val jobHaystack = "${job.name} ${job.projectSlug} ${job.procedure}".lowercase()
+            for (w in queryWords) {
+                if (jobHaystack.contains(w)) score += 2.0
+            }
+            if (score > highestJobScore && score >= 2.0) {
+                highestJobScore = score
+                matchedJob = job
+            }
         }
 
-        // 4. Match Notes from Database Index
-        val matchedNotes = db.searchNotes(qLower)
-            .filter { it.filePath != "VAULT-INDEX.md" }
-            .take(3)
-            .map { "Note [[${it.title}]]: ${it.contentMarkdown.take(300)}..." }
+        // 4. Match Granular Long-Term Memories from vault_memories
+        val matchedMemories = db.searchMemories(qLower, limit = 4)
 
-        // 5. Matched Index Tags
+        // 5. Match Notes from Database Index
+        val matchedNotes = db.searchNotes(qLower)
+            .filter { it.filePath != "VAULT-INDEX.md" && !it.filePath.contains("Daily Note Template") }
+            .take(2)
+            .map { "[[${it.title}]]: ${it.contentMarkdown.take(180).replace("\n", " ")}..." }
+
+        // 6. Matched Index Tags
         val indexTags = db.searchIndex(qLower)
             .take(3)
             .map { "${it.tag} -> ${it.summary}" }
 
-        // 6. Build the lean, high-signal System Prompt Context Block
+        // 7. Build the lean, high-signal System Prompt Context Block (Strictly compact)
         val promptBlock = StringBuilder()
-        promptBlock.append("=== MAYRA MEMORY-ON-DEMAND (AI MEMORY VAULT) ===\n")
-        promptBlock.append("Operator Profile: $whoIAm\n")
-        promptBlock.append("Preferences: $preferences\n")
+        promptBlock.append("--- [MAYRA MEMORY-ON-DEMAND: RELEVANT VAULT SLICE] ---\n")
+        promptBlock.append("Operator: $whoIAm | Preferences: $preferences\n")
+
+        if (matchedMemories.isNotEmpty()) {
+            promptBlock.append("Relevant Long-Term Memories:\n")
+            matchedMemories.forEach {
+                promptBlock.append("  • [${it.category}] ${it.fact}\n")
+            }
+        }
 
         if (openPriorities.isNotEmpty()) {
             promptBlock.append("Active Priorities:\n")
-            openPriorities.forEach { promptBlock.append("  - $it\n") }
+            openPriorities.forEach { promptBlock.append("  • $it\n") }
         }
 
         if (matchedJob != null) {
-            promptBlock.append("Loaded Job Skill: [[${matchedJob.name}]]\n")
-            promptBlock.append("  Procedure: ${matchedJob.procedure.take(200)}\n")
-            promptBlock.append("  Quality Bar: ${matchedJob.qualityBar.take(150)}\n")
+            promptBlock.append("Active Skill: [[${matchedJob.name}]]\n")
+            promptBlock.append("  Procedure: ${matchedJob.procedure.take(160)}...\n")
             if (matchedJob.lessons.isNotBlank()) {
-                promptBlock.append("  Compounded Lessons: ${matchedJob.lessons.take(150)}\n")
+                promptBlock.append("  Lessons: ${matchedJob.lessons.take(120)}...\n")
             }
         }
 
         if (matchedNotes.isNotEmpty()) {
-            promptBlock.append("Relevant Context Notes:\n")
-            matchedNotes.forEach { promptBlock.append("  $it\n") }
+            promptBlock.append("Related Notes:\n")
+            matchedNotes.forEach { promptBlock.append("  • $it\n") }
         }
-        promptBlock.append("================================================\n")
+        promptBlock.append("------------------------------------------------------\n")
 
         MemoryContextResult(
             promptInjection = promptBlock.toString(),
             matchedJobName = matchedJob?.name,
             matchedNotesCount = matchedNotes.size,
             activePrioritiesCount = openPriorities.size,
-            indexTags = indexTags
+            indexTags = indexTags,
+            matchedMemories = matchedMemories
         )
     }
 
     // =========================================================================
     // BEHAVIOR 7: Self-Maintenance & Checkpoint Persistence
     // =========================================================================
+
+    /**
+     * Evaluates a completed conversation turn for meaningful facts that future
+     * sessions should know (durable preferences, identity, project decisions,
+     * technical choices, active priorities, or compounding lessons).
+     * Automatically deduplicates and supersedes contradictory records.
+     */
+    suspend fun evaluateAndPersistTurn(
+        userPrompt: String,
+        assistantReply: String,
+        speaker: String = "MAYRA"
+    ): Boolean = withContext(Dispatchers.IO) {
+        val trimmedPrompt = userPrompt.trim()
+        val lowerPrompt = trimmedPrompt.lowercase()
+
+        // Filter casual chatter / conversational filler
+        val casualPatterns = listOf(
+            "^hi$", "^hello$", "^hey$", "^namaste$", "^good morning$",
+            "^good evening$", "^thank you$", "^thanks$", "^ok$", "^okay$",
+            "^theek hai$", "^kya haal hai$", "^bye$", "^good night$"
+        )
+        if (casualPatterns.any { lowerPrompt.matches(it.toRegex()) }) {
+            return@withContext false
+        }
+
+        var factsSaved = 0
+        val sessionDecisions = mutableListOf<String>()
+        val profileUpdates = mutableListOf<String>()
+        val notesTouched = mutableListOf<String>()
+
+        // 1. Identity & Preferred Name
+        val nameMatch = trimmedPrompt.matchFirst(
+            "(?:my name is|mera naam|call me|i am|main hoon)\\s+([A-Za-z0-9_]+)"
+        )
+        if (nameMatch != null && nameMatch.length > 1 && !listOf("not", "doing", "just", "busy").contains(nameMatch.lowercase())) {
+            val fact = "User Preferred Name is $nameMatch"
+            db.upsertMemoryWithDeduplication(
+                category = "identity",
+                fact = fact,
+                source = "user",
+                confidence = 1.0,
+                projectSlug = "personal",
+                tags = "#identity"
+            )
+            updateProfileFact("Who I Am", nameMatch)
+            profileUpdates.add("Who I Am: updated name to $nameMatch")
+            factsSaved++
+        }
+
+        // 2. Durable User Preferences (Language, Tone, Workflow)
+        if (lowerPrompt.contains("prefer english") || lowerPrompt.contains("english mein baat") || lowerPrompt.contains("speak in english")) {
+            val fact = "Preferred language is English"
+            db.upsertMemoryWithDeduplication(
+                category = "preference",
+                fact = fact,
+                source = "user",
+                confidence = 1.0,
+                projectSlug = "personal",
+                tags = "#preference #language"
+            )
+            updateProfileFact("Preferences", "Speaks in English. Direct, concise.")
+            profileUpdates.add("Preferences: updated language preference to English")
+            factsSaved++
+        } else if (lowerPrompt.contains("prefer hindi") || lowerPrompt.contains("hindi mein baat") || lowerPrompt.contains("speak in hindi")) {
+            val fact = "Preferred language is Hindi"
+            db.upsertMemoryWithDeduplication(
+                category = "preference",
+                fact = fact,
+                source = "user",
+                confidence = 1.0,
+                projectSlug = "personal",
+                tags = "#preference #language"
+            )
+            updateProfileFact("Preferences", "Speaks in Hindi/Hinglish. Direct, concise.")
+            profileUpdates.add("Preferences: updated language preference to Hindi")
+            factsSaved++
+        }
+
+        // 3. Technical & Project Decisions / Variables
+        val modelMatch = trimmedPrompt.matchFirst(
+            "(?:uses model|project uses|model is|switch to model)\\s+([A-Za-z0-9_\\-]+)"
+        )
+        if (modelMatch != null) {
+            val fact = "MAYRA project uses model $modelMatch"
+            db.upsertMemoryWithDeduplication(
+                category = "technical",
+                fact = fact,
+                source = speaker,
+                confidence = 0.95,
+                projectSlug = "mayra",
+                tags = "#technical #model"
+            )
+            sessionDecisions.add("Configured project model to $modelMatch")
+            notesTouched.add("02 - Android System/Android System.md")
+            factsSaved++
+        }
+
+        // 4. Explicit Memory Save Directive ("remember that...", "save to memory...")
+        val explicitSaveMatch = trimmedPrompt.matchFirst(
+            "(?:remember that|save to memory|save in memory|yaad rakhna|memory mein daal do)\\s*[:\\-]?\\s*(.*)"
+        )
+        if (explicitSaveMatch != null && explicitSaveMatch.length > 4) {
+            val fact = explicitSaveMatch.trim()
+            db.upsertMemoryWithDeduplication(
+                category = "long_term",
+                fact = fact,
+                source = "user",
+                confidence = 1.0,
+                projectSlug = "general",
+                tags = "#explicit-memory"
+            )
+            sessionDecisions.add("Stored user directive in long-term memory: $fact")
+            factsSaved++
+        }
+
+        // 5. Active Priorities ("todo:", "priority:", "we need to finish...")
+        val priorityMatch = trimmedPrompt.matchFirst(
+            "(?:priority|todo|task)\\s*[:\\-]\\s*([A-Za-z0-9_\\-\\s]{4,80})"
+        )
+        if (priorityMatch != null) {
+            val taskId = "p-${System.currentTimeMillis()}"
+            db.insertActivePriority(taskId, priorityMatch.trim(), "general")
+            filesystem.appendFile("Active Priorities.md", "\n- [ ] ${priorityMatch.trim()}")
+            notesTouched.add("Active Priorities.md")
+            factsSaved++
+        }
+
+        // If any meaningful facts were saved, execute automatic checkpoint persistence
+        if (factsSaved > 0) {
+            executeCheckpointPersistence(
+                topic = "Conversation Turn (${trimmedPrompt.take(30)}...)",
+                outcome = "Saved $factsSaved memory items (${sessionDecisions.joinToString("; ").ifEmpty { "Preferences updated" }})",
+                touchedNotePath = notesTouched.firstOrNull(),
+                noteAddition = sessionDecisions.firstOrNull()
+            )
+            Log.i(TAG, "Automatic memory turn persisted: $factsSaved items saved/superseded")
+            return@withContext true
+        }
+
+        false
+    }
+
+    /**
+     * Rebuilds/refreshes the SQLite index safely from the Markdown filesystem
+     * without creating duplicate records.
+     */
+    suspend fun rebuildDatabaseFromFilesystem(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val root = filesystem.getVaultRootDir()
+            if (!root.exists()) return@withContext false
+
+            // 1. Sync Root Index
+            val vaultIndexContent = filesystem.readFile("VAULT-INDEX.md")
+            if (vaultIndexContent != null) {
+                db.upsertNote(
+                    filePath = "VAULT-INDEX.md",
+                    title = "VAULT INDEX",
+                    folder = "root",
+                    contentMarkdown = vaultIndexContent,
+                    type = "index",
+                    projectSlug = "meta",
+                    status = "active"
+                )
+                syncLivingProfileFromContent(vaultIndexContent)
+            }
+
+            // 2. Scan and index all markdown files
+            root.walkTopDown().filter { it.isFile && it.extension.equals("md", ignoreCase = true) }.forEach { file ->
+                val relPath = file.relativeTo(root).path
+                val content = file.readText()
+                val folder = if (relPath.contains(File.separator)) relPath.substringBefore(File.separator) else "root"
+                val title = file.nameWithoutExtension
+
+                db.upsertNote(
+                    filePath = relPath,
+                    title = title,
+                    folder = folder,
+                    contentMarkdown = content,
+                    type = if (relPath.contains("Daily Notes")) "log" else if (relPath.contains("Jobs")) "guide" else "reference",
+                    projectSlug = if (relPath.contains("Android System")) "android" else "general",
+                    status = "active"
+                )
+            }
+
+            // 3. Sync Active Priorities
+            val prioritiesContent = filesystem.readFile("Active Priorities.md")
+            if (prioritiesContent != null) {
+                prioritiesContent.lines().forEach { line ->
+                    val clean = line.trim()
+                    if (clean.startsWith("- [ ]") || clean.startsWith("- [x]")) {
+                        val isDone = clean.startsWith("- [x]")
+                        val task = clean.removePrefix("- [ ]").removePrefix("- [x]").trim()
+                        if (task.isNotBlank()) {
+                            val id = "p-" + Math.abs(task.hashCode()).toString()
+                            db.insertActivePriority(id, task, "general")
+                            if (isDone) db.togglePriority(id, true)
+                        }
+                    }
+                }
+            }
+
+            Log.i(TAG, "Successfully rebuilt SQLite index from Markdown vault")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to rebuild database from filesystem: ${e.message}", e)
+            false
+        }
+    }
 
     /**
      * Checkpoint persistence mandate:
@@ -558,10 +789,16 @@ class MayraMemoryVaultEngine private constructor(private val context: Context) {
     }
 }
 
+private fun String.matchFirst(regexPattern: String): String? {
+    val matcher = java.util.regex.Pattern.compile(regexPattern, java.util.regex.Pattern.CASE_INSENSITIVE).matcher(this)
+    return if (matcher.find()) matcher.group(1)?.trim() else null
+}
+
 data class MemoryContextResult(
     val promptInjection: String,
     val matchedJobName: String?,
     val matchedNotesCount: Int,
     val activePrioritiesCount: Int,
-    val indexTags: List<String>
+    val indexTags: List<String>,
+    val matchedMemories: List<VaultMemoryItem> = emptyList()
 )

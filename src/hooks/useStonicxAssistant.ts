@@ -304,9 +304,7 @@ export function useStonicxAssistant({ personalConfig, assistantConfig, onSwitchT
       .join('\n');
 
     // 4. Cross-Brain Shared Vault Query & Prompt Injection
-    const vaultQuery = MemoryQueryEngine.getInstance().queryVault(trimmed, 'STONICX');
-    const recalledVaultContext = MemoryQueryEngine.getInstance().formatQueryResultForPrompt(vaultQuery);
-    const sharedVaultSystemPrompt = MemorySyncBridge.getInstance().generateSystemContextPrompt('STONICX');
+    const sharedVaultSystemPrompt = MemorySyncBridge.getInstance().generateSystemContextPrompt('STONICX', trimmed);
 
     // 5. Construct Comprehensive AI Priming System Prompt
     const stonicxSystemPrompt = `You are STONICX, an autonomous High-Performance Cybernetic AI Operating System and Neural Computing Engine.
@@ -321,7 +319,6 @@ PRIMARY IDENTITY & DIRECTIVES:
 - Language: Answer in English or Hindi matching user tone, keeping technical depth pristine.
 
 ${sharedVaultSystemPrompt}
-${recalledVaultContext}
 ${autonomousToolResult ? `
 ============================================================
 AUTONOMOUS TOOL EXECUTION RESULT [${autonomousToolResult.tool.toUpperCase()}]:

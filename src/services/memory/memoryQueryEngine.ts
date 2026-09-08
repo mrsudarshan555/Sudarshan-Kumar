@@ -8,7 +8,7 @@
  * `[MemoryBridge] Cross-brain query resolved -> Context injected to prompt`
  */
 
-import { MemoryVaultManager, VaultIndexEntry } from './memoryVaultManager';
+import { MemoryVaultManager, VaultFact, VaultIndexEntry } from './memoryVaultManager';
 
 export interface QueryResult {
   found: boolean;
@@ -16,6 +16,8 @@ export interface QueryResult {
   sourceDocs: string[];
   relevanceScore: number;
   extractedAnswer?: string;
+  provenanceList?: string[];
+  facts?: VaultFact[];
 }
 
 export class MemoryQueryEngine {
@@ -33,63 +35,46 @@ export class MemoryQueryEngine {
     return this.instance;
   }
 
+  public static resetInstance(): void {
+    this.instance = null;
+  }
+
   /**
-   * Queries the shared vault across all markdown documents
+   * Queries the shared vault across all markdown documents using deterministic multi-signal scoring
    */
   public queryVault(query: string, askingBrain: 'MAYRA' | 'STONICX' = 'MAYRA'): QueryResult {
     const cleanQuery = query.toLowerCase().trim();
-    const memoryDoc = this.vault.getDocument('MEMORY.md');
-    const dailyDoc = this.vault.getDocument('DAILY-NOTE.md');
-    const indexEntries = this.vault.getIndexEntries();
-
-    const matchedContent: string[] = [];
     const sourceDocs: string[] = [];
-    let score = 0;
+    const matchedContent: string[] = [];
+    const provenanceList: string[] = [];
 
-    // Tokenize query
+    // 1. Query structured facts with multi-signal scoring and project isolation
+    const relevantFacts = this.vault.getRelevantActiveFacts(query, 5);
+    let totalScore = 0;
+
+    relevantFacts.forEach(f => {
+      matchedContent.push(`[${f.category.toUpperCase()}] ${f.fact}`);
+      if (!sourceDocs.includes('MEMORY.md')) sourceDocs.push('MEMORY.md');
+      if (f.provenance) provenanceList.push(f.provenance);
+      totalScore += (f.relevanceScore || 10);
+    });
+
+    // 2. Query index entries if needed
+    const indexEntries = this.vault.getIndexEntries();
     const keywords = cleanQuery
       .replace(/[^\w\s]/g, '')
       .split(/\s+/)
       .filter((k) => k.length > 2);
 
-    // 1. Search index entries
     indexEntries.forEach((entry) => {
       const entryText = `${entry.tag} ${entry.summary} ${entry.category} ${entry.source}`.toLowerCase();
       const hits = keywords.filter((kw) => entryText.includes(kw));
-      if (hits.length > 0) {
+      if (hits.length > 0 && !matchedContent.some(m => m.includes(entry.summary))) {
         matchedContent.push(`[INDEX: ${entry.tag}] (${entry.source}) ${entry.summary}`);
         if (!sourceDocs.includes(entry.referenceDoc)) {
           sourceDocs.push(entry.referenceDoc);
         }
-        score += hits.length * 15;
-      }
-    });
-
-    // 2. Search MEMORY.md lines
-    const memoryLines = memoryDoc.split('\n');
-    memoryLines.forEach((line) => {
-      if (line.trim().startsWith('-')) {
-        const lowerLine = line.toLowerCase();
-        const hits = keywords.filter((kw) => lowerLine.includes(kw));
-        if (hits.length > 0) {
-          matchedContent.push(`[MEMORY] ${line.trim()}`);
-          if (!sourceDocs.includes('MEMORY.md')) sourceDocs.push('MEMORY.md');
-          score += hits.length * 10;
-        }
-      }
-    });
-
-    // 3. Search DAILY-NOTE.md lines
-    const dailyLines = dailyDoc.split('\n');
-    dailyLines.forEach((line) => {
-      if (line.trim().startsWith('-')) {
-        const lowerLine = line.toLowerCase();
-        const hits = keywords.filter((kw) => lowerLine.includes(kw));
-        if (hits.length > 0) {
-          matchedContent.push(`[DAILY-TIMELINE] ${line.trim()}`);
-          if (!sourceDocs.includes('DAILY-NOTE.md')) sourceDocs.push('DAILY-NOTE.md');
-          score += hits.length * 8;
-        }
+        totalScore += hits.length * 15;
       }
     });
 
@@ -100,15 +85,17 @@ export class MemoryQueryEngine {
 
     return {
       found: isFound,
-      matchedContent: matchedContent.slice(0, 8),
+      matchedContent: matchedContent.slice(0, 5),
       sourceDocs,
-      relevanceScore: score,
-      extractedAnswer: matchedContent.length > 0 ? matchedContent.join('\n') : undefined
+      relevanceScore: totalScore,
+      extractedAnswer: matchedContent.length > 0 ? matchedContent.join('\n') : undefined,
+      provenanceList,
+      facts: relevantFacts
     };
   }
 
   /**
-   * Helper to format query results as a context snippet for LLM prompts
+   * Helper to format query results as a compact context snippet for LLM prompts
    */
   public formatQueryResultForPrompt(result: QueryResult): string {
     if (!result.found || result.matchedContent.length === 0) {

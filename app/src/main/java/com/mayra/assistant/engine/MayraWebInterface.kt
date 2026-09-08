@@ -357,5 +357,83 @@ class MayraWebInterface(
             false
         }
     }
+
+    @JavascriptInterface
+    fun evaluateAndPersistTurn(userPrompt: String, assistantReply: String, speaker: String): Boolean {
+        return runBlocking(Dispatchers.IO) {
+            val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+            engine.evaluateAndPersistTurn(userPrompt, assistantReply, speaker)
+        }
+    }
+
+    @JavascriptInterface
+    fun saveMemory(category: String, fact: String, source: String, projectSlug: String, tags: String): String {
+        val db = com.mayra.assistant.memory.MayraMemoryVaultDatabase.getInstance(context)
+        val saved = db.upsertMemoryWithDeduplication(
+            category = category,
+            fact = fact,
+            source = source,
+            confidence = 1.0,
+            projectSlug = projectSlug,
+            tags = tags
+        )
+        return JSONObject().apply {
+            put("id", saved.id)
+            put("category", saved.category)
+            put("fact", saved.fact)
+            put("status", saved.status)
+            put("supersedesId", saved.supersedesId ?: JSONObject.NULL)
+            put("createdAt", saved.createdAt)
+            put("updatedAt", saved.updatedAt)
+        }.toString()
+    }
+
+    @JavascriptInterface
+    fun searchMemories(query: String, limit: Int): String {
+        val db = com.mayra.assistant.memory.MayraMemoryVaultDatabase.getInstance(context)
+        val list = db.searchMemories(query, limit)
+        val arr = org.json.JSONArray()
+        for (m in list) {
+            arr.put(JSONObject().apply {
+                put("id", m.id)
+                put("category", m.category)
+                put("fact", m.fact)
+                put("status", m.status)
+                put("confidence", m.confidence)
+                put("projectSlug", m.projectSlug)
+                put("tags", m.tags)
+                put("supersedesId", m.supersedesId ?: JSONObject.NULL)
+            })
+        }
+        return arr.toString()
+    }
+
+    @JavascriptInterface
+    fun getAllActiveMemoriesJson(): String {
+        val db = com.mayra.assistant.memory.MayraMemoryVaultDatabase.getInstance(context)
+        val list = db.getAllActiveMemories()
+        val arr = org.json.JSONArray()
+        for (m in list) {
+            arr.put(JSONObject().apply {
+                put("id", m.id)
+                put("category", m.category)
+                put("fact", m.fact)
+                put("status", m.status)
+                put("confidence", m.confidence)
+                put("projectSlug", m.projectSlug)
+                put("tags", m.tags)
+                put("supersedesId", m.supersedesId ?: JSONObject.NULL)
+            })
+        }
+        return arr.toString()
+    }
+
+    @JavascriptInterface
+    fun rebuildVaultIndex(): Boolean {
+        return runBlocking(Dispatchers.IO) {
+            val engine = com.mayra.assistant.memory.MayraMemoryVaultEngine.getInstance(context)
+            engine.rebuildDatabaseFromFilesystem()
+        }
+    }
 }
 
