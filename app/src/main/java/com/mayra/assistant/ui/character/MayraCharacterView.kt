@@ -225,6 +225,12 @@ fun MayraCharacterView(
                         }
                         webViewClient = WebViewClient()
 
+                        // Connect existing native Memory Vault and offline engine via JS bridge
+                        addJavascriptInterface(
+                            com.mayra.assistant.engine.MayraWebInterface(ctx, this),
+                            "MayraNativeLLM"
+                        )
+
                         // Load offline HTML with Three.js rendering PMX / textures from android_asset/models/
                         val htmlData = """
                             <!DOCTYPE html>

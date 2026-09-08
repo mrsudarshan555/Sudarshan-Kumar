@@ -483,6 +483,15 @@ class MayraMemoryVaultEngine private constructor(private val context: Context) {
         if (matchedJob != null) {
             promptBlock.append("Active Skill: [[${matchedJob.name}]]\n")
             promptBlock.append("  Procedure: ${matchedJob.procedure.take(160)}...\n")
+            if (matchedJob.bootChain.isNotEmpty()) {
+                val chainSnippets = matchedJob.bootChain
+                    .filter { !it.equals("This note", ignoreCase = true) }
+                    .mapNotNull { link -> resolveWikilink(link)?.let { "$link: $it" } }
+                if (chainSnippets.isNotEmpty()) {
+                    promptBlock.append("  Boot Chain Context:\n")
+                    chainSnippets.forEach { promptBlock.append("    * $it\n") }
+                }
+            }
             if (matchedJob.lessons.isNotBlank()) {
                 promptBlock.append("  Lessons: ${matchedJob.lessons.take(120)}...\n")
             }
@@ -502,6 +511,57 @@ class MayraMemoryVaultEngine private constructor(private val context: Context) {
             indexTags = indexTags,
             matchedMemories = matchedMemories
         )
+    }
+
+    /**
+     * Minimal wikilink resolution for references like:
+     * [[VAULT-INDEX]], [[Active Priorities]], [[MEMORY]], [[Note#Heading]]
+     */
+    fun resolveWikilink(link: String): String? {
+        val clean = link.removePrefix("[[").removeSuffix("]]").trim()
+        if (clean.isBlank() || clean.equals("This note", ignoreCase = true)) return null
+
+        if (clean.equals("Active Priorities", ignoreCase = true)) {
+            val active = db.getActivePriorities(includeDone = false)
+            if (active.isEmpty()) return "No active priorities pending."
+            return active.take(2).joinToString("; ") { "[${it.projectSlug}] ${it.task}" }
+        }
+
+        if (clean.equals("VAULT-INDEX", ignoreCase = true) || clean.equals("VAULT-INDEX.md", ignoreCase = true)) {
+            val tags = db.getAllIndexEntries().take(3).joinToString("; ") { "${it.tag}: ${it.summary}" }
+            return if (tags.isNotBlank()) tags else "Root directory index"
+        }
+
+        val parts = clean.split("#")
+        val docName = parts.first().trim()
+        val heading = if (parts.size > 1) parts[1].trim() else null
+
+        val note = if (docName.isBlank() || docName.equals("MEMORY", ignoreCase = true) || docName.equals("MEMORY.md", ignoreCase = true)) {
+            db.getNote("MEMORY.md")
+        } else {
+            db.getNote(if (docName.endsWith(".md")) docName else "$docName.md")
+                ?: db.getAllNotes().firstOrNull { it.title.contains(docName, ignoreCase = true) }
+        }
+
+        if (note != null) {
+            if (heading == null) {
+                return note.contentMarkdown.lines().firstOrNull { it.trim().startsWith("-") }?.trim()
+                    ?: note.contentMarkdown.take(120).replace("\n", " ")
+            }
+            val lines = note.contentMarkdown.lines()
+            var inHeading = false
+            for (line in lines) {
+                val tr = line.trim()
+                if (tr.startsWith("#") && tr.contains(heading, ignoreCase = true)) {
+                    inHeading = true
+                    continue
+                } else if (inHeading) {
+                    if (tr.startsWith("#")) break
+                    if (tr.isNotBlank()) return tr
+                }
+            }
+        }
+        return null
     }
 
     // =========================================================================

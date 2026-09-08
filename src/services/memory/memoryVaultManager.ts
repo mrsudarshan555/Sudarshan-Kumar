@@ -50,6 +50,7 @@ export interface VaultJob {
   qualityBar: string;
   lessons: string[];
   status: 'active' | 'idle' | 'retired';
+  bootChain?: string[];
 }
 
 export interface VaultPriority {
@@ -244,7 +245,8 @@ export class MemoryVaultManager {
         procedure: 'Verify memory index integrity, check active priorities, validate sub-100ms response time.',
         qualityBar: 'All checks green, zero memory contradictions, clean markdown formatting.',
         lessons: ['Cache hot items in memory for sub-millisecond lookups.'],
-        status: 'active'
+        status: 'active',
+        bootChain: ['This note', '[[VAULT-INDEX]]', '[[Active Priorities]]']
       },
       {
         jobId: 'job-code-audit',
@@ -253,7 +255,8 @@ export class MemoryVaultManager {
         procedure: 'Examine syntax, verify types, enforce WCAG AA contrast, ensure zero-touch on camera/renderers.',
         qualityBar: 'Strict type safety, zero regressions, no unused variables.',
         lessons: ['Never alter camera rig or 3D canvas when auditing memory.'],
-        status: 'active'
+        status: 'active',
+        bootChain: ['This note', '[[MEMORY.md#4. Long-Term Facts & Knowledge]]', '[[Active Priorities]]']
       }
     ];
   }
@@ -353,6 +356,20 @@ export class MemoryVaultManager {
     if (rawJobs) {
       try {
         this.jobs = JSON.parse(rawJobs);
+        if (!this.jobs || this.jobs.length === 0) {
+          this.initDefaultJobs();
+        } else {
+          // Guarantee bootChain on default jobs if older payload lacked it
+          const defaultChains: Record<string, string[]> = {
+            'job-system-health': ['This note', '[[VAULT-INDEX]]', '[[Active Priorities]]'],
+            'job-code-audit': ['This note', '[[MEMORY.md#4. Long-Term Facts & Knowledge]]', '[[Active Priorities]]']
+          };
+          for (const j of this.jobs) {
+            if ((!j.bootChain || j.bootChain.length === 0) && defaultChains[j.jobId]) {
+              j.bootChain = defaultChains[j.jobId];
+            }
+          }
+        }
       } catch {
         this.initDefaultJobs();
       }
@@ -683,6 +700,98 @@ export class MemoryVaultManager {
       await this.upsertJob(job);
     }
     return true;
+  }
+
+  /**
+   * Minimal wikilink resolution for references like:
+   * - [[VAULT-INDEX]] or [[VAULT-INDEX.md]]
+   * - [[Active Priorities]]
+   * - [[MEMORY]] or [[MEMORY.md]]
+   * - [[DAILY-NOTE]] or [[DAILY-NOTE.md]]
+   * - [[Note#Heading]] or [[MEMORY.md#4. Long-Term Facts & Knowledge]]
+   * 
+   * Returns a compact, bounded relevant snippet (< 50 words) from the target section.
+   */
+  public resolveWikilink(link: string): string | null {
+    if (!link) return null;
+    const cleanLink = link.replace(/^\[\[/, '').replace(/\]\]$/, '').trim();
+    if (!cleanLink || cleanLink.toLowerCase() === 'this note') return null;
+
+    // Handle pipe alias: [[target|alias]]
+    const pipeIdx = cleanLink.indexOf('|');
+    const target = pipeIdx >= 0 ? cleanLink.slice(0, pipeIdx).trim() : cleanLink;
+
+    // 1. Special entity: [[Active Priorities]]
+    if (target.toLowerCase() === 'active priorities') {
+      const active = this.getActivePriorities();
+      if (active.length === 0) return 'No active priorities pending.';
+      return active.slice(0, 3).map(p => `[${p.projectSlug.toUpperCase()}] ${p.task}`).join('; ');
+    }
+
+    // 2. Section link: [[Document#Heading]] or [[#Heading]]
+    const hashIdx = target.indexOf('#');
+    let docName = hashIdx >= 0 ? target.slice(0, hashIdx).trim() : target;
+    const heading = hashIdx >= 0 ? target.slice(hashIdx + 1).trim() : null;
+
+    if (!docName || docName.toLowerCase() === 'memory') docName = 'MEMORY.md';
+    else if (!docName.endsWith('.md')) docName = `${docName}.md`;
+
+    const docContent = this.getDocument(docName);
+    if (!docContent) return null;
+
+    if (!heading) {
+      // Return top summary lines of document (up to 2 non-empty bullet points or 140 chars)
+      const lines = docContent.split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('|'));
+      return lines.slice(0, 2).map(l => l.trim()).join(' | ') || docContent.slice(0, 140).replace(/\n/g, ' ');
+    }
+
+    // Extract content under heading
+    const normalizedHeading = heading.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const lines = docContent.split('\n');
+    let insideHeading = false;
+    const extractedLines: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('#')) {
+        const hText = trimmed.replace(/^#+\s*/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (hText.includes(normalizedHeading) || normalizedHeading.includes(hText)) {
+          insideHeading = true;
+          continue;
+        } else if (insideHeading) {
+          // Hit next heading at same or higher level
+          break;
+        }
+      } else if (insideHeading) {
+        if (trimmed.length > 0 && !trimmed.startsWith('#')) {
+          extractedLines.push(trimmed);
+          if (extractedLines.length >= 3) break;
+        }
+      }
+    }
+
+    if (extractedLines.length > 0) {
+      return extractedLines.join(' ');
+    }
+    return null;
+  }
+
+  /**
+   * Resolves a Job's bootChain at runtime:
+   * Traverses each note in bootChain, resolves wikilinks, and returns a compact priming summary (< 100 words).
+   */
+  public resolveJobBootChain(job: VaultJob): string[] {
+    const chain = job.bootChain || [];
+    const resolvedSnippets: string[] = [];
+
+    for (const link of chain) {
+      if (link.toLowerCase() === 'this note') continue;
+      const snippet = this.resolveWikilink(link);
+      if (snippet) {
+        resolvedSnippets.push(`${link}: ${snippet}`);
+      }
+    }
+    return resolvedSnippets;
   }
 
   /**
