@@ -37,6 +37,7 @@ export interface UseMayraAssistantProps {
 export function useMayraAssistant({ personalConfig, assistantConfig, memories = [], onExecuteAction, onModeSwitch }: UseMayraAssistantProps) {
   const [status, setStatus] = useState<AssistantStatus>('READY');
   const [isListeningMode, setIsListeningMode] = useState<boolean>(false);
+  const [isPttActive, setIsPttActive] = useState<boolean>(false);
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<MayraLanguage>(() => getSavedLanguage());
@@ -44,6 +45,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
   
   const isListeningModeRef = useRef<boolean>(false);
   isListeningModeRef.current = isListeningMode;
+  const isPttActiveRef = useRef<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const activeModelMsgIdRef = useRef<string | null>(null);
@@ -778,14 +780,23 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
         }
       }, { once: true });
     } else {
-      // Fallback via /api/chat if WebSocket is unavailable
+      // Fallback via /api/chat if WebSocket is unavailable (with multi-turn history & sentence-level TTS streaming)
       try {
         console.log('[LIVE_WS_STATE] Fallback to /api/chat');
+        const recentHistory = messages
+          .filter(m => m.text && m.text.trim())
+          .slice(-6)
+          .map(m => ({
+            role: m.sender === 'user' ? ('user' as const) : ('model' as const),
+            text: m.text.trim()
+          }));
+
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: trimmed,
+            history: recentHistory,
             image,
             contextPrompt: memoryContext,
             persona: assistantConfig.personaTone,
@@ -795,9 +806,79 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
             language: detected,
             assistant: 'mayra',
             voiceName: assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Aoede',
-            returnAudio: true
+            returnAudio: true,
+            stream: true
           })
         });
+
+        // Handle SSE streaming response if returned
+        if (res.ok && res.headers.get('content-type')?.includes('text/event-stream') && res.body) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let sseBuffer = '';
+          const assistantMsgId = `msg-m-${Date.now() + 1}`;
+          let accumulatedText = '';
+          let receivedAnyAudio = false;
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: assistantMsgId,
+              sender: 'mayra',
+              text: '',
+              timestamp: Date.now()
+            }
+          ]);
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            sseBuffer += decoder.decode(value, { stream: true });
+            const lines = sseBuffer.split('\n');
+            sseBuffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const clean = line.trim();
+              if (clean.startsWith('data: ')) {
+                try {
+                  const ev = JSON.parse(clean.slice(6));
+                  if (ev.type === 'chunk' && ev.text) {
+                    accumulatedText += ev.text;
+                    setMessages((prev) =>
+                      prev.map((m) =>
+                        m.id === assistantMsgId ? { ...m, text: accumulatedText } : m
+                      )
+                    );
+                  } else if (ev.type === 'sentence' && ev.audio) {
+                    receivedAnyAudio = true;
+                    schedulePcm24kChunk(ev.audio, handleSpeechStart, handleSpeechEnd);
+                  } else if (ev.type === 'done') {
+                    if (ev.autoMemorySaved && onExecuteAction) {
+                      onExecuteAction({
+                        type: 'AUTO_MEMORY_SAVED',
+                        payload: ev.autoMemorySaved
+                      });
+                    }
+                    if (ev.action && onExecuteAction) {
+                      onExecuteAction(ev.action);
+                    }
+                    const finalText = ev.fullText || accumulatedText;
+                    MemorySyncBridge.getInstance().syncConversationTurn('MAYRA', trimmed, finalText).catch(() => {});
+                    if (!receivedAnyAudio && finalText) {
+                      speakText(finalText, detected, handleSpeechStart, handleSpeechEnd);
+                    }
+                  }
+                } catch {
+                  // ignore malformed SSE line
+                }
+              }
+            }
+          }
+          return;
+        }
+
+        // Standard JSON response handling
         const data = await res.json();
         if (data.action && onExecuteAction) {
           onExecuteAction(data.action);
@@ -960,6 +1041,118 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     }
   }, [getOrConnectLiveWs, status]);
 
+  // Backtalk-Style Push-to-Talk (PTT / Hold-to-Talk)
+  const startPtt = useCallback(async () => {
+    if (isPttActiveRef.current) return;
+    console.log('[MAYRA Pipeline] PTT_START initiated. Current Status:', status);
+    prewarmAudioEngine();
+
+    // If currently speaking, immediately interrupt
+    if (status === 'SPEAKING') {
+      console.log('[MAYRA Pipeline] Assistant speaking -> PTT manual interruption');
+      continuousEngineRef.current?.interruptManually();
+      flushQueuedAudio();
+      stopCurrentSpeech();
+    }
+
+    isPttActiveRef.current = true;
+    setIsPttActive(true);
+    setStatus('LISTENING');
+
+    // Start PTT mode on continuous engine
+    await continuousEngineRef.current?.startPtt();
+
+    // Stream 16kHz PCM audio if WebSocket is connected
+    const ws = getOrConnectLiveWs();
+    const started = await startPcm16kCapture((pcmBase64) => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ audio: pcmBase64 }));
+      }
+    });
+
+    if (!started) {
+      console.warn('[MAYRA Pipeline] Could not start PCM capture for PTT.');
+    }
+  }, [getOrConnectLiveWs, status]);
+
+  const stopPtt = useCallback(() => {
+    if (!isPttActiveRef.current) return;
+    console.log('[MAYRA Pipeline] PTT_STOP initiated. Submitting turn.');
+    isPttActiveRef.current = false;
+    setIsPttActive(false);
+
+    // Stop PCM audio stream if not in continuous hands-free mode
+    if (!isListeningModeRef.current) {
+      stopPcm16kCapture();
+    }
+
+    // Stop PTT on engine; this triggers onTurnComplete if speech was recorded
+    const dispatched = continuousEngineRef.current?.stopPtt();
+    if (!dispatched && !isListeningModeRef.current) {
+      setStatus('READY');
+    }
+  }, []);
+
+  // Backtalk-Style Spacebar Push-to-Talk (Hold Space to talk, release to send)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+
+      // Crucial: check if user is typing in a text input field or textarea
+      const activeEl = document.activeElement;
+      if (activeEl) {
+        const tagName = activeEl.tagName.toUpperCase();
+        if (tagName === 'INPUT' || tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable) {
+          return; // Do NOT interfere with text-input fields!
+        }
+      }
+
+      // Prevent page scrolling on Spacebar
+      e.preventDefault();
+
+      // If already holding (e.repeat is fired repeatedly while key is pressed), ignore
+      if (e.repeat || isPttActiveRef.current) return;
+
+      console.log('[MAYRA PTT] Spacebar pressed down -> starting PTT');
+      startPtt();
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+
+      const activeEl = document.activeElement;
+      if (activeEl) {
+        const tagName = activeEl.tagName.toUpperCase();
+        if (tagName === 'INPUT' || tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable) {
+          return;
+        }
+      }
+
+      if (isPttActiveRef.current) {
+        e.preventDefault();
+        console.log('[MAYRA PTT] Spacebar released -> stopping PTT and completing turn');
+        stopPtt();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (isPttActiveRef.current) {
+        console.log('[MAYRA PTT] Window blur -> auto-stopping PTT');
+        stopPtt();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, [startPtt, stopPtt]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -984,6 +1177,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     setStatus,
     isListeningMode,
     setIsListeningMode,
+    isPttActive,
+    startPtt,
+    stopPtt,
     inputText,
     setInputText,
     isProcessing,

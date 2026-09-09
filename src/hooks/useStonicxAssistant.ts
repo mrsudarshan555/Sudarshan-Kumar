@@ -364,11 +364,20 @@ Synthesize your response by applying the primed user profile, shared memory vaul
 `;
 
     try {
+      const recentHistory = messages
+        .filter(m => m.text && m.text.trim())
+        .slice(-6)
+        .map(m => ({
+          role: m.sender === 'user' ? ('user' as const) : ('model' as const),
+          text: m.text.trim()
+        }));
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
+          history: recentHistory,
           image,
           contextPrompt: stonicxSystemPrompt,
           assistant: 'stonicx',

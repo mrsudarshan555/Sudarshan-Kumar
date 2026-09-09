@@ -15,6 +15,7 @@ import './services/memory/memoryVaultTestHarness';
 import './services/tools/toolCallingTestHarness';
 import { MemoryVaultManager } from './services/memory/memoryVaultManager';
 import { FloatingDataCardLayer } from './components/tools/FloatingDataCardLayer';
+import { SplashScreen } from './components/common/SplashScreen';
 
 export default function App() {
   // Initial App Startup / Splash screen state
@@ -26,24 +27,51 @@ export default function App() {
     // Initialize unified shared markdown memory vault
     MemoryVaultManager.getInstance().initializeVault().catch(() => {});
 
-    const timer1 = setTimeout(() => {
-      setSplashFading(true);
-    }, 1100);
+    let modelLoaded = false;
+    let minTimePassed = false;
+    let isFadingTriggered = false;
 
-    const timer2 = setTimeout(() => {
-      setIsSplashVisible(false);
-      // Check for first launch onboarding
-      if (typeof window !== 'undefined') {
-        const completed = localStorage.getItem('mayra_onboarding_completed');
-        if (!completed) {
-          setIsOnboardingOpen(true);
-        }
+    const tryDismissSplash = () => {
+      if (modelLoaded && minTimePassed && !isFadingTriggered) {
+        isFadingTriggered = true;
+        setSplashFading(true);
+        setTimeout(() => {
+          setIsSplashVisible(false);
+          // Check for first launch onboarding
+          if (typeof window !== 'undefined') {
+            const completed = localStorage.getItem('mayra_onboarding_completed');
+            if (!completed) {
+              setIsOnboardingOpen(true);
+            }
+          }
+        }, 700);
       }
-    }, 1550);
+    };
+
+    // Minimum display duration (1.6s) to let the butterfly and loading animation show smoothly
+    const minTimer = setTimeout(() => {
+      minTimePassed = true;
+      tryDismissSplash();
+    }, 1600);
+
+    // Fallback maximum safety timer (5.5s) in case network is offline or model fails
+    const maxFallbackTimer = setTimeout(() => {
+      modelLoaded = true;
+      minTimePassed = true;
+      tryDismissSplash();
+    }, 5500);
+
+    const onModelLoaded = () => {
+      modelLoaded = true;
+      tryDismissSplash();
+    };
+
+    window.addEventListener('mayra_model_loaded', onModelLoaded);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearTimeout(minTimer);
+      clearTimeout(maxFallbackTimer);
+      window.removeEventListener('mayra_model_loaded', onModelLoaded);
     };
   }, []);
 
@@ -236,6 +264,9 @@ export default function App() {
   const {
     status,
     isListeningMode,
+    isPttActive,
+    startPtt,
+    stopPtt,
     inputText,
     setInputText,
     messages,
@@ -333,10 +364,13 @@ export default function App() {
               setCurrentSubScreen={setCurrentSubScreen}
               status={status}
               isListeningMode={isListeningMode}
+              isPttActive={isPttActive}
               inputText={inputText}
               setInputText={setInputText}
               onSubmitPrompt={(text, img) => submitPrompt(text, img)}
               onTriggerVoice={triggerVoice}
+              onStartPtt={startPtt}
+              onStopPtt={stopPtt}
               onSelectRoutineAction={handleSelectRoutineAction}
               onSendVisionQuery={handleSendVisionQuery}
               onClearChat={clearChat}
@@ -385,28 +419,8 @@ export default function App() {
         setPermissions={setPermissions}
       />
 
-      {/* 1. APP STARTUP / SPLASH SCREEN (Centered Complete MAYRA Logo, No Text, No Cropping) */}
-      {isSplashVisible && (
-        <div 
-          className={`fixed inset-0 z-[9999] flex items-center justify-center bg-[#070914] pointer-events-none transition-opacity duration-500 ease-out ${
-            splashFading ? 'opacity-0' : 'opacity-100'
-          }`}
-        >
-          <div className="flex items-center justify-center p-4">
-            <img
-              src="/ic_launcher_foreground.png"
-              alt="MAYRA Startup Logo"
-              className="w-32 h-32 md:w-36 md:h-36 max-w-full max-h-full object-contain pointer-events-none select-none drop-shadow-[0_0_35px_rgba(6,182,212,0.45)]"
-              draggable={false}
-              onError={(e) => {
-                if (e.currentTarget.src !== '/mayra_logo.png') {
-                  e.currentTarget.src = '/mayra_logo.png';
-                }
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {/* 1. APP STARTUP / SPLASH SCREEN (Purple Butterfly & Loading Spinner - Matching Screenshot) */}
+      <SplashScreen isVisible={isSplashVisible} isFading={splashFading} />
 
       {/* 2. Autonomous Task Delegation & Persona Switch Cipher HUD */}
       <CipherGlitchOverlay />

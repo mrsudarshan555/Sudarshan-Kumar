@@ -411,6 +411,9 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
       configureSceneHierarchy(freshInstance);
       setModelScene(freshInstance);
       setIsLoading(false);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mayra_model_loaded', { detail: { success: true } }));
+      }
     };
 
     if (cachedRawSourceTemplate) {
@@ -425,6 +428,9 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
           const detail = originalErr?.message ? ` (${originalErr.message})` : '';
           setLoadError(`Failed to load 3D character asset${detail}. Tap Retry.`);
           setIsLoading(false);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mayra_model_loaded', { detail: { success: false } }));
+          }
         }
         return;
       }

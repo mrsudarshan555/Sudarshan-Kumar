@@ -2,9 +2,8 @@ import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChatMessage, AssistantStatus } from '../../types';
 import { 
-  Send, Mic, Sparkles, Copy, 
-  Paperclip, X, FileText, Image as ImageIcon,
-  Check, Search, ChevronUp, ChevronDown, Trash2, Zap, Keyboard
+  Sparkles, Copy, X, FileText, Image as ImageIcon,
+  Check, Zap
 } from 'lucide-react';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
@@ -14,7 +13,6 @@ import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
 import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
 import { PullToRefresh } from '../common/PullToRefresh';
 import { InteractiveQuizWidget } from '../quiz/InteractiveQuizWidget';
-import { TypingToolWidget } from '../tools/TypingToolWidget';
 
 interface ChatScreenProps {
   messages: ChatMessage[];
@@ -23,6 +21,8 @@ interface ChatScreenProps {
   setInputText: (val: string) => void;
   onSubmitPrompt: (customText?: string, image?: { base64: string; mimeType?: string; name?: string; size?: string }) => void;
   onTriggerVoice: () => void;
+  onStartPtt?: () => void;
+  onStopPtt?: () => void;
   onClearChat: () => void;
   onOpenVisionScanner?: () => void;
   onOpenRoutines?: () => void;
@@ -35,60 +35,23 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   setInputText,
   onSubmitPrompt,
   onTriggerVoice,
-  onClearChat,
-  onOpenVisionScanner,
-  onOpenRoutines
+  onStartPtt,
+  onStopPtt,
+  onOpenVisionScanner
 }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [attachedFile, setAttachedFile] = useState<AttachmentItem | null>(null);
   const [isAttachmentSheetOpen, setIsAttachmentSheetOpen] = useState(false);
-  const [keyboardOffset, setKeyboardOffset] = useState<number>(0);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
 
-  // Chat Search State
-  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(0);
-  const [isTypingToolOpen, setIsTypingToolOpen] = useState<boolean>(false);
-
-  // Filter and find matching message IDs
-  const matchingMessageIds = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
-    return messages
-      .filter(m => m.text.toLowerCase().includes(q))
-      .map(m => m.id);
-  }, [messages, searchQuery]);
-
-  // Adjust active match index
-  useEffect(() => {
-    if (matchingMessageIds.length > 0) {
-      setCurrentMatchIndex(0);
-      // Scroll to first match
-      const el = document.getElementById(`msg-${matchingMessageIds[0]}`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior
+      });
     }
-  }, [matchingMessageIds]);
-
-  const handleNextMatch = () => {
-    if (matchingMessageIds.length === 0) return;
-    const nextIdx = (currentMatchIndex + 1) % matchingMessageIds.length;
-    setCurrentMatchIndex(nextIdx);
-    const targetId = matchingMessageIds[nextIdx];
-    const el = document.getElementById(`msg-${targetId}`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  const handlePrevMatch = () => {
-    if (matchingMessageIds.length === 0) return;
-    const prevIdx = (currentMatchIndex - 1 + matchingMessageIds.length) % matchingMessageIds.length;
-    setCurrentMatchIndex(prevIdx);
-    const targetId = matchingMessageIds[prevIdx];
-    const el = document.getElementById(`msg-${targetId}`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   // Keyboard open/close layout coordinator via visualViewport
@@ -97,16 +60,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
     const handleVisualResize = () => {
       if (!window.visualViewport) return;
-      const visualHeight = window.visualViewport.height;
-      const windowHeight = window.innerHeight;
-      const offset = Math.max(0, windowHeight - visualHeight - (window.visualViewport.offsetTop || 0));
-      if (offset > 140 && isInputFocused) {
-        setKeyboardOffset(offset);
+      if (isInputFocused) {
         setTimeout(() => {
-          scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 80);
-      } else {
-        setKeyboardOffset(0);
+          scrollToBottom('smooth');
+        }, 60);
       }
     };
 
@@ -120,10 +77,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   }, [isInputFocused]);
 
   useEffect(() => {
-    if (!isSearchOpen) {
-      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, status, isSearchOpen]);
+    const timer = setTimeout(() => {
+      scrollToBottom('smooth');
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [messages.length, status]);
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -172,153 +130,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     return getDynamicSuggestions(messages, 'en', rotationSeed);
   }, [messages, rotationSeed]);
 
-  // Helper to render text with search query highlighted
-  const renderHighlightedText = (text: string, isMatch: boolean) => {
-    if (!searchQuery.trim() || !isMatch) {
-      return text;
-    }
-    const q = searchQuery.toLowerCase();
-    const parts = text.split(new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-    return parts.map((part, i) => {
-      if (part.toLowerCase() === q) {
-        return (
-          <mark key={i} className="bg-amber-400 text-slate-950 font-bold px-0.5 rounded shadow-sm">
-            {part}
-          </mark>
-        );
-      }
-      return part;
-    });
-  };
-
   return (
     <div 
-      className="flex-1 flex flex-col h-full overflow-hidden bg-transparent text-slate-100 relative min-h-0 transition-[padding-bottom] duration-200 ease-out"
-      style={keyboardOffset > 0 ? { paddingBottom: `${keyboardOffset}px` } : undefined}
+      className="w-full h-full flex flex-col overflow-hidden bg-transparent text-slate-100 relative min-h-0"
     >
       {/* 1. Atmospheric Ambient Background Depth & Drifting Particles (Matching 3D Avatar/Home) */}
       <HomeAtmosphereBackground status={status} />
-      
-      {/* Top Floating Mini Header with Search & Clear */}
-      <div className="relative px-3.5 py-2 border-b border-white/10 flex items-center justify-between bg-black/25 backdrop-blur-xl z-10 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30">
-            <Sparkles className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-xs font-bold font-sans text-white">MAYRA Chat & History</span>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {onOpenRoutines && (
-            <button
-              onClick={onOpenRoutines}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-amber-300 hover:text-amber-200 transition-all flex items-center gap-1 text-[10px] font-mono cursor-pointer"
-              title="Quick Routines"
-            >
-              <Zap className="w-3 h-3 stroke-[2]" />
-              <span className="hidden sm:inline">Routines</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setIsTypingToolOpen(true)}
-            className="p-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/30 transition-all flex items-center gap-1 text-[10px] font-mono cursor-pointer"
-            title="MAYRA Autonomous Typing Tool"
-          >
-            <Keyboard className="w-3.5 h-3.5 stroke-[1.8]" />
-            <span className="hidden sm:inline">Type</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setIsSearchOpen(prev => !prev);
-              if (!isSearchOpen) {
-                setTimeout(() => searchInputRef.current?.focus(), 150);
-              } else {
-                setSearchQuery('');
-              }
-            }}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              isSearchOpen ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40' : 'bg-white/5 hover:bg-white/10 text-slate-300'
-            }`}
-            title="Search Chat History"
-          >
-            <Search className="w-3.5 h-3.5 stroke-[1.8]" />
-          </button>
-
-          {messages.length > 0 && (
-            <button
-              onClick={onClearChat}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-all cursor-pointer"
-              title="Clear Chat"
-            >
-              <Trash2 className="w-3.5 h-3.5 stroke-[1.8]" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Expandable Search Bar */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-b border-cyan-500/30 bg-[#0C1021] px-3 py-2 z-10 shrink-0"
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center bg-black/50 border border-white/10 rounded-xl px-2.5 py-1 gap-2 focus-within:border-cyan-400">
-                <Search className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search in chat history..."
-                  className="bg-transparent border-none outline-none flex-1 text-xs text-white placeholder-slate-400 font-sans min-w-0"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="text-slate-400 hover:text-white p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-
-              {/* Match Navigation Counter */}
-              {searchQuery.trim() && (
-                <div className="flex items-center gap-1 text-[11px] font-mono text-cyan-300">
-                  <span>
-                    {matchingMessageIds.length > 0 ? `${currentMatchIndex + 1}/${matchingMessageIds.length}` : '0 found'}
-                  </span>
-                  <button
-                    onClick={handlePrevMatch}
-                    disabled={matchingMessageIds.length === 0}
-                    className="p-1 hover:bg-white/10 disabled:opacity-30 rounded cursor-pointer"
-                    title="Previous match"
-                  >
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={handleNextMatch}
-                    disabled={matchingMessageIds.length === 0}
-                    className="p-1 hover:bg-white/10 disabled:opacity-30 rounded cursor-pointer"
-                    title="Next match"
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Pull To Refresh Wrapped Messages Stream */}
       <PullToRefresh
+        ref={messagesContainerRef}
         onRefresh={async () => {
           await new Promise(res => setTimeout(res, 600));
         }}
@@ -339,8 +160,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             <AnimatePresence initial={false}>
               {messages.map((msg) => {
                 const isUser = msg.sender === 'user';
-                const isMatch = matchingMessageIds.includes(msg.id);
-                const isCurrentFocusedMatch = isMatch && matchingMessageIds[currentMatchIndex] === msg.id;
 
                 return (
                   <motion.div
@@ -349,9 +168,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     initial={{ opacity: 0, y: 12, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.24, ease: 'easeOut' }}
-                    className={`group flex flex-col ${isUser ? 'items-end' : 'items-start'} transition-all ${
-                      isCurrentFocusedMatch ? 'ring-2 ring-amber-400 rounded-2xl p-0.5' : ''
-                    }`}
+                    className={`group flex flex-col ${isUser ? 'items-end' : 'items-start'} transition-all`}
                   >
                     <div
                       className={`max-w-[86%] rounded-2xl p-3 text-xs leading-relaxed font-sans transition-all ${
@@ -425,7 +242,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                       )}
 
                       <div className="whitespace-pre-wrap leading-relaxed">
-                        {renderHighlightedText(msg.text, isMatch)}
+                        {msg.text}
                       </div>
 
                       {/* Quiz Details Quick-Tap Chips */}
@@ -480,8 +297,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 </div>
               </motion.div>
             )}
-
-            <div ref={scrollRef} />
           </div>
         )}
       </PullToRefresh>
@@ -545,7 +360,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </AnimatePresence>
 
       {/* Chat Input Bar - Morphing Aurora Capsule (Fully Blended with Space Ambient Glow) */}
-      <div className="px-2.5 pt-1 pb-1.5 bg-transparent shrink-0 flex justify-center z-10">
+      <div className="w-full px-3 pb-1 pt-0.5 bg-transparent shrink-0 flex justify-center z-10">
         <div className="w-full max-w-lg">
           <MorphingAuroraInputBox
             inputText={inputText}
@@ -570,6 +385,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               }
             }}
             onTriggerVoice={onTriggerVoice}
+            onStartPtt={onStartPtt}
+            onStopPtt={onStopPtt}
             onOpenAttachment={() => setIsAttachmentSheetOpen(true)}
             status={status}
             attachedFile={attachedFile}
@@ -588,12 +405,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           setAttachedFile(item);
         }}
         onOpenVisionScanner={onOpenVisionScanner}
-      />
-
-      {/* Autonomous Typing Tool Interactive Tester Modal */}
-      <TypingToolWidget
-        isOpen={isTypingToolOpen}
-        onClose={() => setIsTypingToolOpen(false)}
       />
 
     </div>

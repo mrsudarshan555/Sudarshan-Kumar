@@ -36,6 +36,8 @@ interface HomeScreenProps {
   setInputText: (text: string) => void;
   onSubmitPrompt: (customText?: string, image?: { base64: string; mimeType?: string; name?: string; size?: string }) => void;
   onTriggerVoice: () => void;
+  onStartPtt?: () => void;
+  onStopPtt?: () => void;
   onSelectAction?: (action: string) => void;
   onOpenSettings: () => void;
   onOpenPermissions?: () => void;
@@ -61,6 +63,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   setInputText,
   onSubmitPrompt,
   onTriggerVoice,
+  onStartPtt,
+  onStopPtt,
   onSelectAction = () => {},
   onOpenSettings,
   onOpenPermissions = () => {},
@@ -770,6 +774,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               }
             }}
             onTriggerVoice={onTriggerVoice}
+            onStartPtt={onStartPtt}
+            onStopPtt={onStopPtt}
             onOpenAttachment={() => setIsAttachmentSheetOpen(true)}
             status={status}
             attachedFile={attachedFile}

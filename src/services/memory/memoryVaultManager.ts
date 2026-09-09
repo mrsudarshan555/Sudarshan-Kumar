@@ -270,6 +270,39 @@ export class MemoryVaultManager {
     // 1. Instant synchronous hydrate from storage
     this.hydrateFromStorage();
 
+    // 1b. Synchronize with Native Android Room/SQLite Vault if running in Android APK
+    if (typeof window !== 'undefined' && (window as any).MayraNativeLLM?.getAllActiveMemoriesJson) {
+      try {
+        const raw = (window as any).MayraNativeLLM.getAllActiveMemoriesJson();
+        if (raw) {
+          const nativeList = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (Array.isArray(nativeList) && nativeList.length > 0) {
+            for (const item of nativeList) {
+              const existing = this.structuredFacts.find(f => f.id === item.id || f.fact.toLowerCase() === (item.fact || '').toLowerCase());
+              if (!existing) {
+                this.structuredFacts.push({
+                  id: item.id || `fact-native-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  category: item.category || 'preference',
+                  fact: item.fact,
+                  source: 'android_native',
+                  status: item.status || 'active',
+                  supersedesId: item.supersedesId || undefined,
+                  timestamp: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  confidence: item.confidence || 1.0,
+                  projectSlug: item.projectSlug || 'general',
+                  tags: item.tags ? (typeof item.tags === 'string' ? item.tags.split(' ') : item.tags) : ['#native']
+                });
+              }
+            }
+            this.persistFacts();
+          }
+        }
+      } catch (e) {
+        console.warn('[MemoryVault] Native memories hydration notice:', e);
+      }
+    }
+
     // 2. Open IndexedDB asynchronously if in browser
     try {
       if (typeof window !== 'undefined' && window.indexedDB) {
@@ -553,6 +586,22 @@ export class MemoryVaultManager {
 
     let supersedesId: string | undefined = undefined;
 
+    const syncToNative = (factStr: string, cat: string, src: string, slug: string, t: string[]) => {
+      if (typeof window !== 'undefined' && (window as any).MayraNativeLLM?.saveMemory) {
+        try {
+          (window as any).MayraNativeLLM.saveMemory(
+            cat,
+            factStr,
+            src,
+            slug,
+            (t && t.length > 0) ? t.join(' ') : `#${cat.toLowerCase()}`
+          );
+        } catch (e) {
+          console.warn('[MemoryVault] Native saveMemory notice:', e);
+        }
+      }
+    };
+
     // 1. Evaluate against existing active facts
     for (const existing of this.structuredFacts) {
       if (existing.status === 'active') {
@@ -578,6 +627,7 @@ export class MemoryVaultManager {
             existing.updatedAt = new Date().toISOString();
             if (source && existing.source === 'SYSTEM') existing.source = source;
             this.persistFacts();
+            syncToNative(normalizedFact, category, source, projectSlug, tags);
             console.log(`[MemoryVault] Duplicate prevented for "${normalizedFact}" -> Reused fact ${existing.id}`);
             return existing;
           }
@@ -589,6 +639,7 @@ export class MemoryVaultManager {
           existing.updatedAt = new Date().toISOString();
           if (source && existing.source === 'SYSTEM') existing.source = source;
           this.persistFacts();
+          syncToNative(normalizedFact, category, source, projectSlug, tags);
           console.log(`[MemoryVault] Duplicate prevented for "${normalizedFact}" -> Reused fact ${existing.id}`);
           return existing;
         }
@@ -630,6 +681,21 @@ export class MemoryVaultManager {
       timestamp: newFact.timestamp,
       referenceDoc: 'MEMORY.md'
     });
+
+    // 5. Dual-sync with Android Native Room/SQLite + Markdown (if running inside APK)
+    if (typeof window !== 'undefined' && (window as any).MayraNativeLLM?.saveMemory) {
+      try {
+        (window as any).MayraNativeLLM.saveMemory(
+          category,
+          normalizedFact,
+          source,
+          detectedProjectSlug,
+          (newFact.tags && newFact.tags.length > 0) ? newFact.tags.join(' ') : `#${category.toLowerCase()}`
+        );
+      } catch (e) {
+        console.warn('[MemoryVault] Native saveMemory notice:', e);
+      }
+    }
 
     return newFact;
   }
@@ -822,6 +888,16 @@ export class MemoryVaultManager {
     if (isDone) p.completedAt = new Date().toISOString();
     setStoreItem(`${STORAGE_PREFIX}PRIORITIES`, JSON.stringify(this.priorities));
     await this.regenerateMemoryMarkdown();
+
+    // Dual-sync priority to Android Native Room DB
+    if (typeof window !== 'undefined' && (window as any).MayraNativeLLM?.toggleActivePriority) {
+      try {
+        (window as any).MayraNativeLLM.toggleActivePriority(id, isDone);
+      } catch (e) {
+        console.warn('[MemoryVault] Native toggleActivePriority notice:', e);
+      }
+    }
+
     return true;
   }
 
@@ -849,6 +925,20 @@ export class MemoryVaultManager {
       timestamp: new Date().toISOString(),
       referenceDoc: 'DAILY-NOTE.md'
     });
+
+    // Dual-sync checkpoint to Android Native Room DB + Daily Notes filesystem
+    if (typeof window !== 'undefined' && (window as any).MayraNativeLLM?.executeMemoryCheckpoint) {
+      try {
+        (window as any).MayraNativeLLM.executeMemoryCheckpoint(
+          topic,
+          outcome,
+          notePath,
+          noteAddition || ''
+        );
+      } catch (e) {
+        console.warn('[MemoryVault] Native executeMemoryCheckpoint notice:', e);
+      }
+    }
 
     console.log(`[MemoryVault] Checkpoint persisted successfully: "${topic}"`);
     return true;

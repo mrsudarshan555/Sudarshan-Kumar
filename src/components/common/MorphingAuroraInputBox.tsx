@@ -9,6 +9,8 @@ interface MorphingAuroraInputBoxProps {
   setInputText: (text: string) => void;
   onSubmit: () => void;
   onTriggerVoice: () => void;
+  onStartPtt?: () => void;
+  onStopPtt?: () => void;
   onOpenAttachment?: () => void;
   status?: AssistantStatus;
   attachedFile?: { name: string; size?: string; mimeType?: string } | null;
@@ -34,6 +36,8 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   setInputText,
   onSubmit,
   onTriggerVoice,
+  onStartPtt,
+  onStopPtt,
   onOpenAttachment,
   status = 'READY',
   attachedFile = null,
@@ -47,6 +51,56 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [internalIsFocused, setInternalIsFocused] = useState<boolean>(false);
   const [suggestionIdx, setSuggestionIdx] = useState<number>(0);
+
+  const micPressTimerRef = useRef<any>(null);
+  const isMicHoldingRef = useRef<boolean>(false);
+  const micPressStartTimeRef = useRef<number>(0);
+
+  const handleMicPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    micPressStartTimeRef.current = Date.now();
+    isMicHoldingRef.current = false;
+
+    if (status === 'SPEAKING') {
+      onTriggerVoice();
+      return;
+    }
+
+    micPressTimerRef.current = setTimeout(() => {
+      isMicHoldingRef.current = true;
+      onStartPtt?.();
+    }, 260);
+  };
+
+  const handleMicPointerUp = () => {
+    if (micPressTimerRef.current) {
+      clearTimeout(micPressTimerRef.current);
+      micPressTimerRef.current = null;
+    }
+    if (isMicHoldingRef.current) {
+      isMicHoldingRef.current = false;
+      onStopPtt?.();
+    }
+  };
+
+  const handleMicPointerCancel = () => {
+    if (micPressTimerRef.current) {
+      clearTimeout(micPressTimerRef.current);
+      micPressTimerRef.current = null;
+    }
+    if (isMicHoldingRef.current) {
+      isMicHoldingRef.current = false;
+      onStopPtt?.();
+    }
+  };
+
+  const handleMicClick = () => {
+    const pressDuration = Date.now() - micPressStartTimeRef.current;
+    if (pressDuration >= 260 && !isMicHoldingRef.current) {
+      return;
+    }
+    onTriggerVoice();
+  };
 
   const isFocused = externalIsFocused !== undefined ? externalIsFocused : internalIsFocused;
 
@@ -331,13 +385,17 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
                         whileHover={{ scale: 1.12 }}
                         whileTap={{ scale: 0.92 }}
                         type="button"
-                        onClick={onTriggerVoice}
-                        className={`p-1 rounded-full transition-all cursor-pointer flex items-center justify-center ${
+                        onClick={handleMicClick}
+                        onPointerDown={handleMicPointerDown}
+                        onPointerUp={handleMicPointerUp}
+                        onPointerCancel={handleMicPointerCancel}
+                        onPointerLeave={handleMicPointerCancel}
+                        className={`p-1 rounded-full transition-all cursor-pointer flex items-center justify-center select-none touch-none ${
                           status === 'LISTENING'
                             ? 'bg-fuchsia-500/20 text-white shadow-[0_0_15px_rgba(217,70,239,0.8)] border border-fuchsia-400/50'
                             : 'text-purple-200 hover:text-white hover:bg-white/10'
                         }`}
-                        title="Voice input"
+                        title="Hold to talk (PTT) / Tap for Hands-Free"
                       >
                         <AudioWaveformIcon status={status || 'READY'} barCount={4} className="w-5 h-5 text-purple-200" />
                       </motion.button>

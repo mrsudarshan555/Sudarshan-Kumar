@@ -377,6 +377,13 @@ class MayraWebInterface(
             projectSlug = projectSlug,
             tags = tags
         )
+        // Also sync to Android filesystem Markdown file (MEMORY.md)
+        try {
+            val filesystem = com.mayra.assistant.memory.VaultFilesystemManager.getInstance(context)
+            filesystem.appendFile("04 - Archive/MEMORY.md", "\n- [${saved.category.uppercase()}] ${saved.fact}")
+        } catch (e: Exception) {
+            // Non-fatal filesystem sync notice
+        }
         return JSONObject().apply {
             put("id", saved.id)
             put("category", saved.category)

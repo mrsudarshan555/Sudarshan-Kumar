@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   AssistantStatus, UserPersonalConfig, AssistantConfig, 
@@ -49,6 +49,9 @@ interface AndroidPhoneFrameProps {
   setInputText: (text: string) => void;
   onSubmitPrompt: (customText?: string, image?: { base64: string; mimeType?: string; name?: string; size?: string }) => void;
   onTriggerVoice: () => void;
+  onStartPtt?: () => void;
+  onStopPtt?: () => void;
+  isPttActive?: boolean;
   onSelectRoutineAction: (action: string) => void;
   onSendVisionQuery: (query: string, image?: { base64: string; mimeType?: string }) => void;
   onClearChat: () => void;
@@ -95,6 +98,9 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
   setInputText,
   onSubmitPrompt,
   onTriggerVoice,
+  onStartPtt,
+  onStopPtt,
+  isPttActive = false,
   onSelectRoutineAction,
   onSendVisionQuery,
   onClearChat,
@@ -224,6 +230,58 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
     setCurrentSubScreen('permissions');
   };
 
+  const pressTimerRef = useRef<any>(null);
+  const isHoldingPttRef = useRef<boolean>(false);
+  const pressStartTimeRef = useRef<number>(0);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // Only apply PTT hold to voice orb (not scan or memories tab)
+    if (activeTab === 'scan' || activeTab === 'memories') return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+    pressStartTimeRef.current = Date.now();
+    isHoldingPttRef.current = false;
+
+    // If currently speaking, immediately interrupt
+    if (status === 'SPEAKING') {
+      console.log('[MAYRA PTT] Orb pressed while speaking -> Interrupting speech');
+      onTriggerVoice();
+      return;
+    }
+
+    // Set hold threshold timer (260ms)
+    pressTimerRef.current = setTimeout(() => {
+      console.log('[MAYRA PTT] Center Orb Hold Threshold Reached -> Starting PTT');
+      isHoldingPttRef.current = true;
+      onStartPtt?.();
+    }, 260);
+  };
+
+  const handlePointerUp = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+
+    if (isHoldingPttRef.current) {
+      console.log('[MAYRA PTT] Center Orb Pointer Released -> Submitting PTT Turn');
+      isHoldingPttRef.current = false;
+      onStopPtt?.();
+    }
+  };
+
+  const handlePointerCancel = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+    if (isHoldingPttRef.current) {
+      console.log('[MAYRA PTT] Center Orb Pointer Canceled -> Submitting PTT Turn');
+      isHoldingPttRef.current = false;
+      onStopPtt?.();
+    }
+  };
+
   const handleCenterAction = () => {
     if (activeTab === 'scan') {
       // Trigger Vision Shutter
@@ -232,8 +290,14 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       // Trigger Memories Add Context Menu
       setMemoriesAddSignal(prev => prev + 1);
     } else {
-      // Trigger Voice Engine
-      console.log('[MAYRA Pipeline] MIC_CLICK: Center Action Button pressed on tab:', activeTab);
+      // Check if this click is the release of a long PTT hold
+      const pressDuration = Date.now() - pressStartTimeRef.current;
+      if (pressDuration >= 260 && !isHoldingPttRef.current) {
+        // Was a PTT hold-release, ignore synthetic click so we don't toggle hands-free
+        return;
+      }
+      // Genuine short tap: toggle Hands-Free continuous mode!
+      console.log('[MAYRA Pipeline] MIC_CLICK: Center Action Button tapped -> Toggling voice mode');
       onTriggerVoice();
     }
   };
@@ -332,7 +396,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       )}
 
       {/* Screen Body Viewport with AnimatePresence Transitions & Error Boundary */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
+      <div className="flex-1 flex flex-col relative overflow-hidden min-h-0">
         <MayraErrorBoundary>
           <AnimatePresence mode="wait" custom={direction}>
             {/* Settings Full View */}
@@ -402,6 +466,8 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     setInputText={setInputText}
                     onSubmitPrompt={onSubmitPrompt}
                     onTriggerVoice={onTriggerVoice}
+                    onStartPtt={onStartPtt}
+                    onStopPtt={onStopPtt}
                     onOpenSettings={handleOpenSettingsWithSpring}
                     onOpenWhiteboard={() => {
                       window.dispatchEvent(new CustomEvent('mayra_toggle_stage_canvas'));
@@ -461,6 +527,8 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     setInputText={setInputText}
                     onSubmitPrompt={onSubmitPrompt}
                     onTriggerVoice={onTriggerVoice}
+                    onStartPtt={onStartPtt}
+                    onStopPtt={onStopPtt}
                     onClearChat={onClearChat}
                     onOpenVisionScanner={() => handleTabSwitch('scan')}
                     onOpenRoutines={() => setIsRoutinesOpen(true)}
@@ -522,11 +590,17 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleCenterAction}
-              className={`w-[54px] h-[54px] rounded-full flex items-center justify-center transition-all shrink-0 overflow-hidden relative cursor-pointer ${
+              onPointerDown={handlePointerDown}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
+              onPointerLeave={handlePointerCancel}
+              className={`w-[54px] h-[54px] rounded-full flex items-center justify-center transition-all shrink-0 overflow-hidden relative cursor-pointer select-none touch-none ${
                 activeTab === 'scan'
                   ? 'bg-gradient-to-tr from-purple-600 via-indigo-500 to-fuchsia-500 text-white shadow-[0_0_25px_rgba(168,85,247,0.8)] border border-white/50'
                   : activeTab === 'memories'
                   ? 'bg-gradient-to-tr from-purple-600 to-fuchsia-600 text-white shadow-[0_0_25px_rgba(168,85,247,0.8)] border border-white/50'
+                  : isPttActive
+                  ? 'bg-[#25074d] text-white shadow-[0_0_35px_rgba(217,70,239,0.95)] border-2 border-fuchsia-400 scale-105 ring-2 ring-fuchsia-500/50'
                   : isListeningMode || status === 'LISTENING'
                   ? 'bg-[#180735] text-white shadow-[0_0_30px_rgba(168,85,247,0.9)] border-2 border-purple-400'
                   : status === 'SPEAKING'
@@ -540,11 +614,13 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                   ? 'Tap to Capture and Analyze'
                   : activeTab === 'memories'
                   ? 'Add Memory or Family Contact'
+                  : isPttActive
+                  ? 'Hold-to-Talk (PTT) active... Release to send'
                   : isListeningMode || status === 'LISTENING'
-                  ? 'Listening... Tap to stop'
+                  ? 'Listening (Hands-Free)... Tap to stop'
                   : status === 'SPEAKING'
                   ? 'Mayra Speaking... Tap to interrupt'
-                  : 'Tap to speak'
+                  : 'Hold to talk (PTT) / Tap for Hands-Free (Spacebar to hold)'
               }
             >
               {activeTab === 'scan' ? (

@@ -29,6 +29,7 @@ export interface ContinuousConversationCallbacks {
 export class ContinuousConversationEngine {
   private state: AssistantStatus = 'READY';
   private isContinuousModeActive: boolean = false;
+  private isPttMode: boolean = false;
   private preferredLanguage: MayraLanguage = 'en';
 
   private recognition: any = null;
@@ -67,6 +68,67 @@ export class ContinuousConversationEngine {
 
   public isContinuousActive(): boolean {
     return this.isContinuousModeActive;
+  }
+
+  public isPttActive(): boolean {
+    return this.isPttMode;
+  }
+
+  /**
+   * Starts Push-to-Talk (PTT / Hold-to-Talk) session.
+   * Speech is actively captured while holding without silence timer interruption.
+   */
+  public async startPtt(): Promise<boolean> {
+    console.log('[ContinuousEngine] START_PTT initiated');
+    if (this.state === 'SPEAKING') {
+      this.interruptManually();
+    }
+
+    this.isPttMode = true;
+    this.clearSilenceTimer();
+    this.currentTurnTranscript = '';
+
+    if (!this.recognition) {
+      await this.initSpeechRecognition();
+    }
+    await this.initBargeInDetector();
+
+    this.startListeningTurn();
+    return true;
+  }
+
+  /**
+   * Releases Push-to-Talk (PTT).
+   * Immediately flushes and submits whatever speech was transcribed during the hold.
+   */
+  public stopPtt(): string | null {
+    console.log('[ContinuousEngine] STOP_PTT called');
+    this.isPttMode = false;
+    this.clearSilenceTimer();
+
+    const textToDispatch = this.currentTurnTranscript.trim();
+
+    if (this.recognition) {
+      try {
+        this.recognition.stop();
+      } catch (e) {}
+    }
+
+    if (textToDispatch) {
+      console.log(`[ContinuousEngine] ✦ PTT TURN COMPLETE: "${textToDispatch}"`);
+      this.transitionTo('THINKING');
+      this.callbacks.onTurnComplete(textToDispatch);
+      this.currentTurnTranscript = '';
+      return textToDispatch;
+    } else {
+      console.log('[ContinuousEngine] PTT released with empty transcript');
+      if (this.isContinuousModeActive) {
+        this.startListeningTurn();
+      } else {
+        this.transitionTo('READY');
+      }
+      return null;
+    }
   }
 
   private transitionTo(newState: AssistantStatus): void {
@@ -267,8 +329,10 @@ export class ContinuousConversationEngine {
           this.lastSpokenTimestamp = Date.now();
           this.callbacks.onUserTranscript(currentText, Boolean(finalTranscript));
 
-          // Set dynamic silence timer to detect end of user turn
-          this.scheduleTurnCompletionTimer(1100);
+          // Set dynamic silence timer to detect end of user turn ONLY IF NOT in manual PTT hold mode
+          if (!this.isPttMode) {
+            this.scheduleTurnCompletionTimer(1100);
+          }
         }
       };
 
@@ -281,10 +345,10 @@ export class ContinuousConversationEngine {
           }
           this.stopContinuousMode();
         } else if (event?.error === 'network') {
-          // Soft retry in continuous mode
-          if (this.isContinuousModeActive && this.state === 'LISTENING') {
+          // Soft retry in continuous mode or PTT mode
+          if ((this.isContinuousModeActive || this.isPttMode) && this.state === 'LISTENING') {
             setTimeout(() => {
-              if (this.isContinuousModeActive && this.state === 'LISTENING') {
+              if ((this.isContinuousModeActive || this.isPttMode) && this.state === 'LISTENING') {
                 try { this.recognition?.start(); } catch (e) {}
               }
             }, 600);
@@ -294,13 +358,13 @@ export class ContinuousConversationEngine {
 
       recognition.onend = () => {
         console.log('[ContinuousEngine] Recognition ended event.');
-        // Auto-restart if we are in continuous listening mode
-        if (this.isContinuousModeActive && (this.state === 'LISTENING' || this.state === 'INTERRUPTED')) {
+        // Auto-restart if we are in continuous listening mode OR in active PTT mode
+        if ((this.isContinuousModeActive || this.isPttMode) && (this.state === 'LISTENING' || this.state === 'INTERRUPTED')) {
           try {
             recognition.start();
           } catch (e) {
             setTimeout(() => {
-              if (this.isContinuousModeActive && this.state === 'LISTENING') {
+              if ((this.isContinuousModeActive || this.isPttMode) && this.state === 'LISTENING') {
                 try { recognition.start(); } catch (err) {}
               }
             }, 300);

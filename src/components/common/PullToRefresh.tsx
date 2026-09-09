@@ -9,23 +9,32 @@ interface PullToRefreshProps {
   disabled?: boolean;
 }
 
-export const PullToRefresh: React.FC<PullToRefreshProps> = ({
+export const PullToRefresh = React.forwardRef<HTMLDivElement, PullToRefreshProps>(({
   onRefresh,
   children,
   className = '',
   disabled = false
-}) => {
+}, ref) => {
   const [pullY, setPullY] = useState<number>(0);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const startYRef = useRef<number>(0);
   const isPullingRef = useRef<boolean>(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const localContainerRef = useRef<HTMLDivElement>(null);
+
+  const setRefs = (node: HTMLDivElement | null) => {
+    (localContainerRef as any).current = node;
+    if (typeof ref === 'function') {
+      ref(node);
+    } else if (ref) {
+      (ref as any).current = node;
+    }
+  };
 
   const PULL_THRESHOLD = 64;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (disabled || isRefreshing) return;
-    if (containerRef.current && containerRef.current.scrollTop <= 0) {
+    if (localContainerRef.current && localContainerRef.current.scrollTop <= 0) {
       startYRef.current = e.touches[0].clientY;
       isPullingRef.current = true;
     }
@@ -36,7 +45,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     const currentY = e.touches[0].clientY;
     const diff = currentY - startYRef.current;
 
-    if (diff > 0 && containerRef.current && containerRef.current.scrollTop <= 0) {
+    if (diff > 0 && localContainerRef.current && localContainerRef.current.scrollTop <= 0) {
       // Apply rubberband resistance
       const resistedY = Math.min(diff * 0.45, 90);
       setPullY(resistedY);
@@ -69,7 +78,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
 
   return (
     <div
-      ref={containerRef}
+      ref={setRefs}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -105,4 +114,4 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
       {children}
     </div>
   );
-};
+});
