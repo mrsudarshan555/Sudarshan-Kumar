@@ -10,7 +10,9 @@ import {
   MessageSquare, 
   Layers, 
   Ban,
-  ShieldCheck
+  ShieldCheck,
+  Users,
+  Sparkles
 } from 'lucide-react';
 
 interface AgentTaskHUDProps {
@@ -108,37 +110,53 @@ export const AgentTaskHUD: React.FC<AgentTaskHUDProps> = ({
       )}
 
       {/* 2. LIGHTWEIGHT LIVE EXECUTION STEP STATUS BAR */}
-      {(status === 'PLANNING' || status === 'EXECUTING') && (
-        <div className="w-full max-w-sm bg-slate-900/90 border border-cyan-500/30 rounded-2xl px-4 py-3 shadow-[0_10px_25px_rgba(0,0,0,0.6),0_0_15px_rgba(6,182,212,0.15)] backdrop-blur-xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative flex items-center justify-center">
-              <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
-              <div className="absolute inset-0 rounded-full blur-[4px] bg-cyan-400/20" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold">
-                  AGENT STEP {currentStep}
-                </span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30 font-mono">
-                  {status}
-                </span>
-              </div>
-              <p className="text-xs text-slate-200 truncate mt-0.5 font-medium">
-                {stepDescription || 'Planning execution...'}
-              </p>
-            </div>
-          </div>
+      {(status === 'PLANNING' || status === 'EXECUTING') && (() => {
+        const isSwarm = toolCalls.some(t => t.name === 'run_multi_agent_swarm') || 
+          (stepDescription?.toLowerCase().includes('स्वार्म') || stepDescription?.toLowerCase().includes('swarm') || stepDescription?.toLowerCase().includes('multi-agent'));
 
-          <button
-            onClick={onCancel}
-            title="Cancel Agent Task"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-700 transition-colors flex-shrink-0"
-          >
-            <Ban className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+        return (
+          <div className="w-full max-w-sm bg-slate-900/90 border border-cyan-500/30 rounded-2xl px-4 py-3 shadow-[0_10px_25px_rgba(0,0,0,0.6),0_0_15px_rgba(6,182,212,0.15)] backdrop-blur-xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative flex items-center justify-center">
+                {isSwarm ? (
+                  <Users className="w-5 h-5 text-purple-400 animate-pulse" />
+                ) : (
+                  <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+                )}
+                <div className={`absolute inset-0 rounded-full blur-[4px] ${isSwarm ? 'bg-purple-400/20' : 'bg-cyan-400/20'}`} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold flex items-center gap-1">
+                    {isSwarm ? (
+                      <span className="text-purple-300 flex items-center gap-1 font-semibold">
+                        <Sparkles className="w-3 h-3 text-purple-400" />
+                        MULTI-AGENT SWARM
+                      </span>
+                    ) : (
+                      `कदम (STEP) ${currentStep}`
+                    )}
+                  </span>
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${isSwarm ? 'bg-purple-950 text-purple-300 border border-purple-500/40' : 'bg-cyan-950 text-cyan-300 border border-cyan-500/30'}`}>
+                    {isSwarm ? 'PARALLEL' : status}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-200 truncate mt-0.5 font-medium">
+                  {stepDescription || (isSwarm ? 'समानांतर में एजेंट्स काम कर रहे हैं...' : 'Planning execution...')}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onCancel}
+              title="Cancel Agent Task"
+              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-700 transition-colors flex-shrink-0"
+            >
+              <Ban className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* 3. CANCELLED / FAILED BANNER */}
       {(status === 'CANCELLED' || status === 'FAILED') && (

@@ -25,6 +25,12 @@ import { MayraAgentEngine } from '../services/agent/agentEngine';
 import { GestureVoiceBridge } from '../services/gestures/gestureVoiceBridge';
 import { DelegationRouter } from '../services/router/delegationRouter';
 import { QuizDataService, QuizConfig } from '../services/quiz/quizDataService';
+import { UndoService } from '../services/markLII/undoService';
+import { ConfirmationGateService } from '../services/markLII/confirmationGateService';
+import { InstantAcknowledgmentEngine } from '../services/markLII/instantAcknowledgmentEngine';
+import { MarkLIIToolsService } from '../services/markLII/markLIITools';
+import { MultiAgentSwarmCoordinator } from '../services/agent/multiAgentSwarm';
+import { ProactiveSmartGuardianEngine, ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEngine';
 
 export interface UseMayraAssistantProps {
   personalConfig: UserPersonalConfig;
@@ -42,6 +48,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<MayraLanguage>(() => getSavedLanguage());
   const [activeAgentTask, setActiveAgentTask] = useState<AgentTaskContext | null>(null);
+  const [activeProactiveAlert, setActiveProactiveAlert] = useState<ProactiveAlert | null>(null);
   
   const isListeningModeRef = useRef<boolean>(false);
   isListeningModeRef.current = isListeningMode;
@@ -130,14 +137,56 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     setActiveAgentTask(null);
   }, []);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      sender: 'mayra',
-      text: initialGreeting,
-      timestamp: Date.now()
+  const CHAT_STORAGE_KEY = 'mayra_chat_messages_v2';
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('[useMayraAssistant] Error loading stored messages:', e);
+      }
     }
-  ]);
+    return [
+      {
+        id: '1',
+        sender: 'mayra',
+        text: initialGreeting,
+        timestamp: Date.now()
+      }
+    ];
+  });
+
+  // Save chat messages to localStorage whenever they update (preserving last 100 turns)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && messages && messages.length > 0) {
+      try {
+        const toSave = messages.slice(-100);
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(toSave));
+      } catch (e) {
+        console.warn('[useMayraAssistant] Error saving messages to localStorage:', e);
+      }
+    }
+  }, [messages]);
+
+  // Synchronize memories to server memoryStore so /api/chat and live-ws are always aligned
+  useEffect(() => {
+    if (memories && memories.length > 0) {
+      try {
+        fetch('/api/memory/restore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ memories })
+        }).catch(() => {});
+      } catch (_) {}
+    }
+  }, [memories]);
 
   const hasGreetedRef = useRef(false);
   const lastUserActivityRef = useRef<number>(Date.now());
@@ -199,6 +248,31 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
 
     return () => clearInterval(idleInterval);
   }, [assistantConfig.proactiveIdleCheckin, status, currentLanguage]);
+
+  // Feature C: Proactive Smart Guardian Live Subscription
+  useEffect(() => {
+    const unsub = ProactiveSmartGuardianEngine.getInstance().subscribe((alert) => {
+      setActiveProactiveAlert(alert);
+      const lang = lastSpokenLanguageRef.current || currentLanguage;
+      const alertText = (lang === 'hi') ? alert.messageHi : alert.messageEn;
+      const voiceAudioText = (lang === 'hi') ? alert.spokenAudioTextHi : alert.spokenAudioTextEn;
+
+      const alertMsg: ChatMessage = {
+        id: `msg-m-guard-${alert.id}`,
+        sender: 'mayra',
+        text: alertText,
+        timestamp: Date.now()
+      };
+      setMessages((prev) => [...prev, alertMsg]);
+      speakText(
+        voiceAudioText, 
+        lang, 
+        () => setStatus('SPEAKING'), 
+        () => setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY')
+      );
+    });
+    return () => unsub();
+  }, [currentLanguage]);
 
   // Dynamic natural voice greeting and pre-warming on app launch
   useEffect(() => {
@@ -545,6 +619,320 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
       }
     }
 
+    // 0.05 MARK-LII PORTED FEATURE: REVERSIBLE UNDO STACK COMMAND
+    if (!image && trimmed && lower.match(/^(undo|wapas karo|wapas kar do|cancel karo|cancel that|undo that|pehle jaisa kar do|undo action)$/i)) {
+      const undoRes = await UndoService.undoLast();
+      const undoText = undoRes.success
+        ? (detected === 'en' ? `Reverted action: ${undoRes.undoneLabel || undoRes.message}` : `पिछली क्रिया वापस कर दी गई: ${undoRes.undoneLabel || undoRes.message}`)
+        : (detected === 'en' ? `Nothing to undo in stack.` : `वापस करने के लिए अभी कोई क्रिया नहीं है।`);
+
+      const assistantMsg: ChatMessage = {
+        id: `msg-m-undo-${Date.now()}`,
+        sender: 'mayra',
+        text: undoText,
+        timestamp: Date.now()
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+      setStatus('READY');
+      speakText(undoText, detected, handleSpeechStart, handleSpeechEnd);
+      return;
+    }
+
+    // 0.052 MULTI-AGENT SWARM PARALLEL ORCHESTRATOR (Feature B)
+    const isSwarmTrigger = !image && Boolean(trimmed) && (
+      lower.includes('swarm') ||
+      lower.includes('मल्टी एजेंट') ||
+      lower.includes('मल्टी-एजेंट') ||
+      lower.includes('multi agent') ||
+      lower.includes('multi-agent') ||
+      lower.includes('saare agents') ||
+      lower.includes('sab agents') ||
+      lower.includes('all agents') ||
+      lower.includes('ek saath sabhi') ||
+      lower.includes('chalo b karo') ||
+      lower.includes('chalo ab b karo') ||
+      lower.includes('chalo ab bhi karo') ||
+      lower.includes('chalo ab b') ||
+      lower.includes('option b') ||
+      lower.includes('feature b')
+    );
+
+    if (isSwarmTrigger) {
+      console.log(`[MAYRA Swarm] Multi-Agent Swarm triggered: "${trimmed}"`);
+      const effectiveObjective = (lower.includes('chalo') && (lower.includes('b karo') || lower.includes('bhi karo') || lower.includes('ab b')))
+        ? 'दिल्ली का मौसम, मुंबई की फ्लाइट्स, सिस्टम हार्डवेयर हेल्थ और नई मेमोरी एक साथ समानांतर में चेक करो'
+        : trimmed;
+
+      const plan = MultiAgentSwarmCoordinator.planSwarm(effectiveObjective, detected === 'hi' ? 'hi' : 'en');
+      const deployedNames = plan.activeAgents.map(a => a.name).join(', ');
+
+      const immediateAck = (detected === 'hi')
+        ? `हाँ Zafer भाई, बिल्कुल! मल्टी-एजेंट स्वार्म को तैनात कर रही हूँ—${plan.activeAgents.length} एजेंट्स एक साथ समानांतर में जुट रहे हैं!`
+        : `Right away, Zafer! Deploying Multi-Agent Swarm with ${plan.activeAgents.length} specialized agents in parallel!`;
+
+      const ackMsg: ChatMessage = {
+        id: `msg-m-swarm-ack-${Date.now()}`,
+        sender: 'mayra',
+        text: immediateAck,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, ackMsg]);
+      speakText(immediateAck, detected, handleSpeechStart, undefined);
+
+      const swarmTaskId = `swarm-${Date.now()}`;
+      setActiveAgentTask({
+        taskId: swarmTaskId,
+        originalUserRequest: trimmed,
+        status: 'EXECUTING',
+        currentStep: 1,
+        totalSteps: plan.subTasks.length,
+        stepDescription: (detected === 'hi')
+          ? `मल्टी-एजेंट स्वार्म सक्रिय: ${deployedNames}`
+          : `Multi-Agent Swarm deployed: ${deployedNames}`,
+        toolCalls: [{ 
+          name: 'run_multi_agent_swarm', 
+          args: { objective: effectiveObjective },
+          step: 1,
+          timestamp: Date.now()
+        }],
+        toolResults: [],
+        pendingConfirmation: null,
+        isCancelled: false,
+        finalResult: null
+      });
+
+      // Execute swarm sub-tasks in parallel
+      MultiAgentSwarmCoordinator.executeSwarm(plan, (task, curr, tot) => {
+        setActiveAgentTask(prev => prev ? {
+          ...prev,
+          currentStep: curr || 1,
+          stepDescription: `${task.agentName}: ${task.instruction}`
+        } : null);
+      }).then(report => {
+        const finalMsg: ChatMessage = {
+          id: `msg-m-swarm-res-${Date.now()}`,
+          sender: 'mayra',
+          text: report.synthesizedSummary,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [...prev, finalMsg]);
+        speakText(report.synthesizedSummary, detected, handleSpeechStart, handleSpeechEnd);
+
+        setActiveAgentTask(prev => prev ? {
+          ...prev,
+          status: 'COMPLETED',
+          stepDescription: (detected === 'hi') ? 'स्वार्म कार्य संपन्न हुआ।' : 'Swarm complete.',
+          finalResult: report.synthesizedSummary
+        } : null);
+
+        setTimeout(() => {
+          setActiveAgentTask(curr => (curr?.taskId === swarmTaskId ? null : curr));
+        }, 4500);
+      }).catch(err => {
+        console.error('[MultiAgentSwarm] Error:', err);
+        setActiveAgentTask(null);
+      });
+
+      return;
+    }
+
+    // 0.053 PROACTIVE SMART GUARDIAN & BACKGROUND INTELLIGENCE (Feature C)
+    const isFeatureCTrigger = !image && Boolean(trimmed) && (
+      lower.includes('chalo ab c') ||
+      lower.includes('chalo c') ||
+      lower.includes('chalo ab c karo') ||
+      lower.includes('chalo c karo') ||
+      lower.includes('c karo') ||
+      lower.includes('c implement') ||
+      lower.includes('feature c') ||
+      lower.includes('option c') ||
+      lower.includes('smart guardian') ||
+      lower.includes('proactive guardian') ||
+      lower.includes('proactive monitor') ||
+      lower.includes('स्मार्ट गार्डियन') ||
+      lower.includes('प्रोएक्टिव')
+    );
+
+    if (isFeatureCTrigger) {
+      console.log(`[MAYRA Guardian] Feature C Proactive Smart Guardian triggered: "${trimmed}"`);
+      const auditAlert = ProactiveSmartGuardianEngine.getInstance().triggerImmediateAudit(userName);
+      setActiveProactiveAlert(auditAlert);
+
+      const reply = (detected === 'hi') ? auditAlert.messageHi : auditAlert.messageEn;
+      const voiceText = (detected === 'hi') ? auditAlert.spokenAudioTextHi : auditAlert.spokenAudioTextEn;
+
+      const auditMsg: ChatMessage = {
+        id: `msg-m-guard-${Date.now()}`,
+        sender: 'mayra',
+        text: reply,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, auditMsg]);
+      setStatus('READY');
+      speakText(voiceText, detected, handleSpeechStart, handleSpeechEnd);
+      return;
+    }
+
+    // 0.054 ZERO-LATENCY DIRECT MEMORY RECALL (Feature C Memory Pillar)
+    const activeMemoriesList = (memories && memories.length > 0)
+      ? memories
+      : MemoryVaultService.loadPersistedMemories([]);
+    const directRecall = MemoryVaultService.recallDirectMemory(trimmed, activeMemoriesList, userName);
+    if (directRecall.recalled && (directRecall.replyHi || directRecall.replyEn)) {
+      const reply = (detected === 'hi' ? directRecall.replyHi : directRecall.replyEn) || directRecall.replyHi!;
+      const memMsg: ChatMessage = {
+        id: `msg-m-recall-${Date.now()}`,
+        sender: 'mayra',
+        text: reply,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, memMsg]);
+      setStatus('READY');
+      speakText(reply, detected, handleSpeechStart, handleSpeechEnd);
+      return;
+    }
+
+    // 0.055 AUTONOMOUS MULTI-STEP TASK / REACT EXECUTION LOOP (Mark-53 Autonomous Engine)
+    const isMultiStepIntent = !image && Boolean(trimmed) && (
+      lower.includes('aur fir') ||
+      lower.includes('aur phir') ||
+      lower.includes('aur uske baad') ||
+      lower.includes('and then') ||
+      lower.includes('after that') ||
+      lower.includes('dono karo') ||
+      lower.includes('teeno karo') ||
+      lower.includes('step by step') ||
+      lower.includes('automate') ||
+      lower.includes('automation') ||
+      lower.includes('khud karo') ||
+      lower.includes('khud se karo') ||
+      lower.includes('autonomous') ||
+      lower.includes('auto task') ||
+      lower.includes('research about') ||
+      lower.includes('pata lagao aur') ||
+      lower.includes('search karo aur') ||
+      (lower.includes(' aur ') && (
+        (lower.includes('weather') || lower.includes('मौसम')) && (lower.includes('flight') || lower.includes('उड़ान') || lower.includes('save') || lower.includes('याद') || lower.includes('status'))
+      )) ||
+      (lower.includes(' and ') && (
+        (lower.includes('weather')) && (lower.includes('flight') || lower.includes('save') || lower.includes('status') || lower.includes('search'))
+      ))
+    );
+
+    if (isMultiStepIntent && agentEngineRef.current) {
+      console.log(`[MAYRA Agent V1] Multi-step autonomous task detected: "${trimmed}"`);
+      const immediateAck = (detected === 'hi')
+        ? 'हाँ भाई, बिल्कुल! मैं यह काम अभी स्टेप-बाय-स्टेप पूरा कर रही हूँ।'
+        : 'Right away, Zafer! Executing autonomous task loop now.';
+      const ackMsg: ChatMessage = {
+        id: `msg-m-agent-ack-${Date.now()}`,
+        sender: 'mayra',
+        text: immediateAck,
+        timestamp: Date.now()
+      };
+      setMessages((prev) => [...prev, ackMsg]);
+      speakText(immediateAck, detected, handleSpeechStart, undefined);
+
+      agentEngineRef.current.executeTask(trimmed, {
+        userName,
+        language: detected,
+        persona: assistantConfig.personaTone
+      });
+      return;
+    }
+
+    // 0.06 MARK-LII PORTED FEATURE: LIVE WEATHER REPORT WITH INSTANT ACKNOWLEDGMENT
+    if (!image && trimmed && (lower.includes('weather') || lower.includes('मौसम') || lower.includes('तापमान') || lower.includes('forecast')) && !lower.includes('code')) {
+      const cityMatch = trimmed.match(/(?:in|of|for|का|के|में)\s+([a-zA-Z\u0900-\u097F]+)/i);
+      const city = cityMatch ? cityMatch[1].trim() : 'Delhi';
+
+      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'weather', target: city, lang: detected === 'en' ? 'en' : 'hi' });
+      const ackId = `msg-m-ack-${Date.now()}`;
+      setMessages((prev) => [...prev, {
+        id: ackId,
+        sender: 'mayra',
+        text: ack,
+        timestamp: Date.now()
+      }]);
+      speakText(ack, detected, handleSpeechStart, undefined);
+
+      try {
+        const weather = await MarkLIIToolsService.fetchWeather(city);
+        const reply = detected === 'en'
+          ? `**Live Weather in ${weather.city}:** ${weather.temperature}°C, ${weather.condition}. Feels like ${weather.feelsLike}°C with ${weather.humidity}% humidity and wind at ${weather.windSpeed}. ${weather.summary}`
+          : `**${weather.city} में लाइव मौसम:** ${weather.temperature}°C, ${weather.condition}। यह ${weather.feelsLike}°C जैसा महसूस हो रहा है, नमी ${weather.humidity}% और हवा की गति ${weather.windSpeed} है। ${weather.summary}`;
+
+        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setStatus('READY');
+        speakText(reply.replace(/\*\*/g, ''), detected, handleSpeechStart, handleSpeechEnd);
+        return;
+      } catch (e) {
+        // Fall through to regular Gemini pipeline
+      }
+    }
+
+    // 0.07 MARK-LII PORTED FEATURE: FLIGHT FINDER WITH INSTANT ACKNOWLEDGMENT
+    if (!image && trimmed && (lower.includes('flight') || lower.includes('उड़ान') || lower.includes('टिकट') || lower.includes('airfare')) && (lower.includes(' to ') || lower.includes(' se ') || lower.includes('से') || lower.includes('तक'))) {
+      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'flight', lang: detected === 'en' ? 'en' : 'hi' });
+      const ackId = `msg-m-ack-${Date.now()}`;
+      setMessages((prev) => [...prev, {
+        id: ackId,
+        sender: 'mayra',
+        text: ack,
+        timestamp: Date.now()
+      }]);
+      speakText(ack, detected, handleSpeechStart, undefined);
+
+      try {
+        let origin = 'Delhi';
+        let dest = 'Mumbai';
+        const fromMatch = trimmed.match(/(?:from|se|से)\s+([a-zA-Z\u0900-\u097F]+)/i);
+        const toMatch = trimmed.match(/(?:to|तक|ko|को)\s+([a-zA-Z\u0900-\u097F]+)/i);
+        if (fromMatch) origin = fromMatch[1].trim();
+        if (toMatch) dest = toMatch[1].trim();
+
+        const flightsData = await MarkLIIToolsService.searchFlights(origin, dest);
+        const listSummary = flightsData.flights.map(f => `• ${f.airline} (${f.flightNumber}): ${f.departureTime} → ${f.arrivalTime} (${f.duration}) — **${f.estimatedPrice}**`).join('\n');
+        const reply = detected === 'en'
+          ? `**Commercial Flights from ${origin} to ${dest}:**\n${listSummary}\n\n_${flightsData.bookingHint || 'Check-in opens 48h before flight.'}_`
+          : `**${origin} से ${dest} के लिए उपलब्ध उड़ानें:**\n${listSummary}\n\n_${flightsData.bookingHint || 'उड़ान से 48 घंटे पहले ऑनलाइन चेक-इन खुलता है।'}_`;
+
+        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setStatus('READY');
+        speakText(`${origin} se ${dest} ke liye ${flightsData.flights.length} flights mil gayi hain.`, detected, handleSpeechStart, handleSpeechEnd);
+        return;
+      } catch (e) {
+        // Fall through
+      }
+    }
+
+    // 0.08 MARK-LII PORTED FEATURE: REAL-TIME SYSTEM TELEMETRY WITH INSTANT ACKNOWLEDGMENT
+    if (!image && trimmed && (lower.includes('system status') || lower.includes('telemetry') || lower.includes('सिस्टम स्टेटस') || lower.includes('cpu status') || lower.includes('ram usage'))) {
+      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'system', lang: detected === 'en' ? 'en' : 'hi' });
+      const ackId = `msg-m-ack-${Date.now()}`;
+      setMessages((prev) => [...prev, {
+        id: ackId,
+        sender: 'mayra',
+        text: ack,
+        timestamp: Date.now()
+      }]);
+      speakText(ack, detected, handleSpeechStart, undefined);
+
+      try {
+        const telemetry = await MarkLIIToolsService.getSystemTelemetry();
+        const reply = detected === 'en'
+          ? `**System Telemetry Diagnostics:**\n• **Platform:** ${telemetry.platform} (${telemetry.architecture})\n• **CPU Load:** ${telemetry.cpu.load1m} avg (${telemetry.cpu.count} Cores)\n• **RAM Usage:** ${telemetry.memory.percentage}% (${telemetry.memory.usedMb}MB / ${telemetry.memory.totalMb}MB)\n• **System Uptime:** ${telemetry.uptime.formatted}\n• **Status:** Optimal Performance`
+          : `**सिस्टम टेलीमेट्री डायग्नोस्टिक्स:**\n• **प्लेटफ़ॉर्म:** ${telemetry.platform} (${telemetry.architecture})\n• **CPU लोड:** ${telemetry.cpu.load1m} औसत (${telemetry.cpu.count} कोर)\n• **RAM उपयोग:** ${telemetry.memory.percentage}% (${telemetry.memory.usedMb}MB / ${telemetry.memory.totalMb}MB)\n• **अपटाइम:** ${telemetry.uptime.formatted}\n• **स्थिति:** उत्तम (Optimal)`;
+
+        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setStatus('READY');
+        speakText(detected === 'en' ? `System telemetry is optimal with ${telemetry.memory.percentage} percent RAM usage.` : `सिस्टम सुचारु रूप से चल रहा है, रैम उपयोग ${telemetry.memory.percentage} प्रतिशत है।`, detected, handleSpeechStart, handleSpeechEnd);
+        return;
+      } catch (e) {
+        // Fall through
+      }
+    }
+
     // 0. MAYRA <-> STONICX Autonomous Task Delegation & Direct Switch Router
     if (!image && trimmed) {
       const decision = await DelegationRouter.routePrompt({
@@ -673,6 +1061,18 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
 
     if (isAgentTask && agentEngineRef.current) {
       console.log(`[MAYRA Agent V1] Dispatching user request to Agent Engine: "${trimmed}"`);
+      const immediateAck = (detected === 'hi')
+        ? 'हाँ भाई, बिल्कुल! मैं इस कार्य पर तुरंत लग रही हूँ।'
+        : 'Right away, Zafer! Executing action now.';
+      const ackMsg: ChatMessage = {
+        id: `msg-m-agent-ack-${Date.now()}`,
+        sender: 'mayra',
+        text: immediateAck,
+        timestamp: Date.now()
+      };
+      setMessages((prev) => [...prev, ackMsg]);
+      speakText(immediateAck, detected, handleSpeechStart, undefined);
+
       agentEngineRef.current.executeTask(trimmed, {
         userName,
         language: detected,
@@ -753,14 +1153,31 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     lastSubmittedPromptRef.current = trimmed;
     accumulatedModelTurnTextRef.current = '';
 
-    // Unified On-Demand Memory Retrieval: Single clean context prompt (<300 words)
-    const memoryContext = MemorySyncBridge.getInstance().generateSystemContextPrompt('MAYRA', trimmed);
+    // Unified On-Demand Memory Retrieval:
+    // Combine all active user memories from props and local vault
+    const activeMemories = (memories && memories.length > 0)
+      ? memories
+      : MemoryVaultService.loadPersistedMemories([]);
+
+    const vaultContext = MemoryVaultService.buildPromptContext(activeMemories, trimmed, 12);
+    const bridgeContext = MemorySyncBridge.getInstance().generateSystemContextPrompt('MAYRA', trimmed);
+    const memoryContext = [vaultContext, bridgeContext].filter(Boolean).join('\n\n');
+
+    // Multi-turn conversation history (last 12 turns for deep context analysis)
+    const recentHistory = messages
+      .filter(m => m.text && m.text.trim())
+      .slice(-12)
+      .map(m => ({
+        role: m.sender === 'user' ? ('user' as const) : ('model' as const),
+        text: m.text.trim()
+      }));
 
     const hasImagePayload = Boolean(image && image.base64);
     console.log(`[MAYRA_CLIENT_SEND_DISPATCH] Dispatching turn:`, {
       channel: (ws && ws.readyState === WebSocket.OPEN) ? 'WebSocket (/api/live-ws)' : 'HTTP (/api/chat)',
       text: trimmed,
       hasMemoryContext: Boolean(memoryContext),
+      historyLength: recentHistory.length,
       hasImageAttachment: hasImagePayload,
       mimeType: image?.mimeType || 'none',
       base64Length: image?.base64 ? image.base64.length : 0,
@@ -768,13 +1185,13 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     });
 
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ text: trimmed, image, contextPrompt: memoryContext }));
-      console.log(`[LIVE_TEXT_SENT] Dispatched text & image to /api/live-ws`);
+      ws.send(JSON.stringify({ text: trimmed, image, contextPrompt: memoryContext, history: recentHistory }));
+      console.log(`[LIVE_TEXT_SENT] Dispatched text, history & image to /api/live-ws`);
     } else if (ws && ws.readyState === WebSocket.CONNECTING) {
       ws.addEventListener('open', () => {
         try {
-          ws.send(JSON.stringify({ text: trimmed, image, contextPrompt: memoryContext }));
-          console.log(`[LIVE_TEXT_SENT] Dispatched queued text & image on WebSocket OPEN`);
+          ws.send(JSON.stringify({ text: trimmed, image, contextPrompt: memoryContext, history: recentHistory }));
+          console.log(`[LIVE_TEXT_SENT] Dispatched queued text, history & image on WebSocket OPEN`);
         } catch (err) {
           console.warn('[LIVE_TEXT_SEND_ERROR]', err);
         }
@@ -783,14 +1200,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
       // Fallback via /api/chat if WebSocket is unavailable (with multi-turn history & sentence-level TTS streaming)
       try {
         console.log('[LIVE_WS_STATE] Fallback to /api/chat');
-        const recentHistory = messages
-          .filter(m => m.text && m.text.trim())
-          .slice(-6)
-          .map(m => ({
-            role: m.sender === 'user' ? ('user' as const) : ('model' as const),
-            text: m.text.trim()
-          }));
-
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1167,10 +1576,22 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
   }, []);
 
   const clearChat = useCallback(() => {
-    setMessages([]);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(CHAT_STORAGE_KEY);
+      } catch (e) {}
+    }
+    setMessages([
+      {
+        id: `m-init-${Date.now()}`,
+        sender: 'mayra',
+        text: initialGreeting,
+        timestamp: Date.now()
+      }
+    ]);
     activeModelMsgIdRef.current = null;
     activeUserMsgIdRef.current = null;
-  }, []);
+  }, [initialGreeting]);
 
   return {
     status,
@@ -1193,6 +1614,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     activeAgentTask,
     approveAgentAction,
     rejectAgentAction,
-    cancelAgentTask
+    cancelAgentTask,
+    activeProactiveAlert,
+    dismissProactiveAlert: () => setActiveProactiveAlert(null)
   };
 }

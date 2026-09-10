@@ -18,6 +18,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalContext
+import com.mayra.assistant.MainActivity
+import com.mayra.assistant.permissions.MayraOverlayPermissionManager
 import com.mayra.assistant.ui.theme.*
 
 data class PermissionEntry(
@@ -36,12 +39,16 @@ fun PermissionsScreen(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val hasCamera = remember(context) { MayraOverlayPermissionManager.hasCameraPermission(context) }
+    val hasOverlay = remember(context) { MayraOverlayPermissionManager.hasOverlayPermission(context) }
+
     var permissionsList by remember {
         mutableStateOf(
             listOf(
                 PermissionEntry("default_assistant", "Default assistant", "Make MAYRA the phone's digital assistant (replaces Google Assistant) — long-press power / swipe from a corner opens her instantly, even on the lock screen.", isGranted = true, isDefaultRole = true),
                 PermissionEntry("microphone", "Microphone", "So you can talk to Mayra (required).", isGranted = true, isRequired = true),
-                PermissionEntry("camera", "Camera", "So Mayra can take your photo (front/back) and record video.", isGranted = true),
+                PermissionEntry("camera", "Camera", "So Mayra can take your photo (front/back) and track hand gestures in floating overlay.", isGranted = hasCamera, isRequired = true),
                 PermissionEntry("phone_calls", "Phone calls", "So Mayra can place calls for you.", isGranted = true),
                 PermissionEntry("location", "Location", "So Mayra can give you location, navigation and weather.", isGranted = true),
                 PermissionEntry("contacts", "Contacts", "So Mayra can look up a contact's number when you say a name (for calls/SMS).", isGranted = true),
@@ -51,7 +58,7 @@ fun PermissionsScreen(
                 PermissionEntry("notification_access", "Notification access", "To read notifications from all apps (and WhatsApp messages).", isGranted = true),
                 PermissionEntry("accessibility_service", "Accessibility service", "For WhatsApp/YouTube control and screen reading.", isGranted = false),
                 PermissionEntry("battery_optimization", "Battery — no optimization", "So Mayra keeps running with the screen off / in the background.", isGranted = false),
-                PermissionEntry("overlay", "Display over other apps", "So Mayra can work on top of other apps.", isGranted = false),
+                PermissionEntry("overlay", "Display over other apps", "So Mayra can float the gesture camera over other apps (sideloaded module).", isGranted = hasOverlay, isRequired = true),
                 PermissionEntry("screen_capture", "Screen capture", "So Mayra can watch your screen live (screen share).", isGranted = false)
             )
         )
@@ -110,8 +117,32 @@ fun PermissionsScreen(
                 PermissionCard(
                     entry = item,
                     onAction = {
-                        permissionsList = permissionsList.map {
-                            if (it.id == item.id) it.copy(isGranted = !it.isGranted) else it
+                        when (item.id) {
+                            "camera" -> {
+                                MainActivity.instance?.overlayPermissionManager?.requestCameraPermission { granted ->
+                                    permissionsList = permissionsList.map {
+                                        if (it.id == "camera") it.copy(isGranted = granted) else it
+                                    }
+                                } ?: run {
+                                    permissionsList = permissionsList.map {
+                                        if (it.id == item.id) it.copy(isGranted = !it.isGranted) else it
+                                    }
+                                }
+                            }
+                            "overlay" -> {
+                                MainActivity.instance?.overlayPermissionManager?.requestOverlayPermission { granted ->
+                                    permissionsList = permissionsList.map {
+                                        if (it.id == "overlay") it.copy(isGranted = granted) else it
+                                    }
+                                } ?: run {
+                                    MayraOverlayPermissionManager.openOverlaySettings(context)
+                                }
+                            }
+                            else -> {
+                                permissionsList = permissionsList.map {
+                                    if (it.id == item.id) it.copy(isGranted = !it.isGranted) else it
+                                }
+                            }
                         }
                     }
                 )

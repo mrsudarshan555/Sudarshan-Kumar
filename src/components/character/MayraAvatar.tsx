@@ -218,10 +218,23 @@ function ModelRenderer({
     return orch;
   }, [modelBoneContainer, morphConsumer, morphMap, bonesMap, hairBonesL, hairBonesR, targetBaseRotations]);
 
+  const renderedFramesRef = useRef(0);
+
   useFrame((state, delta) => {
     if (!groupRef.current) return;
     const time = state.clock.getElapsedTime();
     const clampedDelta = Math.min(delta, 0.1); // Protect against tab switch spikes
+
+    // Notify window that 3D character is fully drawn and rendered on screen
+    if (renderedFramesRef.current < 5) {
+      renderedFramesRef.current += 1;
+      if (renderedFramesRef.current >= 2) {
+        if (typeof window !== 'undefined') {
+          (window as any).__MAYRA_MODEL_READY__ = true;
+          window.dispatchEvent(new CustomEvent('mayra_model_loaded', { detail: { success: true } }));
+        }
+      }
+    }
 
     // 1. Root group transform handling (drag, rotation, locked scale)
     groupRef.current.position.set(0, 0, 0);

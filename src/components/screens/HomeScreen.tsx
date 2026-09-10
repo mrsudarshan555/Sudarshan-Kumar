@@ -130,6 +130,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    if (appearanceConfig?.useOrbOnHome) {
+      if (typeof window !== 'undefined') {
+        (window as any).__MAYRA_MODEL_READY__ = true;
+        window.dispatchEvent(new CustomEvent('mayra_model_loaded', { detail: { success: true } }));
+      }
+    }
+  }, [appearanceConfig?.useOrbOnHome]);
+
   const handleToggleLock = () => {
     toggleLock();
     const nextLocked = !lockState.isLocked;

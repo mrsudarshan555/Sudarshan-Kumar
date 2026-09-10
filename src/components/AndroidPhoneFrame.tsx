@@ -18,11 +18,15 @@ import { useMayraWakeWord } from '../hooks/useMayraWakeWord';
 import { FloatingMayraOverlay } from './overlay/FloatingMayraOverlay';
 import { BackgroundGestureOverlayBubble } from './overlay/BackgroundGestureOverlayBubble';
 import { AgentTaskHUD } from './agent/AgentTaskHUD';
+import { ProactiveGuardianHUD } from './agent/ProactiveGuardianHUD';
+import { ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEngine';
 import { 
   Home, Camera, Brain, MessageSquare, 
   Settings as SettingsIcon, Shield,
   Trash2, Plus, Zap, Smartphone, UserCheck
 } from 'lucide-react';
+import { MarkLIIUndoToast } from './MarkLIIUndoToast';
+import { MarkLIIConfirmationModal } from './MarkLIIConfirmationModal';
 import { getThemePreset } from '../utils/themePresets';
 import { MayraErrorBoundary } from './common/MayraErrorBoundary';
 import { useAppLock } from './security/useAppLock';
@@ -60,6 +64,9 @@ interface AndroidPhoneFrameProps {
   onApproveAgentAction?: () => void;
   onRejectAgentAction?: () => void;
   onCancelAgentTask?: () => void;
+  // Feature C: Proactive Guardian Alert Props
+  activeProactiveAlert?: ProactiveAlert | null;
+  onDismissProactiveAlert?: () => void;
   // Configs
   personalConfig: UserPersonalConfig;
   setPersonalConfig: React.Dispatch<React.SetStateAction<UserPersonalConfig>>;
@@ -108,6 +115,8 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
   onApproveAgentAction,
   onRejectAgentAction,
   onCancelAgentTask,
+  activeProactiveAlert,
+  onDismissProactiveAlert,
   personalConfig,
   setPersonalConfig,
   assistantConfig,
@@ -748,6 +757,17 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
         onCancel={onCancelAgentTask || (() => {})}
       />
 
+      {/* Feature C: Proactive Smart Guardian Live Alert HUD */}
+      <ProactiveGuardianHUD
+        alert={activeProactiveAlert || null}
+        onDismiss={onDismissProactiveAlert || (() => {})}
+        onAccept={(alert) => {
+          if (alert.suggestedAction?.actionType === 'OPEN_MEMORIES') {
+            setActiveTab('memories');
+          }
+        }}
+      />
+
       {/* iOS Magnifying Glass / Glassmorphism Floating Assistant Overlay */}
       <FloatingMayraOverlay
         isOpen={isFloatingOverlayOpen}
@@ -793,6 +813,12 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
           onSubmitPrompt(`Maine quiz me ${score.correct}/${score.total} score kiya. Meri galtiyan samjhao aur important concepts explain karo.`);
         }}
       />
+
+      {/* Mark-LII Reversible Action Undo Toast */}
+      <MarkLIIUndoToast />
+
+      {/* Mark-LII Tamper-Proof Confirmation Gate Modal */}
+      <MarkLIIConfirmationModal />
 
     </div>
   );

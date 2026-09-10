@@ -11,29 +11,29 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isVisible, isFading 
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#07040D] select-none transition-opacity duration-700 ease-out ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center select-none transition-opacity duration-700 ease-out ${
         isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
       style={{
-        background: 'radial-gradient(circle at 50% 45%, #18092B 0%, #0C0517 40%, #06020A 100%)'
+        background: 'radial-gradient(ellipse at 50% 48%, #140723 0%, #0A0413 50%, #050209 100%)'
       }}
     >
       {/* Background Soft Violet Atmosphere */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
-        <div className="w-[320px] h-[320px] rounded-full bg-purple-600/15 blur-3xl" />
-        <div className="w-[200px] h-[200px] rounded-full bg-fuchsia-600/10 blur-2xl -mt-16" />
+        <div className="w-[360px] h-[360px] rounded-full bg-purple-600/10 blur-3xl" />
+        <div className="w-[220px] h-[220px] rounded-full bg-fuchsia-600/10 blur-2xl -mt-16" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center px-6">
         {/* Luminous Purple Butterfly (Exact Symmetrical Match from Screenshot) */}
         <motion.div
-          initial={{ scale: 0.92, opacity: 0 }}
+          initial={{ scale: 0.94, opacity: 0 }}
           animate={{ scale: [0.98, 1.02, 0.98], opacity: 1 }}
           transition={{
             scale: { repeat: Infinity, duration: 3.2, ease: 'easeInOut' },
-            opacity: { duration: 0.6 }
+            opacity: { duration: 0.5 }
           }}
-          className="relative w-44 h-36 flex items-center justify-center drop-shadow-[0_0_35px_rgba(168,85,247,0.5)]"
+          className="relative w-44 h-36 flex items-center justify-center drop-shadow-[0_0_35px_rgba(168,85,247,0.55)]"
         >
           <svg
             viewBox="0 0 280 220"

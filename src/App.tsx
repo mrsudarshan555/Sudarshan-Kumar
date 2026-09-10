@@ -16,6 +16,8 @@ import './services/tools/toolCallingTestHarness';
 import { MemoryVaultManager } from './services/memory/memoryVaultManager';
 import { FloatingDataCardLayer } from './components/tools/FloatingDataCardLayer';
 import { SplashScreen } from './components/common/SplashScreen';
+import { UndoService } from './services/markLII/undoService';
+import { ConfirmationGateService } from './services/markLII/confirmationGateService';
 
 export default function App() {
   // Initial App Startup / Splash screen state
@@ -27,7 +29,7 @@ export default function App() {
     // Initialize unified shared markdown memory vault
     MemoryVaultManager.getInstance().initializeVault().catch(() => {});
 
-    let modelLoaded = false;
+    let modelLoaded = (typeof window !== 'undefined' && (window as any).__MAYRA_MODEL_READY__ === true);
     let minTimePassed = false;
     let isFadingTriggered = false;
 
@@ -48,19 +50,13 @@ export default function App() {
       }
     };
 
-    // Minimum display duration (1.6s) to let the butterfly and loading animation show smoothly
+    // Minimum display duration (1.2s)
     const minTimer = setTimeout(() => {
       minTimePassed = true;
       tryDismissSplash();
-    }, 1600);
+    }, 1200);
 
-    // Fallback maximum safety timer (5.5s) in case network is offline or model fails
-    const maxFallbackTimer = setTimeout(() => {
-      modelLoaded = true;
-      minTimePassed = true;
-      tryDismissSplash();
-    }, 5500);
-
+    // Event fired strictly when the 3D character mesh has loaded and rendered its frames
     const onModelLoaded = () => {
       modelLoaded = true;
       tryDismissSplash();
@@ -68,9 +64,15 @@ export default function App() {
 
     window.addEventListener('mayra_model_loaded', onModelLoaded);
 
+    // Safety fallback only after 45s if network is completely broken/offline
+    const offlineTimeout = setTimeout(() => {
+      modelLoaded = true;
+      tryDismissSplash();
+    }, 45000);
+
     return () => {
       clearTimeout(minTimer);
-      clearTimeout(maxFallbackTimer);
+      clearTimeout(offlineTimeout);
       window.removeEventListener('mayra_model_loaded', onModelLoaded);
     };
   }, []);
@@ -160,6 +162,15 @@ export default function App() {
               ...prev
             ];
           });
+          // Mark-LII Reversible Stack Entry
+          UndoService.pushUndo(
+            `Save Memory: ${key}`,
+            () => {
+              setMemories((prev) => prev.filter((m) => m.key.toLowerCase() !== key.toLowerCase()));
+              return `स्मृति "${key}" हटा दी गई`;
+            },
+            'memory'
+          );
           console.log('[MAYRA Pipeline] ACTION_EXECUTED: SAVE_MEMORY');
           console.log('[MAYRA Pipeline] ACTION_VERIFIED: Memory stored successfully — ' + key + ': ' + value);
         }
@@ -194,6 +205,18 @@ export default function App() {
       case 'DELETE_MEMORY': {
         const { key, id } = action.payload || {};
         if (id || key) {
+          // Snapshot for Mark-LII Reversible Undo
+          const itemToDelete = memories.find((m) => (id ? m.id === id : m.key.toLowerCase() === key.toLowerCase()));
+          if (itemToDelete) {
+            UndoService.pushUndo(
+              `Delete Memory: ${itemToDelete.key}`,
+              () => {
+                setMemories((prev) => [itemToDelete, ...prev]);
+                return `स्मृति "${itemToDelete.key}" पुनः बहाल कर दी गई`;
+              },
+              'memory'
+            );
+          }
           setMemories((prev) => prev.filter((m) => (id ? m.id !== id : m.key.toLowerCase() !== key.toLowerCase())));
           console.log('[MAYRA Pipeline] ACTION_EXECUTED: DELETE_MEMORY');
           console.log('[MAYRA Pipeline] ACTION_VERIFIED: Memory item removed');
@@ -201,9 +224,25 @@ export default function App() {
         break;
       }
       case 'CLEAR_MEMORIES': {
-        setMemories([]);
-        console.log('[MAYRA Pipeline] ACTION_EXECUTED: CLEAR_MEMORIES');
-        console.log('[MAYRA Pipeline] ACTION_VERIFIED: All memories cleared');
+        ConfirmationGateService.requestConfirmation({
+          actionKey: 'clear_memories',
+          title: 'सभी यादें मिटाएं (Clear All Memories)',
+          description: 'क्या आप निश्चित हैं कि आप मेमोरी वॉल्ट से सभी सेव की गई जानकारियों को हटाना चाहते हैं?',
+          dangerLevel: 'critical',
+          onConfirm: () => {
+            const backup = [...memories];
+            setMemories([]);
+            UndoService.pushUndo(
+              'Clear All Memories',
+              () => {
+                setMemories(backup);
+                return 'सभी स्मृतियाँ पुनः सुरक्षित कर दी गईं';
+              },
+              'memory'
+            );
+            console.log('[MAYRA Pipeline] ACTION_EXECUTED: CLEAR_MEMORIES via Safety Gate');
+          }
+        });
         break;
       }
       case 'NAVIGATE_TAB': {
@@ -277,7 +316,9 @@ export default function App() {
     activeAgentTask,
     approveAgentAction,
     rejectAgentAction,
-    cancelAgentTask
+    cancelAgentTask,
+    activeProactiveAlert,
+    dismissProactiveAlert
   } = useMayraAssistant({
     personalConfig,
     assistantConfig,
@@ -378,6 +419,8 @@ export default function App() {
               onApproveAgentAction={approveAgentAction}
               onRejectAgentAction={rejectAgentAction}
               onCancelAgentTask={cancelAgentTask}
+              activeProactiveAlert={activeProactiveAlert}
+              onDismissProactiveAlert={dismissProactiveAlert}
               personalConfig={personalConfig}
               setPersonalConfig={setPersonalConfig}
               assistantConfig={assistantConfig}

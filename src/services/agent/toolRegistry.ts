@@ -13,6 +13,8 @@ import { MayraSystemBridge } from '../native/MayraSystemIntegrationBridge';
 import { MemoryVaultService } from '../memory/memoryVaultService';
 import { ContactFuzzyMatcher } from '../contacts/contactFuzzyMatcher';
 import { TypingToolService, TypingSpeed } from '../tools/typingTool';
+import { MarkLIIToolsService } from '../markLII/markLIITools';
+import { UndoService } from '../markLII/undoService';
 
 export interface ToolParameterSchema {
   type: 'string' | 'number' | 'boolean' | 'object' | 'array';
@@ -89,6 +91,72 @@ export class AgentToolRegistry {
             category: m.category
           }))
         };
+      }
+    });
+
+    // 1b. save_memory (SAFE)
+    AgentToolRegistry.register({
+      name: 'save_memory',
+      description: 'Save important personal facts, contact details, user preferences, notes, or findings permanently into MAYRA Memory Vault.',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 4000,
+      parameters: {
+        type: 'object',
+        properties: {
+          key: {
+            type: 'string',
+            description: 'Descriptive title or identifier for the memory (e.g. "Rahul Email", "Delhi Winter Weather")'
+          },
+          value: {
+            type: 'string',
+            description: 'The detail, value, or fact to remember'
+          },
+          category: {
+            type: 'string',
+            description: 'Category: "personal", "preferences", "facts", "routines", or "contacts"',
+            enum: ['personal', 'preferences', 'facts', 'routines', 'contacts']
+          }
+        },
+        required: ['key', 'value']
+      },
+      execute: async (args) => {
+        try {
+          const key = (args.key || '').trim();
+          const value = (args.value || '').trim();
+          const category = args.category || 'facts';
+          if (!key || !value) {
+            return { success: false, error: 'Key and value are required to save a memory.' };
+          }
+          const allMemories = MemoryVaultService.loadPersistedMemories([]);
+          const existingIdx = allMemories.findIndex(m => m.key.toLowerCase() === key.toLowerCase());
+          if (existingIdx >= 0) {
+            allMemories[existingIdx] = {
+              ...allMemories[existingIdx],
+              value,
+              category,
+              timestamp: Date.now()
+            };
+          } else {
+            allMemories.unshift({
+              id: `mem-${Date.now()}`,
+              key,
+              value,
+              category,
+              timestamp: Date.now(),
+              importance: 4,
+              tags: [category, key.toLowerCase().replace(/\s+/g, '_')],
+              isPinned: false
+            });
+          }
+          MemoryVaultService.savePersistedMemories(allMemories);
+          return {
+            success: true,
+            message: `Memory "${key}" successfully saved into Memory Vault under category "${category}".`
+          };
+        } catch (e: any) {
+          return { success: false, error: e?.message || 'Failed to save memory' };
+        }
       }
     });
 
@@ -649,6 +717,201 @@ export class AgentToolRegistry {
           return {
             success: false,
             error: e.message || 'Sandbox evaluation failed'
+          };
+        }
+      }
+    });
+
+    // 16. weather_report (Mark-LII ported)
+    AgentToolRegistry.register({
+      name: 'weather_report',
+      description: 'Fetch current weather conditions, temperature, humidity, and 3-day forecast for any city or region.',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 6000,
+      parameters: {
+        type: 'object',
+        properties: {
+          city: {
+            type: 'string',
+            description: 'City or location name (e.g., "Delhi", "Mumbai", "London", "Tokyo")'
+          },
+          unit: {
+            type: 'string',
+            description: 'Temperature unit ("c" for Celsius or "f" for Fahrenheit)',
+            enum: ['c', 'f']
+          }
+        },
+        required: ['city']
+      },
+      execute: async (args) => {
+        const weather = await MarkLIIToolsService.fetchWeather(args.city, args.unit || 'c');
+        return {
+          success: true,
+          agent: 'Mark-LII Weather Engine',
+          weather
+        };
+      }
+    });
+
+    // 17. flight_finder (Mark-LII ported)
+    AgentToolRegistry.register({
+      name: 'flight_finder',
+      description: 'Search available commercial flights between cities, departure dates, airlines, schedules, and estimated ticket prices.',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 8000,
+      parameters: {
+        type: 'object',
+        properties: {
+          origin: {
+            type: 'string',
+            description: 'Origin city or airport code (e.g. "Delhi", "DEL", "New York")'
+          },
+          destination: {
+            type: 'string',
+            description: 'Destination city or airport code (e.g. "Mumbai", "BOM", "London")'
+          },
+          date: {
+            type: 'string',
+            description: 'Departure date or timeframe (e.g. "Tomorrow", "Next Friday", "2026-10-15")'
+          }
+        },
+        required: ['origin', 'destination']
+      },
+      execute: async (args) => {
+        const result = await MarkLIIToolsService.searchFlights(args.origin, args.destination, args.date || 'Upcoming');
+        return {
+          success: true,
+          agent: 'Mark-LII Flight Intelligence',
+          result
+        };
+      }
+    });
+
+    // 18. system_status (Mark-LII ported)
+    AgentToolRegistry.register({
+      name: 'system_status',
+      description: 'Inspect real-time system performance, CPU load average, RAM allocation, system uptime, and hardware health telemetry.',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 4000,
+      parameters: {
+        type: 'object',
+        properties: {
+          aspect: {
+            type: 'string',
+            description: 'Optional focus area ("cpu", "memory", "battery", "uptime", "all")',
+            enum: ['cpu', 'memory', 'battery', 'uptime', 'all']
+          }
+        },
+        required: []
+      },
+      execute: async () => {
+        const telemetry = await MarkLIIToolsService.getSystemTelemetry();
+        return {
+          success: true,
+          agent: 'Mark-LII Telemetry Monitor',
+          telemetry
+        };
+      }
+    });
+
+    // 19. code_helper (Mark-LII ported)
+    AgentToolRegistry.register({
+      name: 'code_helper',
+      description: 'Analyze, debug, optimize, or review code snippets across languages with architectural guidance.',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 8000,
+      parameters: {
+        type: 'object',
+        properties: {
+          code: {
+            type: 'string',
+            description: 'Source code content to inspect'
+          },
+          language: {
+            type: 'string',
+            description: 'Programming language (e.g. typescript, python, kotlin, javascript)'
+          },
+          task: {
+            type: 'string',
+            description: 'Analysis task',
+            enum: ['debug', 'explain', 'refactor', 'optimize']
+          }
+        },
+        required: ['code']
+      },
+      execute: async (args) => {
+        const result = await MarkLIIToolsService.analyzeCode(args.code, args.language || 'typescript', args.task || 'debug');
+        return {
+          success: true,
+          agent: 'Mark-LII Code Specialist',
+          result
+        };
+      }
+    });
+
+    // 20. undo_action (Mark-LII core/undo.py)
+    AgentToolRegistry.register({
+      name: 'undo_action',
+      description: 'Revert the most recent state-changing action (e.g. volume adjustment, memory change, setting toggle, or cleared chat).',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 3000,
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      },
+      execute: async () => {
+        const res = await UndoService.undoLast();
+        return {
+          success: res.success,
+          agent: 'Mark-LII Undo Stack',
+          message: res.message,
+          undoneAction: res.undoneLabel
+        };
+      }
+    });
+
+    // 22. run_multi_agent_swarm (SAFE) - Multi-Agent Swarm Coordinator (Feature B)
+    AgentToolRegistry.register({
+      name: 'run_multi_agent_swarm',
+      description: 'Deploy a coordinated swarm of specialized sub-agents (Researcher Agent, STONICX Coder Agent, Memory Curator, Device Agent, and Travel Logistics Agent) to execute multi-domain tasks in parallel.',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 12000,
+      parameters: {
+        type: 'object',
+        properties: {
+          objective: {
+            type: 'string',
+            description: 'The composite multi-step objective or prompt for the swarm to solve'
+          }
+        },
+        required: ['objective']
+      },
+      execute: async (args) => {
+        try {
+          const { MultiAgentSwarmCoordinator } = await import('./multiAgentSwarm');
+          const plan = MultiAgentSwarmCoordinator.planSwarm(args.objective || 'General swarm task');
+          const report = await MultiAgentSwarmCoordinator.executeSwarm(plan);
+          return {
+            success: true,
+            swarmId: report.swarmId,
+            agentsDeployed: plan.activeAgents.map(a => a.name),
+            completedTasks: report.completedTasks,
+            totalTasks: report.totalTasks,
+            executionTimeMs: report.executionTimeMs,
+            summary: report.synthesizedSummary,
+            details: report.results
+          };
+        } catch (e: any) {
+          return {
+            success: false,
+            error: e?.message || 'Multi-agent swarm execution encountered an error'
           };
         }
       }

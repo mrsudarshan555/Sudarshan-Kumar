@@ -23,8 +23,13 @@ export interface AgentEngineCallbacks {
 export class MayraAgentEngine {
   private activeContext: AgentTaskContext | null = null;
   private callbacks: AgentEngineCallbacks = {};
-  private readonly MAX_STEPS = 6;
+  private readonly MAX_STEPS = 8;
   private isProcessing: boolean = false;
+  private executionOptions?: {
+    userName?: string;
+    language?: string;
+    persona?: string;
+  };
 
   constructor(callbacks?: AgentEngineCallbacks) {
     if (callbacks) {
@@ -55,6 +60,7 @@ export class MayraAgentEngine {
       persona?: string;
     }
   ): Promise<AgentTaskContext> {
+    this.executionOptions = options;
     const taskId = `task-${Date.now()}`;
     const initialContext: AgentTaskContext = {
       taskId,
@@ -62,7 +68,7 @@ export class MayraAgentEngine {
       status: 'PLANNING',
       currentStep: 0,
       totalSteps: undefined,
-      stepDescription: 'Analyzing task and selecting tools...',
+      stepDescription: options?.language === 'hi' ? 'कार्य का विश्लेषण और टूल्स का चयन किया जा रहा है...' : 'Analyzing task and selecting tools...',
       toolCalls: [],
       toolResults: [],
       pendingConfirmation: null,
@@ -75,7 +81,7 @@ export class MayraAgentEngine {
     this.notifyStatus('PLANNING');
 
     try {
-      await this.runExecutionLoop(options);
+      await this.runExecutionLoop(this.executionOptions);
     } catch (err: any) {
       console.warn('[MayraAgentEngine] Execution error:', err);
       if (this.activeContext) {
@@ -122,7 +128,7 @@ export class MayraAgentEngine {
 
     // Resume execution loop with the tool result
     this.isProcessing = true;
-    await this.runExecutionLoop();
+    await this.runExecutionLoop(this.executionOptions);
   }
 
   /**
@@ -151,7 +157,7 @@ export class MayraAgentEngine {
 
     // Resume loop so AI knows user declined
     this.isProcessing = true;
-    await this.runExecutionLoop();
+    await this.runExecutionLoop(this.executionOptions);
   }
 
   /**
@@ -167,6 +173,37 @@ export class MayraAgentEngine {
     this.activeContext.finalResult = 'Task was cancelled.';
     this.isProcessing = false;
     this.notifyStatus('CANCELLED');
+  }
+
+  /**
+   * Helper to format descriptive step text
+   */
+  private formatStepDescription(toolName: string, toolArgs: Record<string, any>, lang: string = 'en'): string {
+    const isHi = lang === 'hi';
+    switch (toolName) {
+      case 'web_search':
+        return isHi ? `इंटरनेट पर खोज: "${toolArgs.query || 'जानकारी'}"...` : `Searching web for "${toolArgs.query || 'info'}"...`;
+      case 'weather_report':
+        return isHi ? `${toolArgs.city || 'शहर'} का मौसम चेक किया जा रहा है...` : `Checking weather for ${toolArgs.city || 'target'}...`;
+      case 'flight_finder':
+        return isHi ? `${toolArgs.origin} से ${toolArgs.destination} के लिए फ्लाइट्स खोजी जा रही हैं...` : `Finding flights ${toolArgs.origin} -> ${toolArgs.destination}...`;
+      case 'system_status':
+        return isHi ? `सिस्टम टेलीमेट्री व रैम/सीपीयू लोड चेक हो रहा है...` : `Inspecting system & hardware telemetry...`;
+      case 'save_memory':
+        return isHi ? `मेमोरी वॉल्ट में सहेजा जा रहा है: "${toolArgs.key || 'तथ्य'}"...` : `Saving to Memory Vault: "${toolArgs.key || 'fact'}"...`;
+      case 'search_memory':
+        return isHi ? `मेमोरी वॉल्ट में खोज: "${toolArgs.query || 'मेमोरी'}"...` : `Searching Memory Vault for "${toolArgs.query}"...`;
+      case 'open_app':
+        return isHi ? `ऐप खोला जा रहा है: ${toolArgs.appName}...` : `Launching application: ${toolArgs.appName}...`;
+      case 'open_url':
+        return isHi ? `वेब लिंक खोला जा रहा है: ${toolArgs.url}...` : `Navigating to URL: ${toolArgs.url}...`;
+      case 'typing_tool':
+        return isHi ? `ऑटोनोमस टाइपिंग एक्शन निष्पादित हो रहा है...` : `Executing autonomous keystrokes...`;
+      case 'delegate_to_stonicx':
+        return isHi ? `STONICX को सब-टास्क सौंपा जा रहा है...` : `Delegating sub-task to STONICX Brain...`;
+      default:
+        return isHi ? `स्टेप ${this.activeContext?.currentStep || 1}: ${toolName}...` : `Executing ${toolName}...`;
+    }
   }
 
   /**
@@ -210,7 +247,7 @@ export class MayraAgentEngine {
       // Check if Agent completed or has no further tools to run
       if (agentData.done || !agentData.toolCall) {
         this.activeContext.status = 'COMPLETED';
-        this.activeContext.stepDescription = 'Completed.';
+        this.activeContext.stepDescription = options?.language === 'hi' ? 'कार्य संपन्न हुआ।' : 'Completed.';
         this.activeContext.finalResult = agentData.finalResponse || agentData.response || 'Task completed successfully.';
         this.notifyStatus('COMPLETED');
         if (this.callbacks.onTaskComplete) {
@@ -232,7 +269,7 @@ export class MayraAgentEngine {
       });
 
       this.activeContext.status = 'EXECUTING';
-      this.activeContext.stepDescription = `Executing: ${toolName}...`;
+      this.activeContext.stepDescription = this.formatStepDescription(toolName, toolArgs, options?.language);
       this.notifyStatus('EXECUTING');
 
       // Dispatch to Tool Registry
@@ -265,7 +302,9 @@ export class MayraAgentEngine {
     // Hit max steps safety guard
     if (this.activeContext.currentStep >= this.MAX_STEPS && this.activeContext.status !== 'COMPLETED') {
       this.activeContext.status = 'COMPLETED';
-      this.activeContext.finalResult = 'Completed max allowed steps for this task.';
+      this.activeContext.finalResult = options?.language === 'hi'
+        ? 'अधिकतम अनुमत स्टेप्स पूरे कर लिए गए हैं।'
+        : 'Completed max allowed steps for this task.';
       this.notifyStatus('COMPLETED');
       if (this.callbacks.onTaskComplete) {
         this.callbacks.onTaskComplete(this.activeContext.finalResult, this.activeContext);

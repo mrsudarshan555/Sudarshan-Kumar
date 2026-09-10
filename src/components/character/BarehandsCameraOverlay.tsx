@@ -97,7 +97,7 @@ export const BarehandsCameraOverlay: React.FC<BarehandsCameraOverlayProps> = ({
         return (
           <div className="flex items-center gap-1 px-2 py-0.5 bg-cyan-950/80 border border-cyan-400/50 rounded-full text-[9px] font-mono text-cyan-200 font-bold">
             <Activity className="w-3 h-3 text-cyan-300" />
-            <span>21-Node Skeleton</span>
+            <span>Bare Hands Spatial</span>
           </div>
         );
     }

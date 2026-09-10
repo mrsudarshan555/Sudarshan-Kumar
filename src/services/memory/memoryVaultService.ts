@@ -122,7 +122,16 @@ export class MemoryVaultService {
     }
 
     // 2. Enrich with default vault metadata if missing
-    return existing.map((item) => ({
+    const filtered = existing.filter(item => {
+      if (!item || !item.key || !item.value) return false;
+      const lowerVal = String(item.value).toLowerCase();
+      const lowerKey = String(item.key).toLowerCase();
+      if (lowerVal.includes('kuchh kar do') || lowerVal.includes('kuch kar do')) return false;
+      if (lowerKey.includes('kuchh kar do') || lowerKey.includes('kuch kar do')) return false;
+      return true;
+    });
+
+    return filtered.map((item) => ({
       ...item,
       importance: item.importance ?? (item.isPinned ? 5 : item.category === 'personal' || item.category === 'preference' ? 4 : 3),
       tags: item.tags ?? [item.category, item.key.toLowerCase().replace(/\s+/g, '_')],
@@ -289,6 +298,12 @@ export class MemoryVaultService {
 
     const lower = clean.toLowerCase();
 
+    // Reject commands, action phrases, or questions from being saved as memories
+    const isActionCommand = /(?:kuchh?|kuch)\s+(?:kar\s+do|karo|batao|karna)|(?:batao|dikhao|sunao|chalao|kholo|bhejo|call|search|play|open|help|can you|kya tum|please do|kuch to karo)/i.test(lower);
+    if (isActionCommand) {
+      return { shouldMemorize: false, confidence: 0 };
+    }
+
     // 1. Explicit Memory Triggers (English + Hindi) (High Confidence >= 0.95)
     // English Examples: "Remember that my main AI project is called Mayra", "Mayra, note down my car license is ABC-123"
     // Hindi Examples: "याद रखो कि मेरी AI प्रोजेक्ट का नाम Mayra है", "Mayra yaad rakhna ki mera project Mayra hai"
@@ -309,7 +324,26 @@ export class MemoryVaultService {
       };
     }
 
-    // 2. Strong User Preference Statements (Confidence >= 0.85)
+    // 2. Age Statements (Confidence >= 0.95)
+    // Examples: "meri umar 15 saal hai", "meri umra 15 years hai", "meri age 15 hai", "i am 15 years old"
+    const ageMatch = clean.match(/(?:meri\s+(?:umra|umar|age)\s*(?:hai\s*)?|my\s+age\s+is\s*|i\s+am\s+)(\d{1,2})\s*(?:saal|sal|years|year|yrs)?(?:\s+old)?(?:\s+hai|\.|\,|$)/i);
+    if (ageMatch && ageMatch[1]) {
+      const ageNum = parseInt(ageMatch[1], 10);
+      if (ageNum >= 5 && ageNum <= 120) {
+        return {
+          shouldMemorize: true,
+          key: 'User Age',
+          value: `${ageNum} years`,
+          category: 'personal',
+          importance: 5,
+          tags: ['personal_identity', 'age'],
+          confidence: 0.95,
+          reason: 'Clear personal age declaration'
+        };
+      }
+    }
+
+    // 3. Strong User Preference Statements (Confidence >= 0.85)
     // Examples: "I prefer dark mode always", "My favorite coffee is cappuccino"
     const prefRegex = /^(?:i prefer|my favorite|i always use|my preferred|i like my)\s+([^,.]+?)\s+(?:to be|is|as|always)\s+([^,.]+)/i;
     const prefMatch = clean.match(prefRegex);
@@ -326,7 +360,7 @@ export class MemoryVaultService {
       };
     }
 
-    // 3. Core Personal Identity / Contact / Family Facts (Confidence >= 0.85)
+    // 4. Core Personal Identity / Contact / Family Facts (Confidence >= 0.85)
     // Examples: "My phone number is +123456", "My father's name is Robert"
     const personalRegex = /^(?:my|our)\s+([a-zA-Z\s]{3,25})\s+(?:is|are)\s+([^,.]+)/i;
     const personalMatch = clean.match(personalRegex);
@@ -350,8 +384,95 @@ export class MemoryVaultService {
       }
     }
 
+    // 5. Direct Hindi Fact Statements: "mera roll number 45 hai", "mera address Mumbai hai", "mera phone 98765 hai"
+    const hindiFactMatch = clean.match(/^(?:mera|meri|mere)\s+([a-zA-Z\u0900-\u097F\s]{2,30}?)\s+([a-zA-Z0-9\u0900-\u097F\s\+\-\_\@\.]+?)(?:\s+(?:hai|hain|tha|thi))?$/i);
+    if (hindiFactMatch && hindiFactMatch[1] && hindiFactMatch[2]) {
+      const rawSubject = hindiFactMatch[1].trim().toLowerCase();
+      const rawValue = hindiFactMatch[2].trim();
+      const validSubjects = ['roll number', 'roll no', 'address', 'pata', 'car', 'bike', 'gadi', 'phone', 'mobile', 'email', 'blood group', 'city', 'shahar', 'gaon', 'company', 'kaam', 'post', 'rank', 'project', 'favourite', 'favorite', 'pasand'];
+      
+      const isFact = validSubjects.some(s => rawSubject.includes(s)) || rawSubject.split(/\s+/).length <= 3;
+      const isNotQuestion = !rawSubject.includes('kya') && !rawValue.includes('kya') && !rawSubject.includes('batao');
+
+      if (isFact && isNotQuestion && rawValue.length >= 1 && rawValue.length <= 80) {
+        return {
+          shouldMemorize: true,
+          key: `User ${hindiFactMatch[1].trim()}`,
+          value: rawValue,
+          category: rawSubject.includes('project') ? 'project' : (rawSubject.includes('pasand') || rawSubject.includes('fav')) ? 'preference' : 'personal',
+          importance: 4,
+          tags: ['auto_fact', rawSubject.replace(/\s+/g, '_')],
+          confidence: 0.92,
+          reason: 'Direct Hindi personal attribute assertion'
+        };
+      }
+    }
+
     // Default: Reject ephemeral message
     return { shouldMemorize: false, confidence: 0.1 };
+  }
+
+  /**
+   * Zero-Latency Direct Memory Recall
+   * Answers queries like "mera roll number kya hai", "mera address kya hai", "mujhe kya pasand hai"
+   */
+  public static recallDirectMemory(
+    query: string, 
+    memories: MemoryItem[], 
+    userName: string = 'Zafer'
+  ): { recalled: boolean; replyHi?: string; replyEn?: string; memory?: MemoryItem } {
+    if (!query || !memories || memories.length === 0) return { recalled: false };
+    const lower = query.toLowerCase().trim();
+
+    // Check if user is asking a memory recall question
+    const isRecallQuery = 
+      (lower.includes('kya hai') || lower.includes('batao') || lower.includes('yaad hai') || lower.includes('what is my') || lower.includes('do you know my') || lower.includes('who am i') || lower.includes('tell me about')) &&
+      (lower.includes('mera') || lower.includes('meri') || lower.includes('mere') || lower.includes('my') || lower.includes('mujhe'));
+
+    if (!isRecallQuery) return { recalled: false };
+
+    // Extract core subject being asked about
+    const subjectMatch = lower.match(/(?:mera|meri|mere|my)\s+([a-zA-Z\u0900-\u097F\s]+?)(?:\s+(?:kya|kahan|kaun|batao|hai|\?|$))/i);
+    const targetSubject = subjectMatch ? subjectMatch[1].trim() : '';
+
+    // Search memories
+    const matches = this.search(memories, {
+      query: targetSubject || lower,
+      limit: 3,
+      minImportance: 1
+    });
+
+    if (matches.length > 0 && matches[0].score >= 2.0) {
+      const best = matches[0].item;
+      const cleanKey = best.key.replace(/^User\s+/i, '');
+      const replyHi = `${userName} भाई, आपकी मेमोरी वॉल्ट के अनुसार आपका ${cleanKey} "${best.value}" है।`;
+      const replyEn = `Zafer, according to your Memory Vault, your ${cleanKey} is "${best.value}".`;
+      return { recalled: true, replyHi, replyEn, memory: best };
+    }
+
+    // Special case: "mujhe kya pasand hai" or preferences query
+    if (lower.includes('pasand') || lower.includes('favourite') || lower.includes('favorite') || lower.includes('like')) {
+      const prefMems = memories.filter(m => m.category === 'preference' || m.key.toLowerCase().includes('pasand') || m.key.toLowerCase().includes('fav'));
+      if (prefMems.length > 0) {
+        const topPrefs = prefMems.slice(0, 3).map(p => `${p.key.replace(/^User\s+Preference:\s*/i, '')}: ${p.value}`).join(', ');
+        const replyHi = `${userName} भाई, आपकी मेमोरी वॉल्ट के अनुसार आपकी पसंदीदा चीजें हैं: ${topPrefs}।`;
+        const replyEn = `Zafer, your saved preferences in Memory Vault are: ${topPrefs}.`;
+        return { recalled: true, replyHi, replyEn };
+      }
+    }
+
+    // Special case: "mere baare mein kya janti ho" / "what do you know about me"
+    if (lower.includes('baare mein kya') || lower.includes('what do you know about me') || lower.includes('meri profile')) {
+      const topMems = memories.filter(m => !m.isArchived).slice(0, 5);
+      if (topMems.length > 0) {
+        const listText = topMems.map(m => `• ${m.key.replace(/^User\s+/i, '')}: ${m.value}`).join('\n');
+        const replyHi = `हाँ ${userName} भाई, आपकी मेमोरी वॉल्ट में ये मुख्य बातें सुरक्षित हैं:\n\n${listText}`;
+        const replyEn = `Here are the top facts in your Memory Vault, ${userName}:\n\n${listText}`;
+        return { recalled: true, replyHi, replyEn };
+      }
+    }
+
+    return { recalled: false };
   }
 
   /**
@@ -427,11 +548,16 @@ export class MemoryVaultService {
 
     let selectedItems: MemoryItem[] = [];
 
+    // Always prioritize core personal identity items (Name, Age, Location)
+    const personalCore = memories.filter(
+      m => !m.isArchived && (m.category === 'personal' || m.key.toLowerCase().includes('name') || m.key.toLowerCase().includes('age'))
+    );
+
     if (isGenericMemoryQuery || !userQuery.trim()) {
       // Provide top pinned and recent memories
       selectedItems = memories
         .filter(m => !m.isArchived)
-        .slice(0, Math.max(maxTokens, 10));
+        .slice(0, Math.max(maxTokens, 12));
     } else {
       // Search top relevant memories
       const matches = this.search(memories, {
@@ -439,9 +565,19 @@ export class MemoryVaultService {
         limit: maxTokens,
         minImportance: 1
       });
-      selectedItems = matches.map(m => m.item);
+      const matchItems = matches.map(m => m.item);
+      
+      // Combine personal core items with query matches, deduplicating by ID
+      const combined = [...personalCore, ...matchItems];
+      const seen = new Set<string>();
+      selectedItems = combined.filter(item => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+
       if (selectedItems.length === 0) {
-        selectedItems = memories.filter(m => !m.isArchived).slice(0, 6);
+        selectedItems = memories.filter(m => !m.isArchived).slice(0, 8);
       }
     }
 

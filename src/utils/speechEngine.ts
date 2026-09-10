@@ -590,9 +590,25 @@ export function getDynamicGreeting(name: string = 'Zafer', lang: MayraLanguage =
  */
 export function sanitizeTextForSpeech(text: string): string {
   return text
+    // Replace markdown links [Label](URL) with just Label
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove code blocks and replace with brief speech indicator
+    .replace(/```[\s\S]*?```/g, ' ')
+    // Remove inline code backticks
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove markdown table lines
+    .replace(/\|.*?\|/g, ' ')
+    // Remove raw markdown brackets like [AUTO_MEMORY] or [ACTION]
     .replace(/\[.*?\]/g, '')
+    // Replace bullets and list numbers with commas for speech cadence
+    .replace(/^[\s]*[•\-\*]\s+/gm, '')
+    .replace(/^[\s]*\d+\.\s+/gm, '')
+    // Strip bold/italic/strikethrough markers
     .replace(/[*#_~`]/g, '')
+    // Replace full URLs with 'link'
     .replace(/https?:\/\/\S+/g, 'link')
+    // Normalize excessive spaces and linebreaks
+    .replace(/\n+/g, '. ')
     .replace(/\s+/g, ' ')
     .trim();
 }

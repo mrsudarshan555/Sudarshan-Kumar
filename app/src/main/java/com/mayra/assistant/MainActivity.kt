@@ -10,12 +10,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.mayra.assistant.permissions.MayraOverlayPermissionManager
 import com.mayra.assistant.ui.navigation.MayraNavGraph
 import com.mayra.assistant.ui.theme.MayraTheme
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        var instance: MainActivity? = null
+            private set
+    }
+
+    lateinit var overlayPermissionManager: MayraOverlayPermissionManager
+        private set
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        instance = this
+        overlayPermissionManager = MayraOverlayPermissionManager(this)
         
         // Enable wake and lock-screen display for voice assistant
         configureLockScreenDisplay()

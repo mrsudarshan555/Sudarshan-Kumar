@@ -14,6 +14,7 @@ import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.mayra.assistant.engine.MayraSmsHandler
 import com.mayra.assistant.engine.MayraTelecomHandler
+import com.mayra.assistant.permissions.MayraOverlayPermissionManager
 import com.mayra.assistant.services.MayraAccessibilityService
 import com.mayra.assistant.services.MayraMicrophoneForegroundService
 import com.mayra.assistant.services.MayraNotificationService
@@ -143,6 +144,41 @@ class MayraNativeIntegrationPlugin : Plugin() {
             call.resolve(JSObject().put("success", true))
         } catch (e: Exception) {
             call.reject("Failed to open battery optimization settings: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun checkFloatingOverlayPermissions(call: PluginCall) {
+        val hasCamera = MayraOverlayPermissionManager.hasCameraPermission(context)
+        val hasOverlay = MayraOverlayPermissionManager.hasOverlayPermission(context)
+        call.resolve(JSObject().apply {
+            put("hasCameraPermission", hasCamera)
+            put("hasOverlayPermission", hasOverlay)
+            put("isOverlayReady", hasCamera && hasOverlay)
+        })
+    }
+
+    @PluginMethod
+    fun openOverlaySettings(call: PluginCall) {
+        try {
+            MayraOverlayPermissionManager.openOverlaySettings(context)
+            call.resolve(JSObject().put("success", true))
+        } catch (e: Exception) {
+            call.reject("Failed to open overlay settings: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun requestCameraPermission(call: PluginCall) {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:${context.packageName}")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            call.resolve(JSObject().put("success", true))
+        } catch (e: Exception) {
+            call.reject("Failed to open app permission settings: ${e.message}")
         }
     }
 
