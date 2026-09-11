@@ -2037,6 +2037,56 @@ ${langInstruction} Provide a concise, highly insightful, accurate visual analysi
   }
 });
 
+// Continuous Screen Watcher Endpoint (Gemini Astra / Live Screen Share Action Logger)
+app.post('/api/vision/observe-screen', async (req, res) => {
+  try {
+    const { image, recentHistory } = req.body;
+    if (!image || !image.base64) {
+      return res.status(400).json({ error: 'Image data is required' });
+    }
+
+    const systemInstruction = `You are an intelligent real-time Screen Watcher for an AI companion named MAYRA (Astra style).
+Analyze this live frame of the user's screen.
+Briefly describe in 1 concise sentence what active app/window/screen the user is looking at, what they clicked, or what notable notification arrived (e.g. 'User is viewing Phone Settings > Display', 'User opened WhatsApp chat with Rahul', 'Notification popped up: New message from Dr. Sharma').
+Identify the app name if obvious.
+Format your reply strictly as JSON:
+{
+  "isSignificant": true,
+  "appName": "App or Window name",
+  "actionSummary": "1 concise sentence description of what is visible or what the user did",
+  "notificationText": "any prominent notification message text if present, else empty"
+}`;
+
+    const userPrompt = `Recent screen events:\n${(recentHistory || []).join('\n')}\nAnalyze what is on screen now and return the JSON.`;
+
+    const raw = await generateGeminiResponse(userPrompt, systemInstruction, 0.2, 'gemini-3.1-flash-lite', image);
+    if (!raw) {
+      return res.json({ isSignificant: false });
+    }
+
+    const cleanJson = raw.replace(/```json\s*|\s*```/g, '').trim();
+    let parsed: any;
+    try {
+      parsed = JSON.parse(cleanJson);
+    } catch {
+      parsed = {
+        isSignificant: true,
+        actionSummary: raw.slice(0, 150),
+        appName: 'Active Screen'
+      };
+    }
+
+    return res.json({
+      isSignificant: parsed.isSignificant ?? true,
+      appName: parsed.appName || 'Active Screen',
+      actionSummary: parsed.actionSummary || 'User is viewing screen content',
+      notificationText: parsed.notificationText || ''
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Observation failed' });
+  }
+});
+
 // MAYRA Agent V1 Tool Declarations for Gemini Function Calling
 const agentToolDeclarations: FunctionDeclaration[] = [
   {

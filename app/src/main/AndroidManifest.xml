@@ -148,6 +148,14 @@
             android:exported="false"
             android:foregroundServiceType="camera" />
 
+        <!-- StonicX (Mayra) Floating Camera Overlay Bubble Service -->
+        <service
+            android:name="com.mayra.assistant.services.OverlayService"
+            android:label="Mayra Gesture Camera Overlay"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="camera" />
+
         <!-- MAYRA System-Wide Gesture Accessibility Service (Synthetic Touch Dispatcher) -->
         <service
             android:name="com.mayra.assistant.services.MayraGestureAccessibilityService"

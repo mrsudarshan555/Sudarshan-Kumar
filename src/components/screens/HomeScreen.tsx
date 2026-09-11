@@ -16,6 +16,8 @@ import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
 import { getDynamicSuggestions } from '../../utils/dynamicSuggestions';
 import { StagePhysicsEngine } from '../../services/stage/stagePhysicsEngine';
 import { UserAccount } from '../../types/auth';
+import { ScreenShareHUD } from './ScreenShareHUD';
+import { ScreenObserverEngine } from '../../services/screen/ScreenObserverEngine';
 import { 
   Settings as SettingsIcon, Send, Paperclip, 
   Sparkles, ScreenShare, Lock, Unlock, FileText, 
@@ -108,6 +110,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   });
 
   const [isScreenSharing, setIsScreenSharing] = useState<boolean>(false);
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+  const [isScreenAnalyzing, setIsScreenAnalyzing] = useState<boolean>(false);
   const [screenShareNotice, setScreenShareNotice] = useState<string | null>(null);
   const [lockToast, setLockToast] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<AttachmentItem | null>(null);
@@ -171,30 +175,63 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     };
   }, [resetIdleTimer, inputText]);
 
+  const handleStopScreenShare = useCallback(() => {
+    ScreenObserverEngine.getInstance().stopWatcher();
+    ScreenObserverEngine.getInstance().registerStream(null, null);
+    if (screenStream) {
+      screenStream.getTracks().forEach((track) => {
+        try { track.stop(); } catch (e) {}
+      });
+    }
+    setScreenStream(null);
+    setIsScreenSharing(false);
+    setScreenShareNotice(null);
+  }, [screenStream]);
+
   const handleToggleScreenShare = async () => {
     resetIdleTimer();
     if (!isScreenSharing) {
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-          const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { cursor: 'always' } as any,
+            audio: false
+          });
+          setScreenStream(stream);
           setIsScreenSharing(true);
           setScreenShareNotice('Screen stream connected to MAYRA Vision');
+          
           stream.getVideoTracks()[0].onended = () => {
-            setIsScreenSharing(false);
-            setScreenShareNotice(null);
+            handleStopScreenShare();
           };
         } else {
-          setIsScreenSharing(true);
-          setScreenShareNotice('Screen stream connected to MAYRA Vision');
+          setScreenShareNotice('Screen sharing not supported on this browser');
+          setTimeout(() => setScreenShareNotice(null), 3000);
         }
-      } catch (err) {
-        setIsScreenSharing(!isScreenSharing);
-        setScreenShareNotice(isScreenSharing ? null : 'Screen stream connected');
+      } catch (err: any) {
+        if (err?.name !== 'NotAllowedError') {
+          console.warn('[ScreenShare] getDisplayMedia issue:', err);
+        }
+        handleStopScreenShare();
       }
     } else {
-      setIsScreenSharing(false);
-      setScreenShareNotice(null);
+      handleStopScreenShare();
     }
+  };
+
+  const handleAnalyzeScreen = (capturedImage: { base64: string; mimeType: string; name: string }) => {
+    setIsScreenAnalyzing(true);
+    const promptToSend = inputText.trim() || 'Please analyze this live screen in detail. Explain what you see, summarize text or key points, highlight any errors or notable items, and guide me.';
+    onSubmitPrompt(promptToSend, {
+      base64: capturedImage.base64,
+      mimeType: capturedImage.mimeType,
+      name: capturedImage.name,
+      size: 'Screen Snapshot'
+    });
+    setInputText('');
+    setTimeout(() => {
+      setIsScreenAnalyzing(false);
+    }, 1500);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -237,7 +274,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       ? defaultPrompt
       : inputText;
     
-    const filePayload = attachedFile?.dataUrl 
+    let filePayload = attachedFile?.dataUrl 
       ? { 
           base64: attachedFile.dataUrl, 
           mimeType: attachedFile.mimeType || (isDoc ? 'application/pdf' : 'image/jpeg'),
@@ -246,12 +283,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         }
       : undefined;
 
+    // If screen sharing is active and user didn't manually pick a file, auto-grab live screen frame!
+    if (!filePayload && isScreenSharing) {
+      const liveFrame = ScreenObserverEngine.getInstance().captureCurrentFrame();
+      if (liveFrame) {
+        filePayload = {
+          base64: liveFrame.base64,
+          mimeType: liveFrame.mimeType,
+          name: liveFrame.name,
+          size: 'Live Screen'
+        };
+      }
+    }
+
     console.log('[MAYRA HomeScreen] Submitting message with attachment data:', {
       prompt: promptToSend,
-      hasAttachment: Boolean(attachedFile),
-      attachmentName: attachedFile?.name,
+      hasAttachment: Boolean(filePayload),
+      attachmentName: filePayload?.name,
       mimeType: filePayload?.mimeType,
-      dataUrlLength: attachedFile?.dataUrl ? attachedFile.dataUrl.length : 0
+      dataUrlLength: filePayload?.base64 ? filePayload.base64.length : 0
     });
 
     onSubmitPrompt(promptToSend, filePayload);
@@ -702,6 +752,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Live Screen Share HUD */}
+      <ScreenShareHUD
+        stream={screenStream}
+        isOpen={isScreenSharing}
+        onStop={handleStopScreenShare}
+        onAnalyzeScreen={handleAnalyzeScreen}
+        isAnalyzing={isScreenAnalyzing}
+      />
 
       {/* 4. LOWER INTERACTION STAGE: Cardless Live Transcript / Prompts & iOS Search Pill */}
       <div className="relative z-20 w-full px-3.5 pb-2 flex flex-col items-center gap-2 pointer-events-auto">

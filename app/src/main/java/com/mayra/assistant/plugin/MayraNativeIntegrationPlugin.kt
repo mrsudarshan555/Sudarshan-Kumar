@@ -18,6 +18,7 @@ import com.mayra.assistant.permissions.MayraOverlayPermissionManager
 import com.mayra.assistant.services.MayraAccessibilityService
 import com.mayra.assistant.services.MayraMicrophoneForegroundService
 import com.mayra.assistant.services.MayraNotificationService
+import com.mayra.assistant.services.OverlayService
 import java.net.URLEncoder
 
 /**
@@ -180,6 +181,31 @@ class MayraNativeIntegrationPlugin : Plugin() {
         } catch (e: Exception) {
             call.reject("Failed to open app permission settings: ${e.message}")
         }
+    }
+
+    @PluginMethod
+    fun startFloatingOverlay(call: PluginCall) {
+        try {
+            OverlayService.start(context)
+            call.resolve(JSObject().put("success", true).put("isRunning", true))
+        } catch (e: Exception) {
+            call.reject("Failed to start OverlayService: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun stopFloatingOverlay(call: PluginCall) {
+        try {
+            OverlayService.stop(context)
+            call.resolve(JSObject().put("success", true).put("isRunning", false))
+        } catch (e: Exception) {
+            call.reject("Failed to stop OverlayService: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun getFloatingOverlayStatus(call: PluginCall) {
+        call.resolve(JSObject().put("isRunning", OverlayService.isRunning))
     }
 
     @PluginMethod

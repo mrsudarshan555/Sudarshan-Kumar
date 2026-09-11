@@ -40,7 +40,7 @@ export class ProactiveSmartGuardianEngine {
   private listeners: Set<ProactiveAlertListener> = new Set();
   private lastAlertTimes: Record<string, number> = {};
   private monitorInterval: NodeJS.Timeout | null = null;
-  private isEnabled: boolean = true;
+  private isEnabled: boolean = false;
 
   private constructor() {
     this.startWatchdog();
@@ -64,32 +64,29 @@ export class ProactiveSmartGuardianEngine {
 
   /**
    * Starts background watchdog timer that polls hardware & environmental telemetry
+   * Note: NEVER triggers on app launch or startup.
    */
   private startWatchdog(): void {
     if (typeof window === 'undefined') return;
 
-    // Check every 30 seconds
+    // Check every 60 seconds only if actively enabled
     this.monitorInterval = setInterval(() => {
       if (!this.isEnabled) return;
       this.evaluateAllTriggers();
-    }, 30000);
-
-    // Initial evaluation after 5 seconds
-    setTimeout(() => {
-      if (this.isEnabled) this.evaluateAllTriggers();
-    }, 5000);
+    }, 60000);
   }
 
   /**
-   * Evaluates all proactive rules
+   * Evaluates proactive rules (only when explicitly enabled)
    */
   public async evaluateAllTriggers(userName: string = 'Zafer'): Promise<ProactiveAlert | null> {
+    if (!this.isEnabled) return null;
     const now = Date.now();
 
-    // 1. Circadian / Late-Night Eye Strain Watchdog
+    // 1. Circadian / Late-Night Eye Strain Watchdog (cooldown: 2 hours)
     const hour = new Date().getHours();
     const isLateNight = hour >= 23 || hour < 5;
-    if (isLateNight && this.canTrigger('night_owl', 3600 * 1000)) { // once per hour
+    if (isLateNight && this.canTrigger('night_owl', 7200 * 1000)) {
       const alert: ProactiveAlert = {
         id: `alert-night-${now}`,
         type: 'night_owl',
@@ -110,12 +107,12 @@ export class ProactiveSmartGuardianEngine {
       return alert;
     }
 
-    // 2. Battery Watchdog (Real Navigator API if available)
+    // 2. Battery Watchdog (Real Navigator API if available, low-power warning)
     if (typeof navigator !== 'undefined' && (navigator as any).getBattery) {
       try {
         const battery = await (navigator as any).getBattery();
         const levelPct = Math.round(battery.level * 100);
-        if (!battery.charging && levelPct <= 20 && this.canTrigger('battery_low', 900 * 1000)) {
+        if (!battery.charging && levelPct <= 15 && this.canTrigger('battery_low', 1800 * 1000)) {
           const alert: ProactiveAlert = {
             id: `alert-battery-${now}`,
             type: 'battery',
@@ -124,7 +121,7 @@ export class ProactiveSmartGuardianEngine {
             messageHi: `${userName} भाई, डिवाइस की बैटरी ${levelPct}% बची है। क्या मैं अल्ट्रा पावर-सेविंग चालू कर दूँ?`,
             messageEn: `Warning: Battery level at ${levelPct}%. Activate Ultra Power Saver?`,
             spokenAudioTextHi: `${userName} भाई, बैटरी केवल ${levelPct} प्रतिशत बची है। अगर आप चाहें तो मैं पावर सेवर ऑन कर दूँ।`,
-            spokenAudioTextEn: `Zafer, battery has dropped to ${levelPct} percent. Shall I activate power saving mode?`,
+            spokenAudioTextEn: `${userName}, battery has dropped to ${levelPct} percent. Shall I activate power saving mode?`,
             suggestedAction: {
               labelHi: 'पावर सेवर ऑन करें',
               labelEn: 'Turn On Power Saver',
@@ -140,45 +137,13 @@ export class ProactiveSmartGuardianEngine {
       }
     }
 
-    // 3. System RAM Optimization Watchdog (Simulated or Performance Memory)
-    if (typeof performance !== 'undefined' && (performance as any).memory) {
-      try {
-        const mem = (performance as any).memory;
-        const used = mem.usedJSHeapSize;
-        const total = mem.totalJSHeapSize;
-        const pct = Math.round((used / total) * 100);
-        if (pct >= 85 && this.canTrigger('system_ram', 600 * 1000)) {
-          const alert: ProactiveAlert = {
-            id: `alert-ram-${now}`,
-            type: 'system_ram',
-            priority: 'medium',
-            title: 'रैम व मेमोरी ऑप्टिमाइजेशन',
-            messageHi: `सिस्टम रैम लोड ${pct}% पर है। पृष्ठभूमि कैशे साफ़ करने की सिफारिश है।`,
-            messageEn: `Memory load is at ${pct}%. Recommend clearing background cache.`,
-            spokenAudioTextHi: `${userName} भाई, सिस्टम मेमोरी थोड़ी बढ़ गई है। क्या मैं बैकग्राउंड कैशे साफ़ कर दूँ?`,
-            spokenAudioTextEn: `Zafer, system memory load is elevated. Recommend clearing background cache.`,
-            suggestedAction: {
-              labelHi: 'कैशे साफ़ करें',
-              labelEn: 'Optimize RAM',
-              actionType: 'OPTIMIZE_RAM'
-            },
-            timestamp: now
-          };
-          this.dispatchAlert(alert);
-          return alert;
-        }
-      } catch {
-        // Safe fallback
-      }
-    }
-
     return null;
   }
 
   /**
    * Forces an immediate Proactive Guardian Audit (Feature C trigger)
    */
-  public triggerImmediateAudit(userName: string = 'Zafer'): ProactiveAlert {
+  public triggerImmediateAudit(userName: string = 'Zafer', shouldDispatch: boolean = false): ProactiveAlert {
     const now = Date.now();
     const hour = new Date().getHours();
     const timeGreeting = (hour >= 5 && hour < 12) ? 'सुप्रभात' : (hour >= 12 && hour < 17) ? 'शुभ दोपहर' : (hour >= 17 && hour < 22) ? 'शुभ संध्या' : 'शुभ रात्रि';
@@ -200,7 +165,9 @@ export class ProactiveSmartGuardianEngine {
       timestamp: now
     };
 
-    this.dispatchAlert(alert);
+    if (shouldDispatch) {
+      this.dispatchAlert(alert);
+    }
     return alert;
   }
 

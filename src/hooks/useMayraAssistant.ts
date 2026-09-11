@@ -31,6 +31,7 @@ import { InstantAcknowledgmentEngine } from '../services/markLII/instantAcknowle
 import { MarkLIIToolsService } from '../services/markLII/markLIITools';
 import { MultiAgentSwarmCoordinator } from '../services/agent/multiAgentSwarm';
 import { ProactiveSmartGuardianEngine, ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEngine';
+import { ScreenObserverEngine } from '../services/screen/ScreenObserverEngine';
 
 export interface UseMayraAssistantProps {
   personalConfig: UserPersonalConfig;
@@ -478,12 +479,26 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     }
 
     // VISIBLE DEBUG LOGGING FOR MULTIMODAL ATTACHMENTS
+    let activeImage = image;
+    // Auto-capture live screen snapshot if user is actively sharing their screen
+    if (!activeImage && ScreenObserverEngine.getInstance().isSharing()) {
+      const liveFrame = ScreenObserverEngine.getInstance().captureCurrentFrame();
+      if (liveFrame) {
+        activeImage = {
+          base64: liveFrame.base64,
+          mimeType: liveFrame.mimeType,
+          name: liveFrame.name
+        };
+        console.log('[MAYRA Screen Vision] Auto-captured live screen frame for ongoing query:', trimmed);
+      }
+    }
+
     console.log(`[MAYRA_MULTIMODAL_CLIENT_DEBUG] Pre-flight Check:`, {
-      hasImageAttachment: Boolean(image && image.base64),
-      attachmentName: image?.name || (image ? 'unnamed' : 'none'),
-      mimeType: image?.mimeType || 'none',
-      base64Length: image?.base64 ? image.base64.length : 0,
-      base64Preview: image?.base64 ? `${image.base64.slice(0, 40)}...` : 'none',
+      hasImageAttachment: Boolean(activeImage && activeImage.base64),
+      attachmentName: activeImage?.name || (activeImage ? 'unnamed' : 'none'),
+      mimeType: activeImage?.mimeType || 'none',
+      base64Length: activeImage?.base64 ? activeImage.base64.length : 0,
+      base64Preview: activeImage?.base64 ? `${activeImage.base64.slice(0, 40)}...` : 'none',
       promptText: trimmed
     });
 
@@ -496,17 +511,17 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     }
 
     // Add user message to UI
-    const isDoc = image?.mimeType?.includes('pdf') || 
-                  image?.mimeType?.includes('document') || 
-                  image?.mimeType?.includes('text') || 
-                  image?.mimeType?.includes('csv') || 
-                  image?.name?.match(/\.(pdf|txt|csv|json|md|doc|docx)$/i);
+    const isDoc = activeImage?.mimeType?.includes('pdf') || 
+                  activeImage?.mimeType?.includes('document') || 
+                  activeImage?.mimeType?.includes('text') || 
+                  activeImage?.mimeType?.includes('csv') || 
+                  activeImage?.name?.match(/\.(pdf|txt|csv|json|md|doc|docx)$/i);
 
     const userMsg: ChatMessage = {
       id: `msg-u-${Date.now()}`,
       sender: 'user',
-      text: trimmed || (image ? (isDoc ? `Attached document: ${image.name || 'document'}` : 'Uploaded image') : ''),
-      image: image ? { base64: image.base64, mimeType: image.mimeType, name: image.name } : undefined,
+      text: trimmed || (activeImage ? (isDoc ? `Attached document: ${activeImage.name || 'document'}` : 'Live Screen View') : ''),
+      image: activeImage ? { base64: activeImage.base64, mimeType: activeImage.mimeType, name: activeImage.name } : undefined,
       timestamp: Date.now()
     };
     setMessages((prev) => [...prev, userMsg]);
@@ -517,7 +532,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     const lower = (trimmed || '').toLowerCase();
 
     // 0.0 INTERACTIVE QUIZ TRIGGER WITH MISSING DETAILS PROMPT FLOW (GOOGLE AI MODE STYLE)
-    if (!image && trimmed) {
+    if (!activeImage && trimmed) {
       const quizAnalysis = QuizDataService.getInstance().parseQuizIntentOrDetails(
         trimmed, 
         pendingQuizConfigRef.current || undefined
@@ -1172,25 +1187,28 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
         text: m.text.trim()
       }));
 
-    const hasImagePayload = Boolean(image && image.base64);
+    const screenPromptContext = ScreenObserverEngine.getInstance().getScreenContextPrompt();
+    const effectiveContextPrompt = [memoryContext, screenPromptContext].filter(Boolean).join('\n\n');
+
+    const hasImagePayload = Boolean(activeImage && activeImage.base64);
     console.log(`[MAYRA_CLIENT_SEND_DISPATCH] Dispatching turn:`, {
       channel: (ws && ws.readyState === WebSocket.OPEN) ? 'WebSocket (/api/live-ws)' : 'HTTP (/api/chat)',
       text: trimmed,
-      hasMemoryContext: Boolean(memoryContext),
+      hasMemoryContext: Boolean(effectiveContextPrompt),
       historyLength: recentHistory.length,
       hasImageAttachment: hasImagePayload,
-      mimeType: image?.mimeType || 'none',
-      base64Length: image?.base64 ? image.base64.length : 0,
-      imageName: image?.name || 'none'
+      mimeType: activeImage?.mimeType || 'none',
+      base64Length: activeImage?.base64 ? activeImage.base64.length : 0,
+      imageName: activeImage?.name || 'none'
     });
 
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ text: trimmed, image, contextPrompt: memoryContext, history: recentHistory }));
+      ws.send(JSON.stringify({ text: trimmed, image: activeImage, contextPrompt: effectiveContextPrompt, history: recentHistory }));
       console.log(`[LIVE_TEXT_SENT] Dispatched text, history & image to /api/live-ws`);
     } else if (ws && ws.readyState === WebSocket.CONNECTING) {
       ws.addEventListener('open', () => {
         try {
-          ws.send(JSON.stringify({ text: trimmed, image, contextPrompt: memoryContext, history: recentHistory }));
+          ws.send(JSON.stringify({ text: trimmed, image: activeImage, contextPrompt: effectiveContextPrompt, history: recentHistory }));
           console.log(`[LIVE_TEXT_SENT] Dispatched queued text, history & image on WebSocket OPEN`);
         } catch (err) {
           console.warn('[LIVE_TEXT_SEND_ERROR]', err);
@@ -1206,8 +1224,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
           body: JSON.stringify({
             message: trimmed,
             history: recentHistory,
-            image,
-            contextPrompt: memoryContext,
+            image: activeImage,
+            contextPrompt: effectiveContextPrompt,
             persona: assistantConfig.personaTone,
             model: personalConfig.geminiModel || 'gemini-3.1-flash-lite',
             temperature: personalConfig.temperature ?? 0.7,
