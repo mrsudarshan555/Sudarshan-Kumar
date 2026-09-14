@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MAYRA AI Assistant Volumetric Character Orb</title>
+  <style>
+    /* -------------------------------------------------------------
+       1. ZERO-OVERHEAD SYSTEM OVERLAY RESET & HARDWARE COMPOSITING
+       ------------------------------------------------------------- */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+
+    /* Primary Container: 340px x 340px viewport centered with pointer safety */
+    #orb-stage {
+      position: relative;
+      width: 340px;
+      height: 340px;
+      max-width: 100vw;
+      max-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none; /* Let clicks pass through outside the interactive radius */
+      z-index: 999999;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: auto; /* Active touch/click for interaction */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+
+    /* Fallback Video Element for Low-Spec / Throttled GPUs (<24 FPS) */
+    #fallback-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      transform: translateZ(0);
+    }
+
+    /* Interactive HUD for Testing & Android Intent Validation */
+    #hud-layer {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 24px);
+      max-width: 440px;
+      background: rgba(10, 15, 30, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000000;
+      pointer-events: auto;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #hud-layer.minimized {
+      transform: translateX(-50%) translateY(calc(100% + 20px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .hud-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .hud-header .title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #38bdf8;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse-dot 1.8s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .hud-buttons {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 5px;
+    }
+
+    .hud-btn {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      padding: 6px 2px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .hud-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .hud-btn.active {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: #38bdf8;
+      color: #e0f2fe;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #94a3b8;
+      font-size: 10px;
+      padding-top: 2px;
+    }
+
+    .hud-controls input[type="range"] {
+      flex: 1;
+      accent-color: #38bdf8;
+      height: 4px;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    /* Floating toggle pill to hide/show HUD */
+    #hud-toggle-pill {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 9999px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      z-index: 1000001;
+      pointer-events: auto;
+      transition: all 0.2s;
+    }
+
+    #hud-toggle-pill:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #fps-meter {
+      font-family: monospace;
+      font-size: 10px;
+      color: #4ade80;
+    }
+  </style>
+
+  <!-- Three.js Release 128 from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- Fixed 340x340 Overlay Stage -->
+  <div id="orb-stage">
+    <canvas id="webgl-canvas"></canvas>
+    <video id="fallback-video" src="orb.mp4" autoplay loop muted playsinline></video>
+  </div>
+
+  <!-- HUD Toggle Button -->
+  <button id="hud-toggle-pill" title="Toggle Testing HUD">HUD: ON</button>
+
+  <!-- Developer & Testing HUD -->
+  <div id="hud-layer">
+    <div class="hud-header">
+      <div class="title">
+        <span class="live-dot"></span>
+        <span>MAYRA SYSTEM ORB</span>
+      </div>
+      <div id="fps-meter">FPS: 60</div>
+    </div>
+
+    <!-- 6 Expressive State Triggers -->
+    <div class="hud-buttons">
+      <button class="hud-btn" data-state="sleep">Sleep</button>
+      <button class="hud-btn active" data-state="listening">Listen</button>
+      <button class="hud-btn" data-state="thinking">Think</button>
+      <button class="hud-btn" data-state="happy">Happy</button>
+      <button class="hud-btn" data-state="sad">Sad</button>
+      <button class="hud-btn" data-state="warning">Alert</button>
+    </div>
+
+    <!-- Audio Reactivity Slider -->
+    <div class="hud-controls">
+      <span>Mic Audio Level:</span>
+      <input type="range" id="audio-slider" min="0" max="1" step="0.01" value="0.35">
+      <span id="audio-val" style="width: 28px; text-align: right; font-family: monospace;">0.35</span>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       VERTEX SHADER (Screen-Space Quad Geometry Pass)
+       ============================================================= -->
+  <script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position.xy, 0.0, 1.0);
+    }
+  </script>
+
+  <!-- =============================================================
+       FRAGMENT SHADER (Procedural Volumetric Fluid & SDF Raymarching)
+       ============================================================= -->
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    precision highp float;
+
+    varying vec2 vUv;
+
+    // Viewport & Dynamic Audio Uniforms
+    uniform vec2  u_resolution;
+    uniform float u_time;
+    uniform float u_audioLevel;
+
+    // Fluid & Color Dynamics (Interpolated by State Engine)
+    uniform vec3  u_color1;        // Ruby / Amber / Primaries
+    uniform vec3  u_color2;        // Emerald / Lime / Core glow
+    uniform vec3  u_color3;        // Cyan / Electric Azure
+    uniform vec3  u_color4;        // Ultraviolet / Deep Violet
+    uniform vec3  u_coreColor;     // Dark Glass Obsidian tint
+    uniform float u_glowIntensity; // Multiplier for outer plume
+    uniform float u_swirlSpeed;    // Angular vortex rotation speed
+    uniform float u_distortionAmp; // fBm wave turbulence factor
+    uniform float u_coreRadius;    // Spherical glass core boundary
+    uniform float u_rainbowMix;    // Thinking state rainbow cycle blend
+
+    // Capsule Eye Geometry & Emotion Morphing
+    uniform vec2  u_eyeScale;      // (width, height)
+    uniform vec2  u_eyeOffset;     // (x, y) displacement
+    uniform float u_eyeCurvature;  // Happy smile crescent curve
+    uniform float u_eyeAngle;      // Sad drooping or alert tilt
+    uniform float u_eyeBlink;      // 0.0 = open, 1.0 = fully closed
+    uniform vec3  u_eyeGlowColor;  // White with state tint
+    uniform vec2  u_lookTarget;    // Parallax ambient look-around
+    uniform vec2  u_shakeOffset;   // Warning vibration impulse
+
+    // -------------------------------------------------------------
+    // MATHEMATICAL PRIMITIVES: Simplex Noise & Curl / fBm
+    // -------------------------------------------------------------
+    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec3 permute(vec3 x) { return mod289(((x * 34.0) + 1.0) * x); }
+
+    // Stefan Gustavson 2D Simplex Noise
+    float snoise(vec2 v) {
+      const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+      vec2 i  = floor(v + dot(v, C.yy));
+      vec2 x0 = v -   i + dot(i, C.xx);
+      vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+      vec4 x12 = x0.xyxy + C.xxzz;
+      x12.xy -= i1;
+      i = mod289(i);
+      vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+      vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+      m = m * m;
+      m = m * m;
+      vec3 x = 2.0 * fract(p * C.www) - 1.0;
+      vec3 h = abs(x) - 0.5;
+      vec3 ox = floor(x + 0.5);
+      vec3 a0 = x - ox;
+      m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
+      vec3 g;
+      g.x  = a0.x  * x0.x  + h.x  * x0.y;
+      g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+      return 130.0 * dot(m, g);
+    }
+
+    // 4-Octave Fractional Brownian Motion (fBm)
+    float fbm(vec2 p) {
+      float total = 0.0;
+      float amplitude = 0.5;
+      float frequency = 1.0;
+      for (int i = 0; i < 4; i++) {
+        total += snoise(p * frequency) * amplitude;
+        frequency *= 2.02;
+        amplitude *= 0.5;
+      }
+      return total;
+    }
+
+    // Inigo Quilez Cosine Palette Generator for "Thinking" state
+    vec3 cosinePalette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
+      return a + b * cos(6.28318 * (c * t + d));
+    }
+
+    // -------------------------------------------------------------
+    // SIGNED DISTANCE FIELDS (SDF) FOR CAPSULE EYES
+    // -------------------------------------------------------------
+    // Distance to vertical capsule centered at origin
+    float sdVerticalCapsule(vec2 p, float h, float r) {
+      p.y -= clamp(p.y, -h, h);
+      return length(p) - r;
+    }
+
+    void main() {
+      // Normalized coordinates centered at (0, 0) with aspect ratio correction
+      vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+
+      // Warning state horizontal vibration impulse
+      uv += u_shakeOffset;
+
+      float dist = length(uv);
+      float angle = atan(uv.y, uv.x);
+
+      // -----------------------------------------------------------
+      // 1. DUAL-DOMAIN WARPED FLUID TURBULENCE (The Chromatic Ring)
+      // -----------------------------------------------------------
+      float swirlTime = u_time * u_swirlSpeed;
+
+      // Angular twist: rotates faster near the core, producing swirling ribbons
+      float twist = (1.0 - smoothstep(0.0, 0.45, dist)) * 2.8;
+      float twistedAngle = angle + twist + swirlTime * 0.8;
+
+      // Convert back to warped Cartesian coordinates
+      vec2 warpedCoord = vec2(cos(twistedAngle), sin(twistedAngle)) * dist;
+
+      // Double domain warp: fluid curl motion
+      vec2 q = vec2(
+        fbm(warpedCoord * 3.2 + vec2(0.0, swirlTime * 0.4)),
+        fbm(warpedCoord * 3.2 + vec2(5.2, 1.3) - vec2(swirlTime * 0.35, 0.0))
+      );
+
+      vec2 rCoord = vec2(
+        fbm(warpedCoord * 3.0 + 3.0 * q + vec2(1.7, 9.2) + swirlTime * 0.25),
+        fbm(warpedCoord * 3.0 + 3.0 * q + vec2(8.3, 2.8) - swirlTime * 0.2)
+      );
+
+      float fluidDensity = fbm(warpedCoord * 2.5 + 4.0 * rCoord * u_distortionAmp);
+
+      // Multi-spectral chromatic dispersion: sample fluid with phase offsets
+      float redDisp   = fbm(warpedCoord * 2.4 + 4.0 * rCoord * u_distortionAmp + vec2(0.04, -0.02));
+      float greenDisp = fluidDensity;
+      float blueDisp  = fbm(warpedCoord * 2.6 + 4.0 * rCoord * u_distortionAmp - vec2(0.03, 0.03));
+
+      // -----------------------------------------------------------
+      // 2. RADIAL RING GEOMETRY & AUDIO RESPONSIVENESS
+      // -----------------------------------------------------------
+      // Audio level expands ring thickness and bloom
+      float audioPulse = u_audioLevel * 0.06;
+      float ringCenter = 0.27 + audioPulse * 0.5;
+      float ringDist = abs(dist - ringCenter);
+
+      // Modulate ring radius non-uniformly with angular harmonics (breathing / pulsing)
+      float radialWobble = 0.028 * sin(angle * 3.0 + u_time * 2.0) * (1.0 + u_audioLevel * 1.5);
+      ringDist = abs(dist - (ringCenter + radialWobble));
+
+      // Sharp luminous core of the fluid ribbon
+      float ringThickness = 0.045 + 0.03 * u_audioLevel;
+      float ringSharp = smoothstep(ringThickness, 0.002, ringDist);
+
+      // Wide soft ethereal outer plume / chromatic halo
+      float outerGlow = exp(-ringDist * 14.0) * u_glowIntensity * (1.0 + u_audioLevel * 0.6);
+      float innerGlow = exp(-ringDist * 24.0) * 1.2;
+
+      // -----------------------------------------------------------
+      // 3. MULTI-SPECTRAL DISPERSION COLOR BLENDING
+      // -----------------------------------------------------------
+      // Normalized angle around the rim [0.0, 1.0]
+      float normAngle = fract((twistedAngle + 3.14159265) / 6.2831853);
+
+      // Frame-by-frame color mapping:
+      // Top-Right: Ruby Red (#FF1E40) -> Amber Orange (#FF6D00)
+      // Left: Emerald Green (#00E676) -> Lime
+      // Bottom-Right: Cyan (#00E5FF) -> Deep Violet (#7C4DFF)
+      vec3 fluidColor = vec3(0.0);
+      if (normAngle < 0.25) {
+        fluidColor = mix(u_color1, u_color2, normAngle / 0.25);
+      } else if (normAngle < 0.5) {
+        fluidColor = mix(u_color2, u_color3, (normAngle - 0.25) / 0.25);
+      } else if (normAngle < 0.75) {
+        fluidColor = mix(u_color3, u_color4, (normAngle - 0.5) / 0.25);
+      } else {
+        fluidColor = mix(u_color4, u_color1, (normAngle - 0.75) / 0.25);
+      }
+
+      // Chromatic dispersion shifts across channels
+      fluidColor.r *= (0.8 + 0.4 * redDisp);
+      fluidColor.g *= (0.8 + 0.4 * greenDisp);
+      fluidColor.b *= (0.8 + 0.4 * blueDisp);
+
+      // Thinking State: dynamic cycling rainbow cosine palette
+      if (u_rainbowMix > 0.01) {
+        vec3 rainbow = cosinePalette(
+          normAngle + u_time * 0.8,
+          vec3(0.5, 0.5, 0.5),
+          vec3(0.5, 0.5, 0.5),
+          vec3(1.0, 1.0, 1.0),
+          vec3(0.0, 0.33, 0.67)
+        );
+        fluidColor = mix(fluidColor, rainbow * 1.3, u_rainbowMix);
+      }
+
+      // Combine ring illumination
+      vec3 ringEmission = fluidColor * (ringSharp * 2.2 + outerGlow + innerGlow);
+
+      // -----------------------------------------------------------
+      // 4. DARK GLASSY OBSIDIAN CORE (Depth, Caustics & Fresnel)
+      // -----------------------------------------------------------
+      float coreRadius = u_coreRadius;
+      float coreMask = smoothstep(coreRadius, coreRadius - 0.035, dist);
+
+      // Virtual 3D hemisphere normal for authentic glass refraction
+      float zSq = max(0.0, coreRadius * coreRadius - dist * dist);
+      float z = sqrt(zSq);
+      vec3 sphereNormal = normalize(vec3(uv, z));
+
+      // Fresnel rim reflection: bright glow on the inner perimeter of the dark core
+      float fresnel = pow(1.0 - sphereNormal.z, 2.8);
+      vec3 fresnelGlow = mix(u_color3, u_color1, normAngle) * fresnel * 1.8;
+
+      // Internal Caustic Scattering: misty cyan/emerald streaks drifting inside
+      vec2 refractedUV = uv * 3.5 + sphereNormal.xy * 0.12;
+      float causticNoise = fbm(refractedUV - vec2(0.0, u_time * 0.25));
+      float causticFilament = pow(clamp(causticNoise * 1.2, 0.0, 1.0), 3.0);
+      vec3 caustics = mix(u_color2, u_color3, 0.5) * causticFilament * 0.85;
+
+      // Dark obsidian base color (deep midnight glass)
+      vec3 coreGlass = u_coreColor + caustics + fresnelGlow;
+
+      // Compose Core over Ring
+      vec3 sceneColor = mix(ringEmission, coreGlass, coreMask * 0.96);
+      sceneColor += ringEmission * (1.0 - coreMask) * 0.5;
+
+      // -----------------------------------------------------------
+      // 5. PROCEDURAL CAPSULE EYES (SDF, Bloom & Expressive Curves)
+      // -----------------------------------------------------------
+      // Parallax look-around & displacement
+      vec2 eyeUV = uv - (u_lookTarget * 0.045) - u_eyeOffset;
+
+      // Symmetric dual eye placement
+      float eyeSpacing = 0.052;
+      vec2 leftEyeP  = eyeUV - vec2(-eyeSpacing, 0.0);
+      vec2 rightEyeP = eyeUV - vec2( eyeSpacing, 0.0);
+
+      // Sad drooping or alert tilt rotation
+      if (abs(u_eyeAngle) > 0.001) {
+        float cosA = cos(u_eyeAngle);
+        float sinA = sin(u_eyeAngle);
+        leftEyeP  = vec2(leftEyeP.x * cosA - leftEyeP.y * sinA,  leftEyeP.x * sinA + leftEyeP.y * cosA);
+        rightEyeP = vec2(rightEyeP.x * cosA + rightEyeP.y * sinA, -rightEyeP.x * sinA + rightEyeP.y * cosA);
+      }
+
+      // Happy state: smile crescent bending (quadratic curvature)
+      if (abs(u_eyeCurvature) > 0.001) {
+        leftEyeP.y  -= u_eyeCurvature * (leftEyeP.x * leftEyeP.x * 60.0);
+        rightEyeP.y -= u_eyeCurvature * (rightEyeP.x * rightEyeP.x * 60.0);
+      }
+
+      // Vertical blink scaling (with minimum safety limit)
+      float verticalScale = max(0.04, u_eyeScale.y * (1.0 - u_eyeBlink * 0.96));
+      leftEyeP.y  /= verticalScale;
+      rightEyeP.y /= verticalScale;
+      leftEyeP.x  /= u_eyeScale.x;
+      rightEyeP.x /= u_eyeScale.x;
+
+      // Capsule geometry dimensions
+      float capsuleHalfH = 0.024;
+      float capsuleRadius = 0.016;
+
+      float dLeft  = sdVerticalCapsule(leftEyeP,  capsuleHalfH, capsuleRadius);
+      float dRight = sdVerticalCapsule(rightEyeP, capsuleHalfH, capsuleRadius);
+      float dEyes  = min(dLeft, dRight);
+
+      // Clean anti-aliased white pill core
+      float eyeCore = smoothstep(0.003, -0.001, dEyes);
+
+      // Multi-tier neon bloom falloff
+      float eyeBloomClose = exp(-max(0.0, dEyes) * 65.0) * 1.3;
+      float eyeBloomWide  = exp(-max(0.0, dEyes) * 18.0) * 0.6;
+      float totalEyeLight = eyeCore + eyeBloomClose + eyeBloomWide;
+
+      // Eye color: solid white core with soft cyan/state-colored neon aura
+      vec3 finalEyeColor = mix(u_eyeGlowColor, vec3(1.0, 1.0, 1.0), eyeCore);
+
+      // Blend eyes onto glassy core
+      sceneColor += finalEyeColor * totalEyeLight * 1.5;
+
+      // -----------------------------------------------------------
+      // 6. VOLUMETRIC ALPHA CHANNEL COMPUTATION
+      // -----------------------------------------------------------
+      // Absolute transparency outside the orb so native Android apps are visible underneath
+      float fluidAlpha = ringSharp * 1.0 + outerGlow * 1.1 + innerGlow * 0.8;
+      float coreAlpha = coreMask * 0.95;
+      float eyeAlpha = totalEyeLight * 1.0;
+
+      float alpha = clamp(fluidAlpha + coreAlpha + eyeAlpha, 0.0, 1.0);
+
+      // Soft vignette mask at boundaries to eliminate square viewport clipping
+      float boundsMask = smoothstep(0.49, 0.40, dist);
+      alpha *= boundsMask;
+
+      gl_FragColor = vec4(sceneColor, alpha);
+    }
+  </script>
+
+  <!-- =============================================================
+       JAVASCRIPT ORCHESTRATION & STATE MACHINE ENGINE
+       ============================================================= -->
+  <script>
+    (function() {
+      'use strict';
+
+      // -----------------------------------------------------------
+      // 1. CAPABILITY DETECTION & HARDWARE ACCELERATION CHECK
+      // -----------------------------------------------------------
+      function detectWebGLCapabilities() {
+        try {
+          const testCanvas = document.createElement('canvas');
+          const gl = testCanvas.getContext('webgl', { alpha: true, antialias: true }) ||
+                     testCanvas.getContext('experimental-webgl');
+          if (!gl) return { supported: false, reason: 'WebGL unsupported' };
+
+          const dbgRenderInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          if (dbgRenderInfo) {
+            const renderer = gl.getParameter(dbgRenderInfo.UNMASKED_RENDERER_WEBGL) || '';
+            const lower = renderer.toLowerCase();
+            // Detect software rasterizers (SwiftShader, llvmpipe, softpipe, Microsoft Basic)
+            if (lower.includes('swiftshader') || lower.includes('llvmpipe') || 
+                lower.includes('softpipe') || lower.includes('software')) {
+              return { supported: false, reason: 'Software rasterizer detected (' + renderer + ')' };
+            }
+          }
+          return { supported: true };
+        } catch (e) {
+          return { supported: false, reason: e.message };
+        }
+      }
+
+      const capability = detectWebGLCapabilities();
+      if (!capability.supported) {
+        console.warn('MayraOrb: WebGL capability check failed -> Triggering hardware fallback.', capability.reason);
+        triggerFallback();
+        return;
+      }
+
+      // -----------------------------------------------------------
+      // 2. THREE.JS INITIALIZATION WITH CLEAN ALPHA COMPOSITING
+      // -----------------------------------------------------------
+      const canvas = document.getElementById('webgl-canvas');
+      const fallbackVideo = document.getElementById('fallback-video');
+      const hudLayer = document.getElementById('hud-layer');
+      const hudTogglePill = document.getElementById('hud-toggle-pill');
+      const fpsMeter = document.getElementById('fps-meter');
+      const audioSlider = document.getElementById('audio-slider');
+      const audioVal = document.getElementById('audio-val');
+
+      let scene, camera, renderer, material, quadMesh;
+      let isRunning = true;
+      let animFrameId = null;
+
+      // Fixed dimension tracking
+      const STAGE_SIZE = 340;
+      let width = STAGE_SIZE;
+      let height = STAGE_SIZE;
+
+      scene = new THREE.Scene();
+      camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance',
+        premultipliedAlpha: false
+      });
+      renderer.setClearColor(0x000000, 0.0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(width, height);
+
+      // -----------------------------------------------------------
+      // 3. 6-STATE EMOTION & VISUAL MATHEMATICS CONFIGURATION
+      // -----------------------------------------------------------
+      const ORB_STATES = {
+        sleep: {
+          name: 'sleep',
+          color1: new THREE.Vector3(0.08, 0.12, 0.35), // Deep midnight blue
+          color2: new THREE.Vector3(0.05, 0.08, 0.25), // Dim indigo
+          color3: new THREE.Vector3(0.12, 0.20, 0.45), // Subdued azure
+          color4: new THREE.Vector3(0.10, 0.05, 0.30), // Dark violet
+          coreColor: new THREE.Vector3(0.008, 0.012, 0.03),
+          glowIntensity: 0.35,
+          swirlSpeed: 0.3,
+          distortionAmp: 0.4,
+          coreRadius: 0.22,
+          rainbowMix: 0.0,
+          eyeScale: new THREE.Vector2(0.9, 0.15), // Narrow horizontal slits
+          eyeOffset: new THREE.Vector2(0.0, 0.0),
+          eyeCurvature: 0.0,
+          eyeAngle: 0.0,
+          eyeGlowColor: new THREE.Vector3(0.5, 0.7, 1.0),
+          allowLookAround: false
+        },
+        listening: {
+          name: 'listening',
+          color1: new THREE.Vector3(1.0, 0.15, 0.28), // Ruby Red
+          color2: new THREE.Vector3(0.0, 0.95, 0.55), // Emerald Green
+          color3: new THREE.Vector3(0.0, 0.90, 1.0),  // High-voltage Cyan
+          color4: new THREE.Vector3(0.55, 0.2, 1.0),  // Neon Violet
+          coreColor: new THREE.Vector3(0.015, 0.02, 0.04),
+          glowIntensity: 1.25,
+          swirlSpeed: 1.0,
+          distortionAmp: 0.85,
+          coreRadius: 0.235,
+          rainbowMix: 0.0,
+          eyeScale: new THREE.Vector2(1.05, 1.15), // Alert, slightly enlarged
+          eyeOffset: new THREE.Vector2(0.0, 0.0),
+          eyeCurvature: 0.0,
+          eyeAngle: 0.0,
+          eyeGlowColor: new THREE.Vector3(0.7, 1.0, 1.0),
+          allowLookAround: true
+        },
+        thinking: {
+          name: 'thinking',
+          color1: new THREE.Vector3(1.0, 0.2, 0.3),
+          color2: new THREE.Vector3(0.2, 1.0, 0.4),
+          color3: new THREE.Vector3(0.0, 0.8, 1.0),
+          color4: new THREE.Vector3(0.8, 0.2, 1.0),
+          coreColor: new THREE.Vector3(0.012, 0.018, 0.035),
+          glowIntensity: 1.45,
+          swirlSpeed: 2.6, // High speed vortex rotation
+          distortionAmp: 1.2,
+          coreRadius: 0.21, // Spiral contraction
+          rainbowMix: 1.0,  // Full cosine rainbow cycling
+          eyeScale: new THREE.Vector2(0.95, 0.95),
+          eyeOffset: new THREE.Vector2(0.0, 0.024), // Float upwards (translateY)
+          eyeCurvature: 0.0,
+          eyeAngle: 0.0,
+          eyeGlowColor: new THREE.Vector3(0.9, 0.95, 1.0),
+          allowLookAround: true
+        },
+        happy: {
+          name: 'happy',
+          color1: new THREE.Vector3(1.0, 0.72, 0.1),  // Sunny gold
+          color2: new THREE.Vector3(1.0, 0.35, 0.15), // Warm coral
+          color3: new THREE.Vector3(1.0, 0.85, 0.2),  // Luminous yellow
+          color4: new THREE.Vector3(1.0, 0.2, 0.45),  // Energetic pink amber
+          coreColor: new THREE.Vector3(0.025, 0.015, 0.02),
+          glowIntensity: 1.4,
+          swirlSpeed: 1.6,
+          distortionAmp: 1.0,
+          coreRadius: 0.24,
+          rainbowMix: 0.0,
+          eyeScale: new THREE.Vector2(1.1, 0.9),
+          eyeOffset: new THREE.Vector2(0.0, 0.005),
+          eyeCurvature: 0.022, // Upward crescent smile curve!
+          eyeAngle: 0.0,
+          eyeGlowColor: new THREE.Vector3(1.0, 0.95, 0.8),
+          allowLookAround: true
+        },
+        sad: {
+          name: 'sad',
+          color1: new THREE.Vector3(0.2, 0.32, 0.48), // Muted slate blue
+          color2: new THREE.Vector3(0.18, 0.22, 0.36), // Desaturated violet
+          color3: new THREE.Vector3(0.12, 0.38, 0.42), // Dark foggy teal
+          color4: new THREE.Vector3(0.22, 0.28, 0.45),
+          coreColor: new THREE.Vector3(0.01, 0.015, 0.025),
+          glowIntensity: 0.55, // 50% dropped glow
+          swirlSpeed: 0.5,     // Viscous, heavy movement
+          distortionAmp: 0.45,
+          coreRadius: 0.22,
+          rainbowMix: 0.0,
+          eyeScale: new THREE.Vector2(0.85, 0.9),
+          eyeOffset: new THREE.Vector2(0.0, -0.015),
+          eyeCurvature: -0.012, // Slight downward droop
+          eyeAngle: 0.14,      // Inward-downward rotation
+          eyeGlowColor: new THREE.Vector3(0.6, 0.75, 0.9),
+          allowLookAround: false
+        },
+        warning: {
+          name: 'warning',
+          color1: new THREE.Vector3(1.0, 0.05, 0.05), // Intense crimson red
+          color2: new THREE.Vector3(1.0, 0.45, 0.0),  // Hot warning amber
+          color3: new THREE.Vector3(0.9, 0.0, 0.15),  // Deep blood scarlet
+          color4: new THREE.Vector3(1.0, 0.3, 0.0),
+          coreColor: new THREE.Vector3(0.03, 0.005, 0.005),
+          glowIntensity: 1.6,
+          swirlSpeed: 2.2,
+          distortionAmp: 1.3,
+          coreRadius: 0.23,
+          rainbowMix: 0.0,
+          eyeScale: new THREE.Vector2(1.2, 0.85), // Tense, wider geometry
+          eyeOffset: new THREE.Vector2(0.0, 0.0),
+          eyeCurvature: 0.0,
+          eyeAngle: -0.08,
+          eyeGlowColor: new THREE.Vector3(1.0, 0.5, 0.4), // Reddish warning rim
+          allowLookAround: false
+        }
+      };
+
+      // Current interpolated state values
+      let currentState = ORB_STATES.listening;
+      let targetState = ORB_STATES.listening;
+      let stateTransitionProgress = 1.0;
+      const TRANSITION_DURATION = 0.5; // 500ms smooth lerp
+
+      // Lerp memory holders
+      const currentUniforms = {
+        color1: currentState.color1.clone(),
+        color2: currentState.color2.clone(),
+        color3: currentState.color3.clone(),
+        color4: currentState.color4.clone(),
+        coreColor: currentState.coreColor.clone(),
+        glowIntensity: currentState.glowIntensity,
+        swirlSpeed: currentState.swirlSpeed,
+        distortionAmp: currentState.distortionAmp,
+        coreRadius: currentState.coreRadius,
+        rainbowMix: currentState.rainbowMix,
+        eyeScale: currentState.eyeScale.clone(),
+        eyeOffset: currentState.eyeOffset.clone(),
+        eyeCurvature: currentState.eyeCurvature,
+        eyeAngle: currentState.eyeAngle,
+        eyeGlowColor: currentState.eyeGlowColor.clone()
+      };
+
+      // Shader Material Setup
+      const vertexShader = document.getElementById('vertexShader').textContent;
+      const fragmentShader = document.getElementById('fragmentShader').textContent;
+
+      material = new THREE.ShaderMaterial({
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        uniforms: {
+          u_resolution:    { value: new THREE.Vector2(width, height) },
+          u_time:          { value: 0.0 },
+          u_audioLevel:    { value: 0.35 },
+          u_color1:        { value: currentUniforms.color1 },
+          u_color2:        { value: currentUniforms.color2 },
+          u_color3:        { value: currentUniforms.color3 },
+          u_color4:        { value: currentUniforms.color4 },
+          u_coreColor:     { value: currentUniforms.coreColor },
+          u_glowIntensity: { value: currentUniforms.glowIntensity },
+          u_swirlSpeed:    { value: currentUniforms.swirlSpeed },
+          u_distortionAmp: { value: currentUniforms.distortionAmp },
+          u_coreRadius:    { value: currentUniforms.coreRadius },
+          u_rainbowMix:    { value: currentUniforms.rainbowMix },
+          u_eyeScale:      { value: currentUniforms.eyeScale },
+          u_eyeOffset:     { value: currentUniforms.eyeOffset },
+          u_eyeCurvature:  { value: currentUniforms.eyeCurvature },
+          u_eyeAngle:      { value: currentUniforms.eyeAngle },
+          u_eyeBlink:      { value: 0.0 },
+          u_eyeGlowColor:  { value: currentUniforms.eyeGlowColor },
+          u_lookTarget:    { value: new THREE.Vector2(0.0, 0.0) },
+          u_shakeOffset:   { value: new THREE.Vector2(0.0, 0.0) }
+        },
+        transparent: true,
+        depthWrite: false,
+        depthTest: false
+      });
+
+      const geometry = new THREE.PlaneGeometry(2, 2);
+      quadMesh = new THREE.Mesh(geometry, material);
+      scene.add(quadMesh);
+
+      // -----------------------------------------------------------
+      // 4. ORGANIC MICRO-ANIMATIONS (Blinking & Parallax Drift)
+      // -----------------------------------------------------------
+      let blinkValue = 0.0;
+      let isBlinking = false;
+      let nextBlinkTime = performance.now() + 3500;
+      let blinkStartTime = 0;
+      const BLINK_DURATION = 240; // 240ms natural eyelid cycle
+
+      function updateBlink(now) {
+        if (!isBlinking && now >= nextBlinkTime) {
+          isBlinking = true;
+          blinkStartTime = now;
+          // Random blink interval: 3.5s to 5.2s
+          nextBlinkTime = now + 3500 + Math.random() * 1700;
+        }
+
+        if (isBlinking) {
+          const elapsed = now - blinkStartTime;
+          const progress = elapsed / BLINK_DURATION;
+          if (progress >= 1.0) {
+            blinkValue = 0.0;
+            isBlinking = false;
+          } else {
+            // Smooth sinusoidal blink curve: 0 -> 1 -> 0
+            blinkValue = Math.sin(progress * Math.PI);
+          }
+        }
+        material.uniforms.u_eyeBlink.value = blinkValue;
+      }
+
+      // Look-around ambient drift target
+      const lookTarget = new THREE.Vector2(0, 0);
+      let targetLookX = 0;
+      let targetLookY = 0;
+
+      function updateLookAround(time) {
+        if (targetState.allowLookAround) {
+          // Slow organic sine-wave figure-eight drift
+          targetLookX = Math.sin(time * 0.8) * 0.4 + Math.sin(time * 1.7) * 0.15;
+          targetLookY = Math.cos(time * 0.6) * 0.35 + Math.sin(time * 1.3) * 0.12;
+        } else {
+          targetLookX = 0;
+          targetLookY = 0;
+        }
+        lookTarget.x += (targetLookX - lookTarget.x) * 0.04;
+        lookTarget.y += (targetLookY - lookTarget.y) * 0.04;
+        material.uniforms.u_lookTarget.value.copy(lookTarget);
+      }
+
+      // Warning state vibration impulse
+      let warningShakeTimer = 0;
+      const shakeOffset = new THREE.Vector2(0, 0);
+
+      function updateWarningShake(delta) {
+        if (targetState.name === 'warning') {
+          warningShakeTimer += delta * 45.0;
+          shakeOffset.x = Math.sin(warningShakeTimer) * 0.009;
+          shakeOffset.y = Math.cos(warningShakeTimer * 1.3) * 0.003;
+        } else {
+          shakeOffset.set(0, 0);
+        }
+        material.uniforms.u_shakeOffset.value.copy(shakeOffset);
+      }
+
+      // -----------------------------------------------------------
+      // 5. GLOBAL INTERFACE FOR ANDROID INTENTS & HOST APP
+      // -----------------------------------------------------------
+      let targetAudioLevel = 0.35;
+      let currentAudioLevel = 0.35;
+
+      window.MayraOrb = {
+        setState: function(stateName, audioLevel) {
+          const s = ORB_STATES[stateName.toLowerCase()];
+          if (!s) {
+            console.warn('MayraOrb.setState: Unknown state "' + stateName + '"');
+            return;
+          }
+          if (targetState !== s) {
+            currentState = { ...currentUniforms };
+            targetState = s;
+            stateTransitionProgress = 0.0;
+          }
+          if (audioLevel !== undefined && audioLevel !== null) {
+            targetAudioLevel = Math.max(0.0, Math.min(1.0, parseFloat(audioLevel)));
+            if (audioSlider) {
+              audioSlider.value = targetAudioLevel;
+              audioVal.textContent = targetAudioLevel.toFixed(2);
+            }
+          }
+          updateHudButtons(s.name);
+        },
+        getState: function() {
+          return targetState.name;
+        },
+        setAudioLevel: function(level) {
+          targetAudioLevel = Math.max(0.0, Math.min(1.0, parseFloat(level)));
+          if (audioSlider) {
+            audioSlider.value = targetAudioLevel;
+            audioVal.textContent = targetAudioLevel.toFixed(2);
+          }
+        },
+        triggerBlink: function() {
+          isBlinking = true;
+          blinkStartTime = performance.now();
+        }
+      };
+
+      // -----------------------------------------------------------
+      // 6. REAL-TIME 60-FRAME FPS WATCHDOG & ZERO-FLICKER FALLBACK
+      // -----------------------------------------------------------
+      const FPS_WINDOW_SIZE = 60;
+      const fpsHistory = [];
+      let lastFrameTime = performance.now();
+      let frameCount = 0;
+      let isFallbackTriggered = false;
+
+      function triggerFallback() {
+        if (isFallbackTriggered) return;
+        isFallbackTriggered = true;
+        isRunning = false;
+
+        console.warn('MayraOrb: FPS Watchdog triggered fallback! Switching to hardware-accelerated fallback video.');
+
+        if (animFrameId) {
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+        }
+
+        // Hide Canvas, display fallback video
+        canvas.style.display = 'none';
+        if (fallbackVideo) {
+          fallbackVideo.style.display = 'block';
+          fallbackVideo.play().catch(function() {
+            // Autoplay policy fallback
+            fallbackVideo.muted = true;
+            fallbackVideo.play();
+          });
+        }
+
+        // Cleanly dispose Three.js resources to free GPU memory
+        if (quadMesh) scene.remove(quadMesh);
+        if (geometry) geometry.dispose();
+        if (material) material.dispose();
+        if (renderer) renderer.dispose();
+      }
+
+      function recordFrameFps(now) {
+        const delta = now - lastFrameTime;
+        lastFrameTime = now;
+        if (delta > 0) {
+          const fps = 1000 / delta;
+          fpsHistory.push(fps);
+          if (fpsHistory.length > FPS_WINDOW_SIZE) {
+            fpsHistory.shift();
+          }
+        }
+        frameCount++;
+
+        // Evaluate average FPS after 90 initial warm-up frames
+        if (frameCount > 90 && fpsHistory.length >= FPS_WINDOW_SIZE) {
+          let sum = 0;
+          for (let i = 0; i < fpsHistory.length; i++) sum += fpsHistory[i];
+          const avgFps = sum / fpsHistory.length;
+
+          if (fpsMeter) {
+            fpsMeter.textContent = 'FPS: ' + Math.round(avgFps);
+            fpsMeter.style.color = avgFps >= 45 ? '#4ade80' : (avgFps >= 24 ? '#facc15' : '#f87171');
+          }
+
+          // Strict watchdog requirement: Drop below 24 FPS triggers instant fallback
+          if (avgFps < 24) {
+            triggerFallback();
+          }
+        }
+      }
+
+      // -----------------------------------------------------------
+      // 7. MAIN RENDER LOOP & UNIFORM INTERPOLATION
+      // -----------------------------------------------------------
+      const clock = new THREE.Clock();
+
+      function animate() {
+        if (!isRunning) return;
+        animFrameId = requestAnimationFrame(animate);
+
+        const now = performance.now();
+        const delta = clock.getDelta();
+        const elapsedTime = clock.getElapsedTime();
+
+        recordFrameFps(now);
+
+        // Smooth state transition lerp (400ms - 600ms)
+        if (stateTransitionProgress < 1.0) {
+          stateTransitionProgress += delta / TRANSITION_DURATION;
+          const t = Math.min(1.0, stateTransitionProgress);
+          // Cubic easeInOut
+          const ease = t < 0.5 ? 4.0 * t * t * t : 1.0 - Math.pow(-2.0 * t + 2.0, 3.0) / 2.0;
+
+          currentUniforms.color1.lerpVectors(currentState.color1, targetState.color1, ease);
+          currentUniforms.color2.lerpVectors(currentState.color2, targetState.color2, ease);
+          currentUniforms.color3.lerpVectors(currentState.color3, targetState.color3, ease);
+          currentUniforms.color4.lerpVectors(currentState.color4, targetState.color4, ease);
+          currentUniforms.coreColor.lerpVectors(currentState.coreColor, targetState.coreColor, ease);
+          currentUniforms.eyeGlowColor.lerpVectors(currentState.eyeGlowColor, targetState.eyeGlowColor, ease);
+
+          currentUniforms.glowIntensity = THREE.MathUtils.lerp(currentState.glowIntensity, targetState.glowIntensity, ease);
+          currentUniforms.swirlSpeed    = THREE.MathUtils.lerp(currentState.swirlSpeed, targetState.swirlSpeed, ease);
+          currentUniforms.distortionAmp = THREE.MathUtils.lerp(currentState.distortionAmp, targetState.distortionAmp, ease);
+          currentUniforms.coreRadius    = THREE.MathUtils.lerp(currentState.coreRadius, targetState.coreRadius, ease);
+          currentUniforms.rainbowMix    = THREE.MathUtils.lerp(currentState.rainbowMix, targetState.rainbowMix, ease);
+
+          currentUniforms.eyeScale.lerpVectors(currentState.eyeScale, targetState.eyeScale, ease);
+          currentUniforms.eyeOffset.lerpVectors(currentState.eyeOffset, targetState.eyeOffset, ease);
+          currentUniforms.eyeCurvature  = THREE.MathUtils.lerp(currentState.eyeCurvature, targetState.eyeCurvature, ease);
+          currentUniforms.eyeAngle      = THREE.MathUtils.lerp(currentState.eyeAngle, targetState.eyeAngle, ease);
+        }
+
+        // Smooth audio responsiveness lerp
+        currentAudioLevel += (targetAudioLevel - currentAudioLevel) * 0.18;
+
+        // Pass updated values to shader uniforms
+        material.uniforms.u_time.value = elapsedTime;
+        material.uniforms.u_audioLevel.value = currentAudioLevel;
+        material.uniforms.u_glowIntensity.value = currentUniforms.glowIntensity;
+        material.uniforms.u_swirlSpeed.value = currentUniforms.swirlSpeed;
+        material.uniforms.u_distortionAmp.value = currentUniforms.distortionAmp;
+        material.uniforms.u_coreRadius.value = currentUniforms.coreRadius;
+        material.uniforms.u_rainbowMix.value = currentUniforms.rainbowMix;
+        material.uniforms.u_eyeCurvature.value = currentUniforms.eyeCurvature;
+        material.uniforms.u_eyeAngle.value = currentUniforms.eyeAngle;
+
+        updateBlink(now);
+        updateLookAround(elapsedTime);
+        updateWarningShake(delta);
+
+        renderer.render(scene, camera);
+      }
+
+      animFrameId = requestAnimationFrame(animate);
+
+      // -----------------------------------------------------------
+      // 8. INTERACTIVE HUD WIDGET ATTACHMENTS
+      // -----------------------------------------------------------
+      function updateHudButtons(activeStateName) {
+        const btns = document.querySelectorAll('.hud-btn');
+        btns.forEach(function(btn) {
+          if (btn.getAttribute('data-state') === activeStateName) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
+
+      document.querySelectorAll('.hud-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const state = this.getAttribute('data-state');
+          window.MayraOrb.setState(state);
+        });
+      });
+
+      if (audioSlider) {
+        audioSlider.addEventListener('input', function() {
+          const val = parseFloat(this.value);
+          window.MayraOrb.setAudioLevel(val);
+        });
+      }
+
+      // Click / Tap directly on orb to trigger natural blink
+      canvas.addEventListener('pointerdown', function() {
+        window.MayraOrb.triggerBlink();
+      });
+
+      // Toggle HUD visibility for pure overlay view
+      if (hudTogglePill) {
+        let hudVisible = true;
+        hudTogglePill.addEventListener('click', function() {
+          hudVisible = !hudVisible;
+          if (hudVisible) {
+            hudLayer.classList.remove('minimized');
+            hudTogglePill.textContent = 'HUD: ON';
+          } else {
+            hudLayer.classList.add('minimized');
+            hudTogglePill.textContent = 'HUD: OFF';
+          }
+        });
+      }
+
+      // Keyboard Shortcut 'H' to toggle HUD
+      window.addEventListener('keydown', function(e) {
+        if (e.key === 'h' || e.key === 'H') {
+          hudTogglePill.click();
+        }
+      });
+
+      // Window resize handler preserving 1:1 aspect ratio
+      window.addEventListener('resize', function() {
+        const stage = document.getElementById('orb-stage');
+        const rect = stage.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        renderer.setSize(width, height);
+        material.uniforms.u_resolution.value.set(width, height);
+      });
+
+    })();
+  </script>
+</body>
+</html>

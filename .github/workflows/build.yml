@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Mayra Capacitor Web APK
 
 on:
   push:
@@ -12,49 +12,69 @@ permissions:
 
 jobs:
   build:
-    name: Build & Package APK
+    name: Build Mayra Web UI APK
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java (JDK 17)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant Execute Permission for Gradle Wrapper
-        run: chmod +x gradlew
+      # 1. Install Node Dependencies & Native Tailwind Linux Binding
+      - name: Install Dependencies & Tailwind Native Binding
+        run: |
+          npm install --include=optional
+          npm install -D @tailwindcss/oxide-linux-x64-gnu
 
+      # 2. Build Web UI (HTML, CSS, React, 3D Assets, JS bundle)
+      - name: Build Web App (Vite)
+        run: npx vite build
+
+      # 3. Sync Web UI into Capacitor Android
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      # 4. Compile Capacitor Android APK
       - name: Build Debug APK with Gradle
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
+      # 5. Upload APK Artifact (Direct download from GitHub Actions)
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Mayra-Web-UI-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
+      # 6. Create GitHub Release
       - name: Create GitHub Release and Upload APK
         uses: softprops/action-gh-release@v2
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "MAYRA AI Assistant Build #${{ github.run_number }}"
+          name: "MAYRA Web APK #${{ github.run_number }}"
           body: |
-            ### 🤖 Automated Build Output
+            ### 🤖 Mayra Web UI Capacitor Android Build
             - **Commit**: `${{ github.sha }}`
             - **Branch**: `${{ github.ref_name }}`
-            - **Build Trigger**: `${{ github.event_name }}`
-            - **Output Binary**: `app-debug.apk`
-          files: app/build/outputs/apk/debug/app-debug.apk
+            - **Trigger**: `${{ github.event_name }}`
+            - **File**: `app-debug.apk` (Real Web UI inside Capacitor WebView)
+          files: android/app/build/outputs/apk/debug/app-debug.apk
           token: ${{ secrets.GITHUB_TOKEN }}
+

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mayra</string>
+    <string name="title_activity_main">Mayra</string>
+    <string name="package_name">com.mayra.assistant</string>
+    <string name="custom_url_scheme">com.mayra.assistant</string>
+</resources>
