@@ -13,7 +13,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -27,15 +27,18 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Node Dependencies & Native Bindings
+      # 1. सारी डिपेंडेंसी और Tailwind का लिनक्स बाइनरी इंस्टॉल करो
+      - name: Install Dependencies & Tailwind Native Binding
         run: |
           npm install --include=optional
           npm install -D @tailwindcss/oxide-linux-x64-gnu
           npm install -D @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: Build Web App (Vite)
+      # 2. असली Web UI (HTML/React) बिल्ड करो (बिना सर्वर के)
+      - name: Build Web App
         run: npx vite build
 
+      # 3. Capacitor Android जोड़ो और Web UI को सिंक करो
       - name: Add and Sync Capacitor Android
         run: |
           if [ ! -d "android" ]; then
@@ -43,12 +46,14 @@ jobs:
           fi
           npx cap sync android
 
-      - name: Build Debug APK with Gradle
+      # 4. APK कंपाइल करो
+      - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
 
+      # 5. तैयार Web UI वाली APK को डाउनलोड के लिए उपलब्ध कराओ
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
