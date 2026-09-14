@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MMDLoader } from 'three-stdlib';
 import * as MMDParserModule from 'mmd-parser';
+import { applyEvelynLightingShader, isFaceMaterial } from './evelynAnimeLightingShader';
 
 // Polyfill window / globalThis for mmd-parser if needed
 const ParserClass: any = (MMDParserModule as any).Parser || (MMDParserModule as any).MMDParser || MMDParserModule;
@@ -340,6 +341,10 @@ export async function loadEvelynPMXModel(
       depthTest: true
     });
 
+    // Apply custom anime studio face & body lighting shader
+    const isFace = isFaceMaterial(matName);
+    applyEvelynLightingShader(standardMat, isFace);
+
     materials.push(standardMat);
   }
 
@@ -379,8 +384,16 @@ export async function loadEvelynPMXModel(
     mesh.bind(skeleton);
   }
 
+  // Preserve native PMX rigid bodies and joint constraints for MMD physics simulation
+  const pmxPhysicsData = {
+    rigidBodies: data.rigidBodies || [],
+    constraints: data.constraints || []
+  };
+  mesh.userData.pmxPhysics = pmxPhysicsData;
+
   const rootGroup = new THREE.Group();
   rootGroup.name = 'Evelyn_PMX_Root';
+  rootGroup.userData.pmxPhysics = pmxPhysicsData;
   rootGroup.add(mesh);
 
   return rootGroup;

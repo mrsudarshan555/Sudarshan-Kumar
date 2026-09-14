@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { AssistantStatus, CharacterTransform, CharacterLockState } from '../../types';
+import { createSafeWebGLRenderer, isWebGLSupported } from './webglUtils';
+import { MayraOrb } from './MayraOrb';
 
 export interface Character3DRendererProps {
   status: AssistantStatus;
@@ -175,6 +177,7 @@ export const Character3DRenderer: React.FC<Character3DRendererProps> = ({
   const auraParticlesRef = useRef<THREE.Points | null>(null);
   const floorRingsRef = useRef<THREE.Group | null>(null);
   const reqIdRef = useRef<number>(0);
+  const [hasWebGlError, setHasWebGlError] = useState<boolean>(() => !isWebGLSupported());
 
   // Status and transform refs for 60fps render loop
   const statusRef = useRef<AssistantStatus>(status);
@@ -195,6 +198,10 @@ export const Character3DRenderer: React.FC<Character3DRendererProps> = ({
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
+    if (!isWebGLSupported()) {
+      setHasWebGlError(true);
+      return;
+    }
 
     const width = containerRef.current.clientWidth || 360;
     const height = containerRef.current.clientHeight || 420;
@@ -208,13 +215,16 @@ export const Character3DRenderer: React.FC<Character3DRendererProps> = ({
     camera.position.set(0, 0.15, 3.4);
     cameraRef.current = camera;
 
-    // 3. WebGL Renderer
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-      antialias: true,
-      powerPreference: 'high-performance'
-    });
+    // 3. Safe WebGL Renderer with progressive fallbacks
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = createSafeWebGLRenderer(canvasRef.current);
+    } catch (err) {
+      console.warn('[Character3DRenderer] WebGL context failed to initialize:', err);
+      setHasWebGlError(true);
+      return;
+    }
+
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -852,9 +862,28 @@ export const Character3DRenderer: React.FC<Character3DRendererProps> = ({
     return () => {
       cancelAnimationFrame(reqIdRef.current);
       resizeObserver.disconnect();
-      renderer.dispose();
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
     };
   }, []);
+
+  if (hasWebGlError) {
+    return (
+      <div className="relative w-full h-full min-h-[320px] flex flex-col items-center justify-center select-none p-4">
+        <MayraOrb
+          style="electric_plasma"
+          color="spectrum"
+          size={210}
+          status={status}
+          interactive={true}
+        />
+        <span className="text-[10px] text-slate-400 font-sans mt-2">
+          ✦ 2D Quantum Core Active (Optimized Canvas)
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div

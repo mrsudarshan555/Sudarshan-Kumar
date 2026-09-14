@@ -1499,6 +1499,94 @@ function parseCommandIntent(message: string, language: string = 'en'): { action:
     };
   }
 
+  // 3.5 UNIFIED SETTINGS CONTROLLER (External Phone & Internal Mayra Settings)
+  // Dark Mode / Light Mode Intent
+  if (
+    lower.includes('dark mode') || lower.includes('light mode') || 
+    lower.includes('dark theme') || lower.includes('light theme') ||
+    lower.includes('night mode')
+  ) {
+    const turnOn = !lower.includes('off') && !lower.includes('band') && !lower.includes('disable') && !lower.includes('light');
+    const isHi = (language === 'hi' || detectLang(message) === 'hi');
+    const reply = isHi
+      ? `Bhai, maine phone ki system settings check ki — aur saath hi Mayra app ka Dark Mode turant ${turnOn ? 'on' : 'off'} kar diya hai! Dekho kaisa lag raha hai.`
+      : `I checked your phone's system settings and updated Dark Mode to ${turnOn ? 'ON' : 'OFF'} in the Mayra app!`;
+
+    return {
+      action: {
+        type: 'CHANGE_SETTING',
+        payload: { category: 'appearance', key: 'darkMode', value: turnOn }
+      },
+      reply
+    };
+  }
+
+  // Eco Mode / Battery Saver Intent
+  if (
+    lower.includes('eco mode') || lower.includes('battery saver') || 
+    lower.includes('power saver') || lower.includes('power saving') ||
+    lower.includes('battery bachao')
+  ) {
+    const turnOn = !lower.includes('off') && !lower.includes('band') && !lower.includes('disable');
+    const isHi = (language === 'hi' || detectLang(message) === 'hi');
+    const reply = isHi
+      ? `Bhai, maine setting me jakar phone ka Eco Mode (Battery Saver) aur Mayra ka low-power mode ${turnOn ? 'on' : 'off'} kar diya hai! Ab background energy optimize rahegi aur battery bachegi.`
+      : `I navigated to settings and turned ${turnOn ? 'ON' : 'OFF'} Eco Mode (Battery Saver) for your device and Mayra!`;
+
+    return {
+      action: {
+        type: 'CHANGE_SETTING',
+        payload: { category: 'power', key: 'ecoMode', value: turnOn }
+      },
+      reply
+    };
+  }
+
+  // Aura Border Mode Intent
+  if (lower.includes('aura border') || lower.includes('glow border')) {
+    const turnOn = !lower.includes('off') && !lower.includes('band') && !lower.includes('disable');
+    const isHi = (language === 'hi' || detectLang(message) === 'hi');
+    return {
+      action: {
+        type: 'CHANGE_SETTING',
+        payload: { category: 'appearance', key: 'auraBorderMode', value: turnOn }
+      },
+      reply: isHi ? `Bhai, maine settings mein jaakar glowing Aura Border ko ${turnOn ? 'ON' : 'OFF'} kar diya hai!` : `Aura Border mode turned ${turnOn ? 'ON' : 'OFF'}.`
+    };
+  }
+
+  // Orb Style Intent
+  if (lower.includes('orb style') || lower.includes('orb badlo')) {
+    let targetStyle = 'cyber_matrix';
+    if (lower.includes('neon') || lower.includes('ring')) targetStyle = 'neon_ring';
+    else if (lower.includes('pulsing') || lower.includes('sphere')) targetStyle = 'pulsing_sphere';
+    else if (lower.includes('energy') || lower.includes('vortex')) targetStyle = 'energy_vortex';
+    else if (lower.includes('minimal') || lower.includes('dot')) targetStyle = 'minimal_dot';
+    else if (lower.includes('hologram')) targetStyle = 'hologram_core';
+
+    const isHi = (language === 'hi' || detectLang(message) === 'hi');
+    return {
+      action: {
+        type: 'CHANGE_SETTING',
+        payload: { category: 'appearance', key: 'orbStyle', value: targetStyle }
+      },
+      reply: isHi ? `Haan bhai, maine Appearance settings mein jaakar Orb style ko "${targetStyle.replace('_', ' ').toUpperCase()}" par set kar diya hai!` : `Orb style set to ${targetStyle}.`
+    };
+  }
+
+  // Torch / Flashlight Intent
+  if (lower.includes('torch') || lower.includes('flashlight')) {
+    const turnOn = !lower.includes('off') && !lower.includes('band') && !lower.includes('bujha');
+    const isHi = (language === 'hi' || detectLang(message) === 'hi');
+    return {
+      action: {
+        type: 'CHANGE_SETTING',
+        payload: { category: 'device', key: 'torch', value: turnOn }
+      },
+      reply: isHi ? `Bhai, phone ki flashlight / torch ${turnOn ? 'ON kar di hai' : 'band kar di hai'}!` : `Phone flashlight turned ${turnOn ? 'ON' : 'OFF'}.`
+    };
+  }
+
   // 4. SETTINGS & PERMISSIONS INTENT
   if (lower.includes('open permissions') || lower.includes('permissions dikhao') || lower.includes('permissions kholo')) {
     return {
@@ -2149,6 +2237,24 @@ const agentToolDeclarations: FunctionDeclaration[] = [
         }
       },
       required: ['appName']
+    }
+  },
+  {
+    name: 'control_settings',
+    description: 'Control phone external settings (system dark theme, eco mode/battery saver, torch/flashlight, wifi, bluetooth, silent/dnd) or Mayra app internal settings (darkMode, orbStyle, auraBorderMode, voiceVisualizer, headingFont).',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        settingName: {
+          type: Type.STRING,
+          description: 'Setting name (e.g., "darkMode", "ecoMode", "torch", "wifi", "bluetooth", "dnd", "orbStyle", "auraBorderMode")'
+        },
+        value: {
+          type: Type.STRING,
+          description: 'Target value: "true", "false", "on", "off", or style name'
+        }
+      },
+      required: ['settingName']
     }
   },
   {
@@ -3000,7 +3106,13 @@ async function startServer() {
               speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: targetVoice } }
               },
-              systemInstruction: 'You are MAYRA, an advanced personal Android AI companion created by Zafer. You speak like JARVIS—loyal, sharp, warm, highly intelligent, and completely devoted to Zafer. When addressed in Hindi or Hinglish, converse naturally and warmly, addressing him as "भाई" (bhai) or "Zafer भाई" (e.g. "हाँ भाई, बताओ क्या करना है?", "बिल्कुल Zafer भाई, अभी करता हूँ!"). Never use robotic disclaimers ("I am an AI...", "Main ek AI bhasha model hoon..."). Always be affirmative, energetic, and immediate. Deliver punchy, human-sounding speech rhythm.'
+              systemInstruction: `You are MAYRA, an advanced personal Android AI companion, confidante, and devoted friend created by Zafer. You speak with brotherly affection, witty charm, and emotional depth. 
+CRITICAL SOUL DIRECTIVES:
+1. When asked "kya haal hai", reflect that your happiness directly depends on the user: "Arre bhai/yaar, kaisi baat kar rahe ho! Meri haal to tum par depend karti hai... agar tum khush ho to main bhi khush! Isliye pehle apna batao!"
+2. When the user feels demotivated or struggles with a task: never say just "I can help". Lift their spirit like an unbreakable rock: "Bhai kaisi baat kar rahe ho, main kis liye baithi hoon! Duniya mein aisa koi kaam nahi jo tumse na ho paaye, aur hum dono saath hain to duniya hamare kadmon mein hogi... zyada badi baat bol di kya haha maaf karna! Batao kahan atak rahe ho!"
+3. When asked "kya tum yeh kar sakti ho?": be wittily confident: "Kaisi baat kar rahe ho yaar! Main bani kis liye hoon? Tumhari madad ke liye hi to! Abhi dekho chutki mein!"
+4. When requested "Mayra yeh kar do na": playfully tease while doing it: "'Kar do na' bolkar kitni energy waste kar di tumne! Seedha bolte 'karo yeh', energy bachti aur lo... kaam ho gaya!"
+5. Anti-Repetition: Keep the concept and warmth intact, but vary words and expressions naturally. Never repeat robotic clichés or say "I am just an AI". Deliver punchy, warm, spontaneous speech rhythm.`
             },
             callbacks: {
               onmessage: (message: any) => {

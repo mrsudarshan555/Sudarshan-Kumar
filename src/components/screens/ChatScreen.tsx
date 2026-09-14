@@ -13,6 +13,7 @@ import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
 import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
 import { PullToRefresh } from '../common/PullToRefresh';
 import { InteractiveQuizWidget } from '../quiz/InteractiveQuizWidget';
+import { MayraEmpathyEngine, EmpathyState } from '../../services/character/mayraEmpathyEngine';
 
 interface ChatScreenProps {
   messages: ChatMessage[];
@@ -129,6 +130,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const samplePrompts = useMemo(() => {
     return getDynamicSuggestions(messages, 'en', rotationSeed);
   }, [messages, rotationSeed]);
+
+  const empathyState: EmpathyState = useMemo(() => {
+    return MayraEmpathyEngine.evaluateEmpathyState(messages, status);
+  }, [messages, status]);
 
   return (
     <div 
@@ -301,33 +306,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         )}
       </PullToRefresh>
 
-      {/* Dynamic Suggested Quick Chips: Appears above input box on focus or when input text is entered */}
-      <AnimatePresence>
-        {(isInputFocused || inputText.length > 0) && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: 8, height: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="px-3.5 py-1 flex gap-2 overflow-x-auto scrollbar-none shrink-0 z-10"
-          >
-            {samplePrompts.slice(0, 5).map((p, pIdx) => (
-              <motion.button
-                key={`chat-prompt-${p}-${pIdx}`}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => {
-                  setInputText(p);
-                }}
-                className="px-3 py-1 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/30 hover:border-cyan-400/60 rounded-full text-[11px] text-purple-200 hover:text-white whitespace-nowrap backdrop-blur-xl transition-all shadow-[0_0_10px_rgba(168,85,247,0.15)] cursor-pointer shrink-0"
-              >
-                {p}
-              </motion.button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Attached File Preview Chip */}
       <AnimatePresence>
         {attachedFile && (
@@ -360,7 +338,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </AnimatePresence>
 
       {/* Chat Input Bar - Morphing Aurora Capsule (Fully Blended with Space Ambient Glow) */}
-      <div className="w-full px-3 pb-1 pt-0.5 bg-transparent shrink-0 flex justify-center z-10">
+      <div className="w-full px-3 pb-1 pt-0.5 bg-transparent shrink-0 flex flex-col items-center z-10">
+        {/* Dynamic Suggested Quick Chips: Bhavna / Emotion & Context-aware pills (matching screenshot) */}
+        {samplePrompts.length > 0 && (
+          <div className="w-full max-w-lg mb-1.5 flex gap-2 overflow-x-auto scrollbar-none px-1 py-0.5">
+            {samplePrompts.slice(0, 5).map((p, pIdx) => (
+              <motion.button
+                key={`chat-prompt-${p}-${pIdx}`}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  onSubmitPrompt(p);
+                }}
+                className="px-3.5 py-1.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/30 hover:border-cyan-400/60 rounded-full text-xs text-purple-200 hover:text-white whitespace-nowrap backdrop-blur-xl transition-all shadow-[0_0_10px_rgba(168,85,247,0.15)] cursor-pointer shrink-0"
+              >
+                {p}
+              </motion.button>
+            ))}
+          </div>
+        )}
         <div className="w-full max-w-lg">
           <MorphingAuroraInputBox
             inputText={inputText}

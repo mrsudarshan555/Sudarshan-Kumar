@@ -18,6 +18,7 @@ import { StagePhysicsEngine } from '../../services/stage/stagePhysicsEngine';
 import { UserAccount } from '../../types/auth';
 import { ScreenShareHUD } from './ScreenShareHUD';
 import { ScreenObserverEngine } from '../../services/screen/ScreenObserverEngine';
+import { MayraEmpathyEngine, EmpathyState } from '../../services/character/mayraEmpathyEngine';
 import { 
   Settings as SettingsIcon, Send, Paperclip, 
   Sparkles, ScreenShare, Lock, Unlock, FileText, 
@@ -308,6 +309,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     setAttachedFile(null);
   };
 
+  // Emotional Intelligence State & Multi-turn Empathy Analysis
+  const empathyState: EmpathyState = useMemo(() => {
+    return MayraEmpathyEngine.evaluateEmpathyState(
+      messages || [],
+      status,
+      isProactivePromptActive
+    );
+  }, [messages, status, isProactivePromptActive]);
+
   const getAssistantMessage = () => {
     switch (status) {
       case 'SPEAKING':
@@ -450,6 +460,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       ) : (
         <MayraAvatar
           status={status}
+          emotion={empathyState.emotion}
           scaleMultiplier={transform.zoom || 1.0}
           characterZoom={100}
           characterSkinTone={assistantConfig?.characterSkinTone ?? 50}
@@ -780,34 +791,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
             <Sparkles className="w-3 h-3 text-cyan-400 shrink-0 ml-2 animate-spin" />
           </motion.div>
-        ) : (
-          /* Suggestion Chips: Fluidly slides into view above chat input when focused or active */
-          <AnimatePresence>
-            {(isInputFocused || inputText.length > 0) && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: 'auto' }}
-                exit={{ opacity: 0, y: 8, height: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-sm flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 scrollbar-none"
-              >
-                {quickPrompts.map((prompt, pIdx) => (
-                  <motion.button
-                    key={`quick-prompt-${prompt}-${pIdx}`}
-                    whileHover={{ scale: 1.05, y: -1 }}
-                    whileTap={{ scale: 0.94 }}
-                    onClick={() => {
-                      setInputText(prompt);
-                    }}
-                    className="px-3 py-1.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/30 hover:border-cyan-400/60 rounded-full text-[11px] text-purple-200 hover:text-white whitespace-nowrap backdrop-blur-xl transition-all shadow-[0_0_10px_rgba(168,85,247,0.15)] cursor-pointer shrink-0"
-                  >
-                    {prompt}
-                  </motion.button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
+        ) : isProactivePromptActive ? (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.96 }}
+            className="w-full max-w-sm px-3 py-1.5 rounded-xl bg-purple-950/60 border border-purple-500/40 backdrop-blur-xl flex items-center justify-between shadow-lg"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0 animate-pulse" />
+              <p className="text-xs text-purple-100 truncate">
+                "Shant kyun ho? Chalo kuch naya try karte hain!"
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setIsProactivePromptActive(false);
+                onSubmitPrompt("Kuch interesting batao ya naya idea do");
+              }}
+              className="px-2 py-0.5 rounded-lg bg-purple-500/30 hover:bg-purple-500/50 text-[10px] text-purple-200 font-mono shrink-0 ml-2 cursor-pointer transition-colors"
+            >
+              Reply
+            </button>
+          </motion.div>
+        ) : null}
 
         {/* Hidden File Input */}
         <input

@@ -25,6 +25,10 @@ import {
   RAW_TEXTURE_URLS, 
   loadEvelynPMXModel 
 } from './pmxModelLoader';
+import { MMDPhysics } from 'three-stdlib';
+import { getAmmo } from './ammoLoader';
+import { MayraOrb } from './MayraOrb';
+import { isWebGLSupported, createSafeWebGLRenderer, WebGLFallbackBoundary } from './webglUtils';
 
 // Priority Model URLs with automatic failover (strictly local)
 export const MODEL_CANDIDATE_URLS = [
@@ -179,8 +183,8 @@ function ModelRenderer({
 
   const bonesMap = useMemo<CharacterBonesMap>(() => {
     return {
-      center: bones.upperBody?.parent?.name || 'センター',
-      waist: '下半身',
+      center: bones.center?.name || bones.upperBody?.parent?.name || 'センター',
+      waist: bones.waist?.name || '下半身',
       upperBody: bones.upperBody?.name || '上半身',
       upperBody2: bones.upperBody2?.name || '上半身2',
       neck: bones.neck?.name || '首',
@@ -198,6 +202,7 @@ function ModelRenderer({
 
   const hairBonesL = useMemo(() => bones.hairBonesL.map((b) => b.name).filter(Boolean), [bones]);
   const hairBonesR = useMemo(() => bones.hairBonesR.map((b) => b.name).filter(Boolean), [bones]);
+  const clothingBones = useMemo(() => (bones.clothingBones || []).map((b) => b.name).filter(Boolean), [bones]);
 
   // Master Orchestrator Instance
   const orchestrator = useMemo(() => {
@@ -207,7 +212,8 @@ function ModelRenderer({
       morphMap,
       bonesMap,
       hairBonesL,
-      hairBonesR
+      hairBonesR,
+      clothingBones
     );
 
     // Bake reference base pose (natural arm slope, elbows, wrists) into rest pose
@@ -216,7 +222,58 @@ function ModelRenderer({
     });
 
     return orch;
-  }, [modelBoneContainer, morphConsumer, morphMap, bonesMap, hairBonesL, hairBonesR, targetBaseRotations]);
+  }, [modelBoneContainer, morphConsumer, morphMap, bonesMap, hairBonesL, hairBonesR, clothingBones, targetBaseRotations]);
+
+  // Native MMD Rigid Body & Constraint Physics Simulation
+  const physicsRef = useRef<MMDPhysics | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function initNativeMMDPhysics() {
+      let skinnedMesh: THREE.SkinnedMesh | null = null;
+      modelScene.traverse((child) => {
+        if (!skinnedMesh && (child as THREE.SkinnedMesh).isSkinnedMesh) {
+          skinnedMesh = child as THREE.SkinnedMesh;
+        }
+      });
+
+      const pmxData = (skinnedMesh as any)?.userData?.pmxPhysics || (modelScene as any)?.userData?.pmxPhysics;
+      if (!pmxData || !pmxData.rigidBodies || pmxData.rigidBodies.length === 0 || !skinnedMesh) {
+        return;
+      }
+
+      const ammo = await getAmmo();
+      if (!ammo || !isMounted) return;
+
+      try {
+        const physicsInstance = new MMDPhysics(
+          skinnedMesh,
+          pmxData.rigidBodies,
+          pmxData.constraints || [],
+          {
+            unitStep: 1 / 60,
+            maxStepNum: 3,
+            gravity: new THREE.Vector3(0, -9.8 * 4.0, 0)
+          }
+        );
+        physicsRef.current = physicsInstance;
+        orchestrator.setHasNativePhysics(true);
+        console.log(`[MayraAvatar] Native MMD Physics simulation activated (${pmxData.rigidBodies.length} rigid bodies, ${pmxData.constraints?.length || 0} joints).`);
+      } catch (err) {
+        console.warn('[MayraAvatar] Failed to initialize MMDPhysics:', err);
+        orchestrator.setHasNativePhysics(false);
+      }
+    }
+
+    initNativeMMDPhysics();
+
+    return () => {
+      isMounted = false;
+      physicsRef.current = null;
+      orchestrator.setHasNativePhysics(false);
+    };
+  }, [modelScene, orchestrator]);
 
   const renderedFramesRef = useRef(0);
 
@@ -268,6 +325,15 @@ function ModelRenderer({
       userLookTarget: state.camera.position,
       audioAnalyser: null
     });
+
+    // 2b. Native MMD Physics Step (Hair, Sleeves & Cloth Simulation)
+    if (physicsRef.current) {
+      try {
+        physicsRef.current.update(clampedDelta);
+      } catch (physErr) {
+        // Safe catch
+      }
+    }
 
     // 3. Flush morph targets to mesh morphTargetInfluences
     morphConsumer.flush(morphsByChannel, clampedDelta);
@@ -334,7 +400,8 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
   onTriggerVoice
 }) => {
   const [modelScene, setModelScene] = useState<THREE.Group | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(!cachedRawSourceTemplate);
+  const [isWebGlActive, setIsWebGlActive] = useState<boolean>(() => isWebGLSupported());
+  const [isLoading, setIsLoading] = useState<boolean>(() => isWebGLSupported() && !cachedRawSourceTemplate);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [attemptCount, setAttemptCount] = useState<number>(0);
   const [cameraConfig, setCameraConfig] = useState<{
@@ -384,15 +451,15 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
       const scaleFactor = (actualHeight > 0.001 ? (TARGET_HEIGHT / actualHeight) : 1.0) * effectiveZoom;
       scene.scale.setScalar(scaleFactor);
 
-      // Align chest/collar level directly to origin so chest-up (bust) portrait is framed cleanly
-      const chestY = box.max.y - (actualHeight * 0.24);
+      // Align chest/collar level directly to origin so chest-up (bust) portrait is framed cleanly with headroom for breathing
+      const chestY = box.max.y - (actualHeight * 0.255);
       scene.position.x = -center.x * scaleFactor;
       scene.position.y = -chestY * scaleFactor;
       scene.position.z = -center.z * scaleFactor;
       scene.rotation.set(0, 0, 0);
 
       // 3. CAMERA CALIBRATION
-      const CAMERA_DISTANCE = 1.75;
+      const CAMERA_DISTANCE = 1.82;
       const fov = 40;
 
       setCameraConfig({
@@ -421,6 +488,23 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
     const instantiateFreshModel = (sourceTemplate: THREE.Group) => {
       // Clones a fresh, unmutated skeleton & hierarchy with zero previous rotations
       const freshInstance = SkeletonUtils.clone(sourceTemplate) as THREE.Group;
+      if (sourceTemplate.userData?.pmxPhysics) {
+        freshInstance.userData.pmxPhysics = sourceTemplate.userData.pmxPhysics;
+      }
+
+      // Ensure skinnedMesh also retains physics metadata
+      let srcMesh: THREE.SkinnedMesh | null = null;
+      let freshMesh: THREE.SkinnedMesh | null = null;
+      sourceTemplate.traverse((c) => {
+        if (!srcMesh && (c as THREE.SkinnedMesh).isSkinnedMesh) srcMesh = c as THREE.SkinnedMesh;
+      });
+      freshInstance.traverse((c) => {
+        if (!freshMesh && (c as THREE.SkinnedMesh).isSkinnedMesh) freshMesh = c as THREE.SkinnedMesh;
+      });
+      if (srcMesh?.userData?.pmxPhysics && freshMesh) {
+        (freshMesh as any).userData.pmxPhysics = (srcMesh as any).userData.pmxPhysics;
+      }
+
       configureSceneHierarchy(freshInstance);
       setModelScene(freshInstance);
       setIsLoading(false);
@@ -472,6 +556,11 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
     };
 
     const loadCharacter = async () => {
+      if (!isWebGlActive) {
+        setIsLoading(false);
+        return;
+      }
+
       if (isMounted && !hasLoadedOnce) {
         setIsLoading(true);
         setLoadError(null);
@@ -501,12 +590,13 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [attemptCount, effectiveZoom]);
+  }, [attemptCount, effectiveZoom, isWebGlActive]);
 
   const handleRetry = () => {
     cachedRawSourceTemplate = null;
     hasLoadedOnce = false;
     setModelScene(null);
+    setIsWebGlActive(isWebGLSupported());
     setAttemptCount(prev => prev + 1);
   };
 
@@ -518,93 +608,150 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
         <div className="w-[240px] h-[240px] rounded-full bg-indigo-500/10 blur-2xl -mt-12" />
       </div>
 
-      {/* 1. Loading Overlay */}
-      {isLoading && !hasLoadedOnce && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#050711]/90 backdrop-blur-sm pointer-events-none transition-opacity">
-          <div className="flex flex-col items-center gap-3 p-5 bg-[#080C1E]/95 border border-cyan-500/30 rounded-3xl shadow-[0_0_25px_rgba(6,182,212,0.25)] max-w-xs w-full mx-4 text-center">
-            <div className="relative">
-              <div className="w-10 h-10 border-2 border-cyan-400/20 border-t-cyan-400 rounded-full animate-spin" />
-              <Sparkles className="w-4 h-4 text-cyan-300 absolute inset-0 m-auto animate-pulse" />
-            </div>
-            <div>
-              <p className="text-sm font-sans font-semibold text-white tracking-wide">Starting...</p>
-              <p className="text-[10px] text-cyan-400/70 font-sans mt-0.5">Initializing AI Engine</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Error Overlay */}
-      {loadError && !isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#050711]/95 p-4 text-center">
-          <div className="p-5 bg-[#0D1127] border border-rose-500/40 rounded-3xl text-slate-200 text-xs font-mono max-w-sm w-full space-y-3 shadow-[0_0_25px_rgba(244,63,94,0.2)]">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
-              <AlertCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-bold text-white text-sm">Character Unavailable</p>
-              <p className="text-rose-400/80 text-[11px] mt-1">{loadError}</p>
-            </div>
-            <button
-              onClick={handleRetry}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs font-bold font-mono uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Retry
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Three.js Canvas Scene */}
-      {modelScene && (
-        <Canvas
-          key={`avatar-canvas-${cameraConfig.fov}-${cameraConfig.position[2]}`}
-          camera={{
-            position: cameraConfig.position,
-            fov: cameraConfig.fov,
-            near: 0.1,
-            far: 1000
-          }}
-          className="w-full h-full touch-none"
-          onCreated={({ gl, camera }) => {
-            camera.lookAt(...cameraConfig.target);
-            gl.outputColorSpace = THREE.SRGBColorSpace;
-            gl.toneMapping = THREE.LinearToneMapping;
-            gl.toneMappingExposure = 1.18;
-          }}
-          gl={{
-            antialias: true,
-            alpha: true,
-            powerPreference: 'high-performance'
-          }}
+      {/* 1. Graceful 2D Fallback when WebGL is unavailable on device/browser */}
+      {!isWebGlActive ? (
+        <div 
+          className="relative z-10 flex flex-col items-center justify-center cursor-pointer p-4 select-none"
+          onClick={onTriggerVoice}
         >
-          {/* Reference Soft Lighting Rig: Natural Ambient & Hemisphere base + gentle front-top key */}
-          {/* 1. Base Soft Ambient Light (warm natural illumination for character +18% brightness) */}
-          <ambientLight intensity={0.80} color="#fff8f2" />
+          <div className="relative flex flex-col items-center gap-4">
+            <div className="transition-transform active:scale-95 duration-200">
+              <MayraOrb
+                style="electric_plasma"
+                color="spectrum"
+                size={220}
+                status={status}
+                interactive={true}
+                onClick={onTriggerVoice}
+              />
+            </div>
+            <div className="flex flex-col items-center select-none text-center px-4">
+              <span className="text-xs font-mono tracking-widest text-cyan-300 font-bold uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.6)]">
+                {status === 'LISTENING' ? 'LISTENING...' : status === 'SPEAKING' ? 'MAYRA SPEAKING' : status === 'THINKING' ? 'REASONING...' : 'SAY "HEY MAYRA" OR TAP'}
+              </span>
+              <span className="text-[10px] text-slate-400 font-sans mt-0.5">
+                ✦ 2D Quantum Core Active (Optimized Canvas)
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* 2. Loading Overlay */}
+          {isLoading && !hasLoadedOnce && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#050711]/90 backdrop-blur-sm pointer-events-none transition-opacity">
+              <div className="flex flex-col items-center gap-3 p-5 bg-[#080C1E]/95 border border-cyan-500/30 rounded-3xl shadow-[0_0_25px_rgba(6,182,212,0.25)] max-w-xs w-full mx-4 text-center">
+                <div className="relative">
+                  <div className="w-10 h-10 border-2 border-cyan-400/20 border-t-cyan-400 rounded-full animate-spin" />
+                  <Sparkles className="w-4 h-4 text-cyan-300 absolute inset-0 m-auto animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-sm font-sans font-semibold text-white tracking-wide">Starting...</p>
+                  <p className="text-[10px] text-cyan-400/70 font-sans mt-0.5">Initializing AI Engine</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {/* 2. Soft Sky/Ground Hemisphere Light (natural gentle warmth, zero harsh contrast) */}
-          <hemisphereLight color="#fff4ec" groundColor="#3a302a" intensity={0.44} />
+          {/* 3. Error Overlay */}
+          {loadError && !isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#050711]/95 p-4 text-center">
+              <div className="p-5 bg-[#0D1127] border border-rose-500/40 rounded-3xl text-slate-200 text-xs font-mono max-w-sm w-full space-y-3 shadow-[0_0_25px_rgba(244,63,94,0.2)]">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">Character Unavailable</p>
+                  <p className="text-rose-400/80 text-[11px] mt-1">{loadError}</p>
+                </div>
+                <button
+                  onClick={handleRetry}
+                  className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs font-bold font-mono uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Retry
+                </button>
+              </div>
+            </div>
+          )}
 
-          {/* 3. Single Gentle Front-Top Key Light (natural under-nose shadow and subtle chin depth, zero hot spots) */}
-          <directionalLight position={[0.2, 1.8, 2.2]} intensity={0.52} color="#fffcf7" />
+          {/* 4. Three.js Canvas Scene guarded by WebGLFallbackBoundary */}
+          {modelScene && (
+            <WebGLFallbackBoundary
+              fallback={
+                <div 
+                  className="relative z-10 flex flex-col items-center justify-center cursor-pointer p-4 select-none"
+                  onClick={onTriggerVoice}
+                >
+                  <div className="relative flex flex-col items-center gap-4">
+                    <MayraOrb
+                      style="electric_plasma"
+                      color="spectrum"
+                      size={220}
+                      status={status}
+                      interactive={true}
+                      onClick={onTriggerVoice}
+                    />
+                    <div className="flex flex-col items-center select-none text-center px-4">
+                      <span className="text-xs font-mono tracking-widest text-cyan-300 font-bold uppercase">
+                        {status === 'LISTENING' ? 'LISTENING...' : status === 'SPEAKING' ? 'MAYRA SPEAKING' : 'READY'}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-sans mt-0.5">
+                        ✦ 2D Quantum Core Active (Optimized Canvas)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              }
+              onError={(err) => {
+                console.warn('[MayraAvatar] WebGL canvas context failed at runtime, switching to 2D core:', err);
+                setIsWebGlActive(false);
+              }}
+            >
+              <Canvas
+                key={`avatar-canvas-${cameraConfig.fov}-${cameraConfig.position[2]}`}
+                camera={{
+                  position: cameraConfig.position,
+                  fov: cameraConfig.fov,
+                  near: 0.1,
+                  far: 1000
+                }}
+                className="w-full h-full touch-none"
+                onCreated={({ gl, camera }) => {
+                  camera.lookAt(...cameraConfig.target);
+                  gl.outputColorSpace = THREE.SRGBColorSpace;
+                  gl.toneMapping = THREE.LinearToneMapping;
+                  gl.toneMappingExposure = 1.18;
+                }}
+                gl={(defaultProps) => createSafeWebGLRenderer(defaultProps.canvas as HTMLCanvasElement)}
+              >
+                {/* Professional 6-Point Anime Studio Lighting Rig */}
+                <ambientLight intensity={0.56} color="#fff8f3" />
+                <hemisphereLight color="#f0f5ff" groundColor="#3a2e36" intensity={0.38} />
+                <directionalLight position={[-0.85, 1.7, 2.1]} intensity={0.58} color="#fffaf4" />
+                <directionalLight position={[1.1, 0.45, 1.8]} intensity={0.36} color="#ffebe4" />
+                <directionalLight position={[1.6, 1.8, -1.9]} intensity={0.68} color="#cbe4ff" />
+                <pointLight position={[0, 2.9, 0.35]} intensity={0.48} color="#fffcf5" distance={6} decay={2} />
 
-          <ModelRenderer 
-            modelScene={modelScene} 
-            status={status} 
-            emotion={emotion}
-            lockState={lockState}
-            transform={transform}
-            characterSkinTone={characterSkinTone}
-          />
+                <ModelRenderer 
+                  modelScene={modelScene} 
+                  status={status} 
+                  emotion={emotion}
+                  lockState={lockState}
+                  transform={transform}
+                  characterSkinTone={characterSkinTone}
+                />
 
-          <OrbitControls
-            target={cameraConfig.target}
-            enabled={false}
-            enablePan={false}
-            enableZoom={false}
-            enableRotate={false}
-          />
-        </Canvas>
+                <OrbitControls
+                  target={cameraConfig.target}
+                  enabled={false}
+                  enablePan={false}
+                  enableZoom={false}
+                  enableRotate={false}
+                />
+              </Canvas>
+            </WebGLFallbackBoundary>
+          )}
+        </>
       )}
     </div>
   );

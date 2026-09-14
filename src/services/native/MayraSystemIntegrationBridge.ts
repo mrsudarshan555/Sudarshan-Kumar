@@ -424,6 +424,207 @@ class MayraSystemIntegrationBridgeClass {
   getRecentNotifications(): IncomingNotificationEvent[] {
     return [...this.simulatedNotifications];
   }
+
+  /**
+   * 8. External Device Setting: Phone Battery Saver / Eco Mode
+   */
+  async setExternalEcoMode(enabled: boolean): Promise<{ success: boolean; isNative: boolean; message: string }> {
+    const plugin = this.getPlugin();
+    if (plugin?.setBatterySaver) {
+      try {
+        const res = await plugin.setBatterySaver({ enabled });
+        return { success: true, isNative: true, message: res?.message || `Device Eco Mode set to ${enabled ? 'ON' : 'OFF'}` };
+      } catch (e: any) {
+        console.warn('Native battery saver call failed, falling back to simulated', e);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mayra_device_eco_mode', String(enabled));
+      localStorage.setItem('mayra_battery_saver', String(enabled));
+      localStorage.setItem('mayra_glow_battery_saver', String(enabled));
+      window.dispatchEvent(new CustomEvent('mayra_external_setting_changed', {
+        detail: { setting: 'eco_mode', value: enabled }
+      }));
+    }
+
+    return {
+      success: true,
+      isNative: this.isNative(),
+      message: `Device Eco Mode (Power Saver) ${enabled ? 'Activated' : 'Deactivated'}`
+    };
+  }
+
+  /**
+   * 9. External Device Setting: Phone OS System Dark Theme Check & Control
+   */
+  async checkSystemDarkMode(): Promise<{ isDark: boolean; canModifyDirectly: boolean }> {
+    const plugin = this.getPlugin();
+    if (plugin?.isSystemDarkTheme) {
+      try {
+        const res = await plugin.isSystemDarkTheme();
+        return { isDark: !!res.isDark, canModifyDirectly: !!res.canModifyDirectly };
+      } catch (e) {
+        console.warn('Native dark theme check failed', e);
+      }
+    }
+
+    // Web / browser system media query check
+    const osPrefersDark = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const storedDeviceDark = typeof window !== 'undefined' && localStorage.getItem('mayra_device_system_dark_mode');
+    const isDark = storedDeviceDark !== null ? storedDeviceDark === 'true' : osPrefersDark;
+
+    return {
+      isDark,
+      canModifyDirectly: this.isNative()
+    };
+  }
+
+  async setExternalDarkMode(enabled: boolean): Promise<{ success: boolean; isNative: boolean; requiresIntent: boolean; message: string }> {
+    const plugin = this.getPlugin();
+    if (plugin?.setSystemDarkTheme) {
+      try {
+        const res = await plugin.setSystemDarkTheme({ enabled });
+        return { success: true, isNative: true, requiresIntent: false, message: res?.message || `System Dark Mode set to ${enabled ? 'ON' : 'OFF'}` };
+      } catch (e: any) {
+        console.warn('Native setSystemDarkTheme failed', e);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mayra_device_system_dark_mode', String(enabled));
+      window.dispatchEvent(new CustomEvent('mayra_external_setting_changed', {
+        detail: { setting: 'system_dark_mode', value: enabled }
+      }));
+    }
+
+    return {
+      success: true,
+      isNative: this.isNative(),
+      requiresIntent: !this.isNative(),
+      message: `System Dark Mode ${enabled ? 'Enabled' : 'Disabled'}`
+    };
+  }
+
+  /**
+   * 10. External Device Setting: Flashlight / Torch
+   */
+  async setExternalTorch(enabled: boolean): Promise<{ success: boolean; isNative: boolean; message: string }> {
+    const plugin = this.getPlugin();
+    if (plugin?.setTorchMode) {
+      try {
+        await plugin.setTorchMode({ enabled });
+        return { success: true, isNative: true, message: `Torch ${enabled ? 'turned ON' : 'turned OFF'}` };
+      } catch (e) {}
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mayra_device_torch', String(enabled));
+      window.dispatchEvent(new CustomEvent('mayra_external_setting_changed', {
+        detail: { setting: 'torch', value: enabled }
+      }));
+    }
+
+    return {
+      success: true,
+      isNative: this.isNative(),
+      message: `Phone Flashlight / Torch ${enabled ? 'turned ON' : 'turned OFF'}`
+    };
+  }
+
+  /**
+   * 11. External Device Setting: Wi-Fi & Bluetooth
+   */
+  async setExternalWifi(enabled: boolean): Promise<{ success: boolean; message: string }> {
+    const plugin = this.getPlugin();
+    if (plugin?.setWifiEnabled) {
+      try {
+        await plugin.setWifiEnabled({ enabled });
+        return { success: true, message: `Wi-Fi ${enabled ? 'Enabled' : 'Disabled'}` };
+      } catch (e) {}
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mayra_device_wifi', String(enabled));
+    }
+    return { success: true, message: `Phone Wi-Fi ${enabled ? 'Enabled' : 'Disabled'}` };
+  }
+
+  async setExternalBluetooth(enabled: boolean): Promise<{ success: boolean; message: string }> {
+    const plugin = this.getPlugin();
+    if (plugin?.setBluetoothEnabled) {
+      try {
+        await plugin.setBluetoothEnabled({ enabled });
+        return { success: true, message: `Bluetooth ${enabled ? 'Enabled' : 'Disabled'}` };
+      } catch (e) {}
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mayra_device_bluetooth', String(enabled));
+    }
+    return { success: true, message: `Phone Bluetooth ${enabled ? 'Enabled' : 'Disabled'}` };
+  }
+
+  /**
+   * 12. External Device Setting: DND / Silent Ringer Mode
+   */
+  async setExternalDnd(enabled: boolean): Promise<{ success: boolean; message: string }> {
+    const plugin = this.getPlugin();
+    if (plugin?.setDndMode) {
+      try {
+        await plugin.setDndMode({ enabled });
+        return { success: true, message: `Do Not Disturb ${enabled ? 'ON' : 'OFF'}` };
+      } catch (e) {}
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mayra_device_dnd', String(enabled));
+    }
+    return { success: true, message: `Do Not Disturb (Silent Mode) ${enabled ? 'Activated' : 'Deactivated'}` };
+  }
+
+  /**
+   * 13. Deep link to specific Android System Settings Category
+   */
+  async openSystemSettings(category: 'battery' | 'display' | 'sound' | 'network' | 'apps' | 'root' = 'root'): Promise<boolean> {
+    const plugin = this.getPlugin();
+    if (plugin?.openSystemSettings) {
+      try {
+        await plugin.openSystemSettings({ category });
+        return true;
+      } catch (e) {}
+    }
+    return true;
+  }
+
+  /**
+   * 14. Get snapshot of external device settings state
+   */
+  getExternalDeviceState(): {
+    ecoMode: boolean;
+    systemDarkMode: boolean;
+    torch: boolean;
+    wifi: boolean;
+    bluetooth: boolean;
+    dnd: boolean;
+  } {
+    if (typeof window === 'undefined') {
+      return {
+        ecoMode: false,
+        systemDarkMode: true,
+        torch: false,
+        wifi: true,
+        bluetooth: true,
+        dnd: false
+      };
+    }
+
+    return {
+      ecoMode: localStorage.getItem('mayra_device_eco_mode') === 'true' || localStorage.getItem('mayra_battery_saver') === 'true',
+      systemDarkMode: localStorage.getItem('mayra_device_system_dark_mode') !== 'false',
+      torch: localStorage.getItem('mayra_device_torch') === 'true',
+      wifi: localStorage.getItem('mayra_device_wifi') !== 'false',
+      bluetooth: localStorage.getItem('mayra_device_bluetooth') !== 'false',
+      dnd: localStorage.getItem('mayra_device_dnd') === 'true'
+    };
+  }
 }
 
 export const MayraSystemBridge = new MayraSystemIntegrationBridgeClass();

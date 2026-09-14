@@ -145,6 +145,8 @@ export interface CharacterFacialFeatureMeshes {
 }
 
 export interface CharacterSkeletonBones {
+  center?: THREE.Object3D;
+  waist?: THREE.Object3D;
   head?: THREE.Object3D;
   neck?: THREE.Object3D;
   upperBody?: THREE.Object3D;
@@ -161,6 +163,7 @@ export interface CharacterSkeletonBones {
   fingersR: THREE.Object3D[];
   hairBonesL: THREE.Object3D[];
   hairBonesR: THREE.Object3D[];
+  clothingBones: THREE.Object3D[];
 }
 
 export interface MeshRestTransform {
@@ -184,7 +187,8 @@ export function buildCharacterBindings(modelScene: THREE.Group): {
     fingersL: [],
     fingersR: [],
     hairBonesL: [],
-    hairBonesR: []
+    hairBonesR: [],
+    clothingBones: []
   };
   const restRotations = new Map<THREE.Object3D, THREE.Euler>();
   const facialFeatures: CharacterFacialFeatureMeshes = {
@@ -258,6 +262,10 @@ export function buildCharacterBindings(modelScene: THREE.Group): {
       bones.upperBody2 = child;
     } else if (name === '上半身' || lower === 'upperbody' || lower === 'spine' || lower === 'spine.b') {
       bones.upperBody = child;
+    } else if (name === '下半身' || name === '腰' || lower === 'waist' || lower === 'hips' || lower === 'pelvis' || lower === 'lowerbody') {
+      bones.waist = child;
+    } else if (name === 'センター' || name === '全ての親' || lower === 'center' || lower === 'root' || lower === 'base') {
+      bones.center = child;
     } else if (name === '左肩' || lower === 'shoulder_l' || lower === 'leftshoulder' || lower === 'shoulder.l' || lower === 'l_shoulder') {
       bones.shoulderL = child;
     } else if (name === '右肩' || lower === 'shoulder_r' || lower === 'rightshoulder' || lower === 'shoulder.r' || lower === 'r_shoulder') {
@@ -286,6 +294,21 @@ export function buildCharacterBindings(modelScene: THREE.Group): {
       } else {
         bones.hairBonesR.push(child);
       }
+    } else if (
+      lower.includes('sleeve') ||
+      lower.includes('skirt') ||
+      lower.includes('ribbon') ||
+      lower.includes('tie') ||
+      lower.includes('cloth') ||
+      lower.includes('acc') ||
+      name.includes('袖') ||
+      name.includes('スカート') ||
+      name.includes('リボン') ||
+      name.includes('紐') ||
+      name.includes('服') ||
+      name.includes('裾')
+    ) {
+      bones.clothingBones.push(child);
     }
   });
 

@@ -32,16 +32,20 @@ import { MarkLIIToolsService } from '../services/markLII/markLIITools';
 import { MultiAgentSwarmCoordinator } from '../services/agent/multiAgentSwarm';
 import { ProactiveSmartGuardianEngine, ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEngine';
 import { ScreenObserverEngine } from '../services/screen/ScreenObserverEngine';
+import { MayraEmpathyEngine } from '../services/character/mayraEmpathyEngine';
+import { UnifiedSettingsManager } from '../services/settings/UnifiedSettingsManager';
+import { AppearanceConfig } from '../types';
 
 export interface UseMayraAssistantProps {
   personalConfig: UserPersonalConfig;
   assistantConfig: AssistantConfig;
+  appearanceConfig?: AppearanceConfig;
   memories?: MemoryItem[];
   onExecuteAction?: (action: AppAction) => void;
   onModeSwitch?: (mode: 'mayra' | 'stonicx') => void;
 }
 
-export function useMayraAssistant({ personalConfig, assistantConfig, memories = [], onExecuteAction, onModeSwitch }: UseMayraAssistantProps) {
+export function useMayraAssistant({ personalConfig, assistantConfig, appearanceConfig, memories = [], onExecuteAction, onModeSwitch }: UseMayraAssistantProps) {
   const [status, setStatus] = useState<AssistantStatus>('READY');
   const [isListeningMode, setIsListeningMode] = useState<boolean>(false);
   const [isPttActive, setIsPttActive] = useState<boolean>(false);
@@ -211,23 +215,56 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
     }
   }, []);
 
-  // Proactive Silence Check-in: Checks if user has been silent for 85-90 seconds during active session
+  // Proactive Emotional Silence Check-in: Checks if user has been silent during active session
+  // Analyzes emotion over recent turns to offer motivation, comfort, or creative anti-boredom questions
   useEffect(() => {
     if (assistantConfig.proactiveIdleCheckin === false) return;
 
     const idleInterval = setInterval(() => {
-      const isIdle = Date.now() - lastUserActivityRef.current >= 90000; // 90 seconds
+      // 28-30 seconds of quiet after last response
+      const isIdle = Date.now() - lastUserActivityRef.current >= 28000;
       if (
         isIdle &&
         !hasTriggeredIdleCheckinRef.current &&
         status === 'READY' &&
-        !isListeningModeRef.current
+        !isListeningModeRef.current &&
+        messages.length >= 2
       ) {
         hasTriggeredIdleCheckinRef.current = true;
         const currentLang = lastSpokenLanguageRef.current || currentLanguage;
-        const checkinPrompt = (currentLang === 'hi')
-          ? "Hey, aap itni der se shant ho gaye—sab theek hai na, ya kisi cheez mein madad chahiye?"
-          : "Hey, why did you go quiet? Anything I can help with?";
+        const userName = personalConfig.preferredName || personalConfig.fullName || 'Zafer';
+        
+        // Deep multi-turn empathy evaluation
+        const empathy = MayraEmpathyEngine.evaluateEmpathyState(messages, status, true);
+        MayraEmpathyEngine.markProactiveDelivered();
+
+        let checkinPrompt = '';
+        if (empathy.sentiment === 'demotivated') {
+          checkinPrompt = (currentLang === 'hi')
+            ? `Bhai ${userName}, aap thode shant ho gaye... Yaad rakhna, haar manne se safar rukta hai, ladne se nahi! Batao, kya atka raha hai? Hum milkar solution nikalenge.`
+            : `Hey ${userName}, you went quiet... Don't give up! Every challenge is a stepping stone. What's on your mind? Let's solve it together.`;
+        } else if (empathy.sentiment === 'sad') {
+          checkinPrompt = (currentLang === 'hi')
+            ? `${userName} bhai, aap shant lag rahe hain... Main hamesha yahin hoon aapke sath. Agar dil me koi bhi baat ho toh bejhijhak batao, dil halka ho jayega.`
+            : `${userName}, you seem a bit down and quiet... I'm right here with you. Whatever is on your mind, feel free to share.`;
+        } else if (empathy.sentiment === 'stressed') {
+          checkinPrompt = (currentLang === 'hi')
+            ? `Bhai, zyada tension mat lo. Ek lambi saans lo. Jo cheez pareshan kar rahi hai, usko step-by-step tod kar hal karte hain.`
+            : `Take a gentle breath, ${userName}. Let's break down whatever is stressing you into simple, easy steps.`;
+        } else if (empathy.sentiment === 'happy') {
+          checkinPrompt = (currentLang === 'hi')
+            ? `Aapki khushi dekh kar mera bhi din ban gaya ${userName} bhai! Aage ka kya plan socha hai?`
+            : `Seeing you so happy made my day ${userName}! What exciting thing are we tackling next?`;
+        } else if (empathy.sentiment === 'curious' || empathy.sentiment === 'ambitious') {
+          checkinPrompt = (currentLang === 'hi')
+            ? `Waise ${userName} bhai, jo hum discuss kar rahe the, uspar ek zabardast idea yaad aaya... Sunoge?`
+            : `By the way ${userName}, thinking about what we were discussing, a great idea struck me... Want to hear it?`;
+        } else {
+          // Anti-boredom proactive conversational spark
+          checkinPrompt = (currentLang === 'hi')
+            ? `Shanti acchi lagti hai ${userName} bhai, par agar thode bore feel kar rahe ho toh batao—ek bohot rochak sawal puchun ya ek naya idea discuss karein?`
+            : `Peace is great ${userName}, but if you're feeling a bit bored, want to hear a fascinating question or discuss a fun new idea?`;
+        }
 
         const checkinMsg: ChatMessage = {
           id: `msg-m-idle-${Date.now()}`,
@@ -243,12 +280,12 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
           () => setStatus('SPEAKING'),
           () => setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY')
         );
-        console.log('[MAYRA Assistant] Proactive silence check-in triggered in language:', currentLang);
+        console.log('[MAYRA Assistant] Proactive empathy check-in triggered:', empathy.sentiment, checkinPrompt);
       }
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(idleInterval);
-  }, [assistantConfig.proactiveIdleCheckin, status, currentLanguage]);
+  }, [assistantConfig.proactiveIdleCheckin, status, currentLanguage, messages, personalConfig]);
 
   // Feature C: Proactive Smart Guardian Live Subscription
   useEffect(() => {
@@ -630,6 +667,31 @@ export function useMayraAssistant({ personalConfig, assistantConfig, memories = 
           setStatus('READY');
         });
 
+        return;
+      }
+    }
+
+    // 0.04 UNIFIED SETTINGS CONTROLLER (External Phone Settings & Internal Mayra Settings)
+    if (!image && trimmed) {
+      const settingResult = await UnifiedSettingsManager.executeSettingCommand(
+        trimmed,
+        { appearance: appearanceConfig, assistant: assistantConfig },
+        detected
+      );
+
+      if (settingResult && settingResult.handled) {
+        if (settingResult.action && onExecuteAction) {
+          onExecuteAction(settingResult.action);
+        }
+        const assistantMsg: ChatMessage = {
+          id: `msg-m-setting-${Date.now()}`,
+          sender: 'mayra',
+          text: settingResult.reply,
+          timestamp: Date.now()
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+        setStatus('READY');
+        speakText(settingResult.reply, detected, handleSpeechStart, handleSpeechEnd);
         return;
       }
     }

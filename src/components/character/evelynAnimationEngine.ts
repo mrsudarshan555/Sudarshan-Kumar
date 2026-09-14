@@ -635,8 +635,27 @@ export class EvelynLipSyncEngine {
 }
 
 // ==========================================
-// 5. CLASS LA: BONE POSE ACCUMULATOR
+// 5. JAPANESE-TO-SEMANTIC BONE NAME MAPPING TABLE & BONE POSE ACCUMULATOR
 // ==========================================
+
+export const BONE_NAME_ALIASES: Record<string, string[]> = {
+  center: ['全ての親', 'センター', 'center', 'root', 'base', 'hips_root'],
+  waist: ['下半身', '腰', 'waist', 'hips', 'pelvis', 'lowerbody', 'lower_body', 'spine1', 'spine'],
+  upperBody: ['上半身', 'upperbody', 'spine', 'chest', 'upper_body', 'spine.b', 'spine_1'],
+  upperBody2: ['上半身2', 'upperbody2', 'chest', 'upper_chest', 'upperchest', 'spine2', 'spine.001'],
+  neck: ['首', 'neck', 'neck.b'],
+  head: ['頭', 'head', 'head.b', 'head_bone'],
+  shoulderL: ['左肩', 'shoulder_l', 'leftshoulder', 'shoulder.l', 'l_shoulder', 'left_shoulder', 'shoulderl'],
+  shoulderR: ['右肩', 'shoulder_r', 'rightshoulder', 'shoulder.r', 'r_shoulder', 'right_shoulder', 'shoulderr'],
+  armL: ['左腕', 'arm_l', 'upperarm_l', 'leftarm', 'leftupperarm', 'arm.l', 'l_arm', 'left_arm', 'left_upper_arm', 'arml'],
+  armR: ['右腕', 'arm_r', 'upperarm_r', 'rightarm', 'rightupperarm', 'arm.r', 'r_arm', 'right_arm', 'right_upper_arm', 'armr'],
+  elbowL: ['左ひじ', '左肘', 'elbow_l', 'forearm_l', 'leftelbow', 'leftforearm', 'elbow.l', 'l_elbow', 'left_forearm', 'elbowl'],
+  elbowR: ['右ひじ', '右肘', 'elbow_r', 'forearm_r', 'rightelbow', 'rightforearm', 'elbow.r', 'r_elbow', 'right_forearm', 'elbowr'],
+  wristL: ['左手首', '左手', 'wrist_l', 'hand_l', 'lefthand', 'leftwrist', 'wrist.l', 'l_wrist', 'left_hand', 'wristl'],
+  wristR: ['右手首', '右手', 'wrist_r', 'hand_r', 'righthand', 'rightwrist', 'wrist.r', 'r_wrist', 'right_hand', 'wristr'],
+  eyeL: ['左目', 'eye_l', 'lefteye', 'eye.l', 'l_eye'],
+  eyeR: ['右目', 'eye_r', 'righteye', 'eye.r', 'r_eye']
+};
 
 export interface BoneRestEntry {
   bone: THREE.Object3D;
@@ -654,25 +673,95 @@ export class EvelynBonePoseAccumulator {
   rest = new Map<string, BoneRestEntry>();
   rotations = new Map<string, THREE.Quaternion>();
   translations = new Map<string, THREE.Vector3>();
+  aliasMap = new Map<string, string>();
 
   private _quat = new THREE.Quaternion();
   private _euler = new THREE.Euler();
   private _identity = new THREE.Quaternion();
 
-  constructor(public model: ModelBoneContainer) {}
+  constructor(public model: ModelBoneContainer) {
+    this.buildInitialAliasIndex();
+  }
+
+  private buildInitialAliasIndex() {
+    for (const [boneName] of this.model.boneIndexByName) {
+      this.aliasMap.set(boneName.toLowerCase(), boneName);
+      this.aliasMap.set(boneName, boneName);
+    }
+    for (const [semanticKey, aliasList] of Object.entries(BONE_NAME_ALIASES)) {
+      this.aliasMap.set(semanticKey.toLowerCase(), semanticKey);
+      for (const alias of aliasList) {
+        if (this.model.boneIndexByName.has(alias)) {
+          const actualName = alias;
+          this.aliasMap.set(semanticKey.toLowerCase(), actualName);
+          for (const a of aliasList) {
+            this.aliasMap.set(a.toLowerCase(), actualName);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  resolveActualName(boneName: string | undefined): string | undefined {
+    if (!boneName) return undefined;
+    if (this.rest.has(boneName)) return boneName;
+    const lower = boneName.toLowerCase();
+    if (this.aliasMap.has(lower)) {
+      const mapped = this.aliasMap.get(lower)!;
+      if (this.rest.has(mapped) || this.model.boneIndexByName.has(mapped)) {
+        return mapped;
+      }
+    }
+    for (const [semanticKey, aliasList] of Object.entries(BONE_NAME_ALIASES)) {
+      if (semanticKey.toLowerCase() === lower || aliasList.some(a => a.toLowerCase() === lower)) {
+        for (const candidate of aliasList) {
+          if (this.rest.has(candidate) || this.model.boneIndexByName.has(candidate)) {
+            this.aliasMap.set(lower, candidate);
+            return candidate;
+          }
+        }
+      }
+    }
+    return boneName;
+  }
 
   register(boneName: string): boolean {
-    if (!boneName || this.rest.has(boneName)) return !!boneName && this.rest.has(boneName);
-    const index = this.model.boneIndexByName.get(boneName);
+    if (!boneName) return false;
+    const actual = this.resolveActualName(boneName) || boneName;
+    if (this.rest.has(actual)) return true;
+
+    let index = this.model.boneIndexByName.get(actual);
+    let matchedName = actual;
+
+    if (index === undefined) {
+      for (const [semanticKey, aliasList] of Object.entries(BONE_NAME_ALIASES)) {
+        if (semanticKey.toLowerCase() === boneName.toLowerCase() || aliasList.some(a => a.toLowerCase() === boneName.toLowerCase())) {
+          for (const candidate of aliasList) {
+            const idx = this.model.boneIndexByName.get(candidate);
+            if (idx !== undefined) {
+              index = idx;
+              matchedName = candidate;
+              break;
+            }
+          }
+        }
+        if (index !== undefined) break;
+      }
+    }
+
     if (index === undefined) return false;
     const bone = this.model.bones[index];
     if (!bone) return false;
 
-    this.rest.set(boneName, {
+    this.rest.set(matchedName, {
       bone,
       position: bone.position.clone(),
       quaternion: bone.quaternion.clone()
     });
+
+    this.aliasMap.set(boneName.toLowerCase(), matchedName);
+    this.aliasMap.set(matchedName.toLowerCase(), matchedName);
     return true;
   }
 
@@ -681,12 +770,16 @@ export class EvelynBonePoseAccumulator {
   }
 
   has(boneName: string): boolean {
-    return !!boneName && this.rest.has(boneName);
+    if (!boneName) return false;
+    const actual = this.resolveActualName(boneName);
+    return !!actual && this.rest.has(actual);
   }
 
   bakeIntoRest(boneName: string, x = 0, y = 0, z = 0) {
     if (!boneName) return;
-    const entry = this.rest.get(boneName);
+    const actual = this.resolveActualName(boneName);
+    if (!actual) return;
+    const entry = this.rest.get(actual);
     if (entry) {
       this._euler.set(x, y, z, 'XYZ');
       this._quat.setFromEuler(this._euler);
@@ -705,18 +798,22 @@ export class EvelynBonePoseAccumulator {
   }
 
   addEuler(boneName: string | undefined, x: number, y: number, z: number, weight = 1) {
-    if (!boneName || weight === 0 || !this.rest.has(boneName) || (x === 0 && y === 0 && z === 0)) return;
+    if (!boneName || weight === 0 || (x === 0 && y === 0 && z === 0)) return;
+    const actual = this.resolveActualName(boneName);
+    if (!actual || !this.rest.has(actual)) return;
     this._euler.set(x * weight, y * weight, z * weight, 'XYZ');
     this._quat.setFromEuler(this._euler);
-    this.addQuaternion(boneName, this._quat);
+    this.addQuaternion(actual, this._quat);
   }
 
   addQuaternion(boneName: string | undefined, q: THREE.Quaternion, weight = 1) {
-    if (!boneName || !this.rest.has(boneName)) return;
-    let current = this.rotations.get(boneName);
+    if (!boneName) return;
+    const actual = this.resolveActualName(boneName);
+    if (!actual || !this.rest.has(actual)) return;
+    let current = this.rotations.get(actual);
     if (!current) {
       current = new THREE.Quaternion();
-      this.rotations.set(boneName, current);
+      this.rotations.set(actual, current);
     }
     if (weight >= 0.999) {
       current.multiply(q);
@@ -727,11 +824,13 @@ export class EvelynBonePoseAccumulator {
   }
 
   addTranslation(boneName: string | undefined, x: number, y: number, z: number, weight = 1) {
-    if (!boneName || weight === 0 || !this.rest.has(boneName)) return;
-    let t = this.translations.get(boneName);
+    if (!boneName || weight === 0) return;
+    const actual = this.resolveActualName(boneName);
+    if (!actual || !this.rest.has(actual)) return;
+    let t = this.translations.get(actual);
     if (!t) {
       t = new THREE.Vector3();
-      this.translations.set(boneName, t);
+      this.translations.set(actual, t);
     }
     t.x += x * weight;
     t.y += y * weight;
@@ -761,21 +860,23 @@ export class EvelynBonePoseAccumulator {
 // ==========================================
 
 export const POSTURE_MOTION_SCALES = {
-  breathChest: 0.0135,
-  breathUpperChest: 0.009,
-  breathNeckCounter: 0.0055,
-  breathShoulder: 0.011,
-  breathRise: 0.035,
-  swayHipRoll: 0.019,
-  swayHipYaw: 0.011,
-  swayLateral: 0.09,
-  swayChestCounter: 0.012,
-  postureHipRoll: 0.028,
-  postureChestRoll: 0.017,
-  postureHeadRoll: 0.021,
-  postureLateral: 0.11,
-  microHead: 0.016,
-  microShoulder: 0.008
+  breathChest: 0.055,        // Effective ~0.028 rad (1.6°) natural chest expansion
+  breathUpperChest: 0.045,   // Effective ~0.023 rad (1.3°) upper chest rise
+  breathNeckCounter: 0.020,  // Compensate neck to keep natural forward gaze
+  breathShoulder: 0.034,     // Effective ~0.017 rad (1.0°) shoulder rise (0.01 - 0.02 rad)
+  breathArmSway: 0.038,      // Effective ~0.019 rad (1.1°) natural arm outward ease (0.015 - 0.025 rad)
+  breathElbow: 0.024,        // Effective ~0.012 rad forearm breathing cadence
+  breathRise: 0.055,         // Torso subtle vertical breathing rise
+  swayHipRoll: 0.035,        // Natural human subtle hip sway (~0.02 rad)
+  swayHipYaw: 0.025,
+  swayLateral: 0.12,
+  swayChestCounter: 0.024,
+  postureHipRoll: 0.036,
+  postureChestRoll: 0.025,
+  postureHeadRoll: 0.025,
+  postureLateral: 0.14,
+  microHead: 0.022,
+  microShoulder: 0.016
 };
 
 export interface IdleBreathingConfig {
@@ -883,18 +984,25 @@ export class EvelynIdleBreathingPostureEngine {
     this.breathPhase += delta * this.config.breathRate;
     const breathOffset = asymmetricBreathingWave(this.breathPhase) - 0.5;
 
-    // Breath Torso Pitch & Neck Compensation
+    // Breath Torso Pitch & Neck Compensation (clearly visible, natural breathing)
     pose.addEuler(this.bones.upperBody, -breathOffset * POSTURE_MOTION_SCALES.breathChest * depth, 0, 0);
     pose.addEuler(this.bones.upperBody2, breathOffset * POSTURE_MOTION_SCALES.breathUpperChest * depth, 0, 0);
     pose.addEuler(this.bones.neck, -breathOffset * POSTURE_MOTION_SCALES.breathNeckCounter * depth, 0, 0);
     pose.addTranslation(this.bones.center, 0, breathOffset * POSTURE_MOTION_SCALES.breathRise * depth, 0);
 
-    // Shoulder Phase-Shifted Rise
+    // Shoulder Phase-Shifted Rise & Fall (subtle, clearly alive)
     const shoulderBreath = asymmetricBreathingWave(this.breathPhase - 0.08) - 0.5;
     pose.addEuler(this.bones.shoulderL, 0, 0, -shoulderBreath * POSTURE_MOTION_SCALES.breathShoulder * depth);
     pose.addEuler(this.bones.shoulderR, 0, 0, shoulderBreath * POSTURE_MOTION_SCALES.breathShoulder * depth);
 
-    // Organic Body Sway
+    // Arm natural synchronous breathing sway (expansion/relaxation)
+    const armBreath = asymmetricBreathingWave(this.breathPhase - 0.12) - 0.5;
+    pose.addEuler(this.bones.armL, armBreath * 0.012 * depth, 0, -armBreath * POSTURE_MOTION_SCALES.breathArmSway * depth);
+    pose.addEuler(this.bones.armR, armBreath * 0.012 * depth, 0, armBreath * POSTURE_MOTION_SCALES.breathArmSway * depth);
+    pose.addEuler(this.bones.elbowL, 0, 0, -armBreath * POSTURE_MOTION_SCALES.breathElbow * depth);
+    pose.addEuler(this.bones.elbowR, 0, 0, armBreath * POSTURE_MOTION_SCALES.breathElbow * depth);
+
+    // Organic Body Sway (Alive subtle weight shift)
     const swayTime = this.time * this.config.swayRate;
     const swayX = Math.sin(swayTime * Math.PI * 2) * 0.6 + fractalNoise(swayTime * 1.7) * 0.4;
     const swayY = fractalNoise(swayTime * 0.6 + 31.7);
@@ -1180,62 +1288,69 @@ export class EvelynBodyLanguageLayer {
     // 1. SPEAKING CONVERSATIONAL BODY MOVEMENT
     if (spk > 0.001) {
       // Natural cadence nods & upper-body conversational presence
-      const nod1 = Math.sin(this.time * 6.2) * 0.016;
-      const nod2 = Math.sin(this.time * 3.1 + 0.5) * 0.009;
+      const nod1 = Math.sin(this.time * 6.2) * 0.024;
+      const nod2 = Math.sin(this.time * 3.1 + 0.5) * 0.014;
       const headPitch = (nod1 + nod2) * spk;
-      const headYaw = Math.sin(this.time * 2.4 + 0.4) * 0.013 * spk;
-      const headRoll = Math.cos(this.time * 1.9 + 0.2) * 0.008 * spk;
+      const headYaw = Math.sin(this.time * 2.4 + 0.4) * 0.020 * spk;
+      const headRoll = Math.cos(this.time * 1.9 + 0.2) * 0.012 * spk;
 
       pose.addEuler(this.bones.head, headPitch, headYaw, headRoll);
-      pose.addEuler(this.bones.neck, headPitch * 0.42, headYaw * 0.38, headRoll * 0.40);
+      pose.addEuler(this.bones.neck, headPitch * 0.45, headYaw * 0.38, headRoll * 0.40);
 
-      // Speaking chest and spine subtle cadence
-      const chestPitch = Math.sin(this.time * 3.1 + 0.3) * 0.0028 * spk;
-      const chestYaw = Math.sin(this.time * 1.8) * 0.0022 * spk;
+      // Speaking chest and spine subtle cadence (natural human inflection)
+      const chestPitch = Math.sin(this.time * 3.1 + 0.3) * 0.026 * spk;
+      const chestYaw = Math.sin(this.time * 1.8) * 0.020 * spk;
       pose.addEuler(this.bones.upperBody2, chestPitch, chestYaw, 0);
-      pose.addEuler(this.bones.upperBody, Math.sin(this.time * 3.1) * 0.002 * spk, 0, 0);
+      pose.addEuler(this.bones.upperBody, Math.sin(this.time * 3.1) * 0.018 * spk, 0, 0);
 
-      // Speaking shoulder gesture
-      const shoulderGesture = Math.sin(this.time * 3.1) * 0.0022 * spk;
+      // Speaking shoulder gesture (0.015 - 0.025 rad)
+      const shoulderGesture = Math.sin(this.time * 3.1) * 0.018 * spk;
       pose.addEuler(this.bones.shoulderL, 0, 0, shoulderGesture);
       pose.addEuler(this.bones.shoulderR, 0, 0, -shoulderGesture);
 
-      // Conversational arm cadence
-      const armSway = Math.sin(this.time * 2.6) * 0.003 * spk;
-      pose.addEuler(this.bones.armL, armSway, 0, 0);
-      pose.addEuler(this.bones.armR, armSway, 0, 0);
+      // Conversational hands and arms cadence (natural living gestures)
+      const armSway = Math.sin(this.time * 2.6) * 0.022 * spk;
+      const armPitch = Math.cos(this.time * 2.2 + 0.4) * 0.018 * spk;
+      pose.addEuler(this.bones.armL, armPitch, 0, -armSway * 0.7);
+      pose.addEuler(this.bones.armR, armPitch, 0, armSway * 0.7);
+      pose.addEuler(this.bones.elbowL, 0, 0, armSway * 0.5);
+      pose.addEuler(this.bones.elbowR, 0, 0, -armSway * 0.5);
+      pose.addEuler(this.bones.wristL, armSway * 0.4, 0, 0);
+      pose.addEuler(this.bones.wristR, armSway * 0.4, 0, 0);
     }
 
     // 2. LISTENING ATTENTIVE POSTURE (Forward lean & curious head tilt)
     if (lis > 0.001) {
-      const listenHeadPitch = 0.014 * lis;
-      const listenHeadYaw = -0.018 * lis;
-      const listenHeadRoll = (0.024 + Math.sin(this.time * 1.5) * 0.003) * lis;
+      const listenHeadPitch = 0.020 * lis;
+      const listenHeadYaw = -0.022 * lis;
+      const listenHeadRoll = (0.026 + Math.sin(this.time * 1.5) * 0.004) * lis;
 
       pose.addEuler(this.bones.head, listenHeadPitch, listenHeadYaw, listenHeadRoll);
       pose.addEuler(this.bones.neck, listenHeadPitch * 0.55, listenHeadYaw * 0.38, listenHeadRoll * 0.40);
-      pose.addEuler(this.bones.upperBody, 0.004 * lis, 0, 0); // attentive forward lean
-      pose.addEuler(this.bones.upperBody2, 0.006 * lis, 0, 0);
+      pose.addEuler(this.bones.upperBody, 0.018 * lis, 0, 0); // attentive forward torso lean
+      pose.addEuler(this.bones.upperBody2, 0.022 * lis, 0, 0);
     }
 
     // 3. THINKING CONTEMPLATIVE POSTURE (Head tilt up/side & subtle introspective posture)
     if (thk > 0.001) {
-      const thinkHeadPitch = -0.012 * thk;
-      const thinkHeadYaw = (0.020 + Math.sin(this.time * 1.1) * 0.003) * thk;
-      const thinkHeadRoll = -0.026 * thk;
+      const thinkHeadPitch = -0.018 * thk;
+      const thinkHeadYaw = (0.026 + Math.sin(this.time * 1.1) * 0.004) * thk;
+      const thinkHeadRoll = -0.028 * thk;
 
       pose.addEuler(this.bones.head, thinkHeadPitch, thinkHeadYaw, thinkHeadRoll);
       pose.addEuler(this.bones.neck, thinkHeadPitch * 0.55, thinkHeadYaw * 0.38, thinkHeadRoll * 0.40);
-      pose.addEuler(this.bones.shoulderR, 0, 0, 0.004 * thk);
-      pose.addEuler(this.bones.upperBody2, -0.003 * thk, 0.004 * thk, 0);
+      pose.addEuler(this.bones.shoulderR, 0, 0, 0.015 * thk);
+      pose.addEuler(this.bones.upperBody2, -0.012 * thk, 0.014 * thk, 0);
     }
 
     // 4. EMOTION POSTURAL FLAVORS
     if (currentEmotion === 'happy' || currentEmotion === 'excited') {
-      pose.addEuler(this.bones.upperBody2, 0.003, 0, 0); // proud/happy upright chest
+      pose.addEuler(this.bones.upperBody2, 0.018, 0, 0); // proud/happy upright chest
+      pose.addEuler(this.bones.shoulderL, 0, 0, 0.010);
+      pose.addEuler(this.bones.shoulderR, 0, 0, -0.010);
     } else if (currentEmotion === 'sad') {
-      pose.addEuler(this.bones.upperBody2, -0.006, 0, 0); // slightly hunched chest
-      pose.addEuler(this.bones.head, -0.010, 0, 0);
+      pose.addEuler(this.bones.upperBody2, -0.020, 0, 0); // slightly hunched chest
+      pose.addEuler(this.bones.head, -0.018, 0, 0);
     }
   }
 }
@@ -1307,24 +1422,36 @@ export interface SpringBoneNode {
 }
 
 export class EvelynSecondaryPhysicsSpring {
-  nodes: SpringBoneNode[] = [];
+  hairNodes: SpringBoneNode[] = [];
+  clothingNodes: SpringBoneNode[] = [];
   time = 0;
+
+  // Velocity tracking for head and torso inertia
+  prevHeadYaw = 0;
+  prevHeadPitch = 0;
+  headAngularVelocity = { yaw: 0, pitch: 0 };
+
+  // Secondary chest recoil physics state
+  chestPhysicsAngle = 0;
+  chestPhysicsVelocity = 0;
 
   constructor(
     public model: ModelBoneContainer,
     public hairBonesL: string[],
-    public hairBonesR: string[]
+    public hairBonesR: string[],
+    public clothingBones: string[] = []
   ) {
-    this.initHairNodes();
+    this.initNodes();
   }
 
-  initHairNodes() {
-    const allBones = [...this.hairBonesL, ...this.hairBonesR];
-    for (const name of allBones) {
+  initNodes() {
+    // Hair nodes
+    const allHair = [...this.hairBonesL, ...this.hairBonesR];
+    for (const name of allHair) {
       const idx = this.model.boneIndexByName.get(name);
       if (idx !== undefined && this.model.bones[idx]) {
         const b = this.model.bones[idx];
-        this.nodes.push({
+        this.hairNodes.push({
           boneName: name,
           boneObject: b,
           position: b.position.clone(),
@@ -1332,42 +1459,115 @@ export class EvelynSecondaryPhysicsSpring {
           velocity: new THREE.Vector3(),
           restLength: 0.1,
           radius: 0.05,
+          stiffness: 0.42,
+          damping: 0.82,
+          drag: 0.90,
+          gravity: new THREE.Vector3(0, -0.04, 0)
+        });
+      }
+    }
+
+    // Clothing, sleeves, skirts, and accessories nodes
+    for (const name of this.clothingBones) {
+      const idx = this.model.boneIndexByName.get(name);
+      if (idx !== undefined && this.model.bones[idx]) {
+        const b = this.model.bones[idx];
+        this.clothingNodes.push({
+          boneName: name,
+          boneObject: b,
+          position: b.position.clone(),
+          prevPosition: b.position.clone(),
+          velocity: new THREE.Vector3(),
+          restLength: 0.12,
+          radius: 0.06,
           stiffness: 0.35,
-          damping: 0.75,
-          drag: 0.88,
-          gravity: new THREE.Vector3(0, -0.05, 0)
+          damping: 0.85,
+          drag: 0.92,
+          gravity: new THREE.Vector3(0, -0.06, 0)
         });
       }
     }
   }
 
-  update(delta: number, pose: EvelynBonePoseAccumulator, breathPhase: number, isSpeaking: boolean) {
+  update(
+    delta: number,
+    pose: EvelynBonePoseAccumulator,
+    breathPhase: number,
+    isSpeaking: boolean,
+    headRot?: { pitch: number; yaw: number },
+    chestBreathValue: number = 0,
+    hasNativePhysics: boolean = false
+  ) {
     this.time += delta;
-    const clampedDelta = Math.min(delta, 0.05);
+    const dt = Math.min(delta, 0.05);
 
-    // Harmonic hair swaying combined with physical spring damping
-    const swayL = Math.sin(breathPhase - 0.4) * 0.006 + (Math.sin(this.time * 3.2) * 0.004) * (isSpeaking ? 1 : 0);
-    const swayR = Math.sin(breathPhase - 0.4) * 0.006 - (Math.sin(this.time * 3.2) * 0.004) * (isSpeaking ? 1 : 0);
+    // 1. Calculate Head angular velocity for inertial hair swing
+    if (headRot) {
+      this.headAngularVelocity.yaw = (headRot.yaw - this.prevHeadYaw) / Math.max(dt, 0.001);
+      this.headAngularVelocity.pitch = (headRot.pitch - this.prevHeadPitch) / Math.max(dt, 0.001);
+      this.prevHeadYaw = headRot.yaw;
+      this.prevHeadPitch = headRot.pitch;
+    }
 
-    for (const node of this.nodes) {
+    // 2. Chest Secondary Physics (tasteful, physically believable secondary recoil on breathing & motion)
+    const targetChestRecoil = (chestBreathValue * 0.012) + Math.sin(breathPhase) * 0.005;
+    const springForce = (targetChestRecoil - this.chestPhysicsAngle) * 32.0;
+    const dampingForce = -this.chestPhysicsVelocity * 6.8;
+    this.chestPhysicsVelocity += (springForce + dampingForce) * dt;
+    this.chestPhysicsAngle += this.chestPhysicsVelocity * dt;
+    this.chestPhysicsAngle = THREE.MathUtils.clamp(this.chestPhysicsAngle, -0.018, 0.018);
+
+    // Add subtle chest physics recoil to upperBody2
+    pose.addEuler('上半身2', this.chestPhysicsAngle, 0, 0);
+
+    // If native MMD rigid bodies physics simulation is active, leave hair & cloth bones to MMDPhysics
+    if (hasNativePhysics) {
+      return;
+    }
+
+    // 3. Hair Secondary Physics (Harmonic wind sway + Head movement inertia)
+    const hairInertiaYaw = -this.headAngularVelocity.yaw * 0.022;
+    const hairInertiaPitch = -this.headAngularVelocity.pitch * 0.016;
+    const clampedHairYaw = THREE.MathUtils.clamp(hairInertiaYaw, -0.045, 0.045);
+    const clampedHairPitch = THREE.MathUtils.clamp(hairInertiaPitch, -0.038, 0.038);
+
+    const baseBreathSway = Math.sin(breathPhase - 0.4) * 0.010;
+    const speechHairVibe = isSpeaking ? Math.sin(this.time * 6.5) * 0.004 : 0;
+
+    for (let i = 0; i < this.hairNodes.length; i++) {
+      const node = this.hairNodes[i];
       const isLeft = this.hairBonesL.includes(node.boneName);
-      const sway = isLeft ? swayL : swayR;
-      const sign = isLeft ? -1 : 1;
+      const strandPhase = i * 0.35;
+      const strandWave = Math.sin(this.time * 2.4 + strandPhase) * 0.006;
 
-      // Add secondary spring sway to accumulator
-      pose.addEuler(node.boneName, sway * 0.5, 0, sign * sway);
+      const rollSway = (isLeft ? -1 : 1) * (baseBreathSway + strandWave) + clampedHairYaw * 0.65;
+      const pitchSway = baseBreathSway * 0.5 + clampedHairPitch + speechHairVibe;
+      const yawSway = clampedHairYaw * 0.45;
+
+      pose.addEuler(node.boneName, pitchSway, yawSway, rollSway);
+    }
+
+    // 4. Clothing, Sleeves, Skirt & Accessories Physics
+    const clothingSway = Math.sin(this.time * 1.8) * 0.010 + baseBreathSway * 0.7;
+    for (let i = 0; i < this.clothingNodes.length; i++) {
+      const node = this.clothingNodes[i];
+      const phase = i * 0.28;
+      const wave = Math.sin(this.time * 2.1 + phase) * 0.008;
+      pose.addEuler(node.boneName, (clothingSway + wave) * 0.5, 0, (clothingSway + wave) * 0.45);
     }
   }
 }
 
 // ==========================================
-// 11. CLASS Yp / GA: IDLE MICRO-BEHAVIOUR LIBRARY & SCHEDULER
+// 11. CLASS Yp / GA: IDLE MICRO-BEHAVIOUR & RANDOM BEHAVIOUR LIBRARY & SCHEDULER
 // ==========================================
 
 export interface MicroBehavior {
   name: string;
   duration: number;
   weight: number;
+  facialOverlay?: Record<string, number>;
+  gazeOffset?: THREE.Vector3;
   run: (t: number, progress: number, pose: EvelynBonePoseAccumulator, bones: CharacterBonesMap) => void;
 }
 
@@ -1377,81 +1577,263 @@ export class EvelynIdleMicroBehaviorScheduler {
   behaviorTimer = 0;
   behaviorElapsed = 0;
   behaviorNext = 4.0;
-  activeWeight = 0;
+  lastBehaviorName = '';
 
   constructor(public bones: CharacterBonesMap) {
     this.initBehaviorLibrary();
   }
 
   initBehaviorLibrary() {
-    // 1. Subtle Conversational Nod
+    // 1. Conversational Friendly Nod
     this.behaviors.push({
       name: 'nod',
-      duration: 1.6,
-      weight: 3.0,
+      duration: 1.8,
+      weight: 3.2,
+      facialOverlay: { mouthSmile: 0.25, browUp: 0.15 },
       run: (t, p, pose, b) => {
-        const nod = Math.sin(p * Math.PI * 2) * 0.022;
+        const nod = Math.sin(p * Math.PI * 2) * 0.034;
         pose.addEuler(b.head, nod, 0, 0);
         pose.addEuler(b.neck, nod * 0.45, 0, 0);
+        pose.addEuler(b.upperBody2, nod * 0.2, 0, 0);
       }
     });
 
     // 2. Curious Head Tilt
     this.behaviors.push({
       name: 'headTilt',
-      duration: 2.5,
-      weight: 2.5,
+      duration: 2.6,
+      weight: 2.8,
+      facialOverlay: { eyesWideL: 0.18, browUp: 0.22 },
       run: (t, p, pose, b) => {
-        const tilt = Math.sin(p * Math.PI) * 0.024;
-        pose.addEuler(b.head, 0, tilt * 0.4, tilt);
-        pose.addEuler(b.neck, 0, tilt * 0.2, tilt * 0.4);
+        const tilt = Math.sin(p * Math.PI) * 0.038;
+        pose.addEuler(b.head, 0, tilt * 0.35, tilt);
+        pose.addEuler(b.neck, 0, tilt * 0.18, tilt * 0.35);
       }
     });
 
-    // 3. Look Around
+    // 3. Look Around (Checking surroundings: scans left, then right, then center)
     this.behaviors.push({
       name: 'lookAround',
-      duration: 3.2,
-      weight: 2.0,
+      duration: 4.2,
+      weight: 2.6,
+      gazeOffset: new THREE.Vector3(0.5, 0, 0),
       run: (t, p, pose, b) => {
-        const yaw = Math.sin(p * Math.PI) * 0.028;
+        const yaw = Math.sin(p * Math.PI * 2) * 0.045;
         pose.addEuler(b.head, 0, yaw, 0);
         pose.addEuler(b.neck, 0, yaw * 0.5, 0);
       }
     });
 
-    // 4. Subtle Weight Shift
+    // 4. Look Left
     this.behaviors.push({
-      name: 'shiftWeight',
-      duration: 3.5,
-      weight: 1.5,
+      name: 'lookLeft',
+      duration: 3.0,
+      weight: 2.2,
+      gazeOffset: new THREE.Vector3(-0.6, 0, 0),
       run: (t, p, pose, b) => {
-        const roll = Math.sin(p * Math.PI) * 0.015;
-        pose.addEuler(b.waist, 0, 0, roll);
-        pose.addEuler(b.upperBody, 0, 0, -roll * 0.8);
+        const ease = Math.sin(p * Math.PI);
+        const yaw = -ease * 0.042;
+        const tilt = -ease * 0.014;
+        pose.addEuler(b.head, 0, yaw, tilt);
+        pose.addEuler(b.neck, 0, yaw * 0.45, tilt * 0.3);
       }
     });
 
-    // 5. Natural Friendly Greeting Wave & Nod (on launch & welcome)
+    // 5. Look Right
     this.behaviors.push({
-      name: 'greeting',
+      name: 'lookRight',
+      duration: 3.0,
+      weight: 2.2,
+      gazeOffset: new THREE.Vector3(0.6, 0, 0),
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        const yaw = ease * 0.042;
+        const tilt = ease * 0.014;
+        pose.addEuler(b.head, 0, yaw, tilt);
+        pose.addEuler(b.neck, 0, yaw * 0.45, tilt * 0.3);
+      }
+    });
+
+    // 6. Look At Screen / Direct User Gaze
+    this.behaviors.push({
+      name: 'lookAtScreen',
       duration: 2.8,
+      weight: 3.0,
+      facialOverlay: { smileEyes: 0.3, mouthSmile: 0.22, browUp: 0.15 },
+      gazeOffset: new THREE.Vector3(0, 0, 0),
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        const nod = ease * 0.022;
+        pose.addEuler(b.head, nod, 0, 0);
+        pose.addEuler(b.upperBody2, ease * 0.014, 0, 0);
+      }
+    });
+
+    // 7. Spontaneous Cheerful Smile
+    this.behaviors.push({
+      name: 'smile',
+      duration: 3.4,
+      weight: 3.2,
+      facialOverlay: {
+        mouthSmile: 0.52,
+        mouthCornerUpL: 0.58,
+        mouthCornerUpR: 0.58,
+        smileEyes: 0.42,
+        browUp: 0.22
+      },
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        pose.addEuler(b.head, ease * 0.018, 0, ease * 0.015);
+        pose.addEuler(b.shoulderL, 0, 0, -ease * 0.012);
+        pose.addEuler(b.shoulderR, 0, 0, ease * 0.012);
+      }
+    });
+
+    // 8. Contemplative Thinking (Think)
+    this.behaviors.push({
+      name: 'think',
+      duration: 3.8,
+      weight: 2.4,
+      facialOverlay: { eyesHalf: 0.36, browTroubled: 0.45, mouthNarrow: 0.22 },
+      gazeOffset: new THREE.Vector3(0.4, 0.3, 0),
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        pose.addEuler(b.head, -ease * 0.026, ease * 0.032, ease * 0.022);
+        pose.addEuler(b.neck, -ease * 0.014, ease * 0.016, ease * 0.012);
+        pose.addEuler(b.armR, ease * 0.025, 0, ease * 0.015);
+        pose.addEuler(b.elbowR, 0, 0, ease * 0.020);
+      }
+    });
+
+    // 9. Inquisitive / Curious Expression & Posture
+    this.behaviors.push({
+      name: 'curious',
+      duration: 3.2,
+      weight: 2.5,
+      facialOverlay: { eyesWideL: 0.32, eyesWideR: 0.32, browUp: 0.48, mouthNarrow: 0.16 },
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        pose.addEuler(b.head, ease * 0.028, ease * 0.018, ease * 0.032);
+        pose.addEuler(b.neck, ease * 0.014, ease * 0.010, ease * 0.018);
+        pose.addEuler(b.upperBody2, ease * 0.018, 0, 0);
+      }
+    });
+
+    // 10. Happy / Upbeat Posture
+    this.behaviors.push({
+      name: 'happy',
+      duration: 3.2,
+      weight: 2.6,
+      facialOverlay: {
+        mouthSmile: 0.62,
+        mouthCornerUpL: 0.65,
+        mouthCornerUpR: 0.65,
+        smileEyes: 0.48,
+        browUp: 0.32
+      },
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        pose.addEuler(b.upperBody2, ease * 0.028, 0, 0);
+        pose.addEuler(b.head, ease * 0.018, 0, ease * 0.014);
+        pose.addEuler(b.shoulderL, 0, 0, -ease * 0.020);
+        pose.addEuler(b.shoulderR, 0, 0, ease * 0.020);
+      }
+    });
+
+    // 11. Natural Deep Breath & Stretching
+    this.behaviors.push({
+      name: 'stretching',
+      duration: 4.4,
+      weight: 2.4,
+      facialOverlay: { smileEyes: 0.25, mouthSmile: 0.18, browUp: 0.14 },
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        pose.addEuler(b.upperBody2, ease * 0.040, 0, 0);
+        pose.addEuler(b.upperBody, ease * 0.020, 0, 0);
+        pose.addEuler(b.shoulderL, 0, 0, -ease * 0.024);
+        pose.addEuler(b.shoulderR, 0, 0, ease * 0.024);
+        pose.addEuler(b.armL, ease * 0.018, 0, -ease * 0.026);
+        pose.addEuler(b.armR, ease * 0.018, 0, ease * 0.026);
+      }
+    });
+
+    // 12. Friendly Natural Greeting Wave
+    this.behaviors.push({
+      name: 'wave',
+      duration: 2.8,
+      weight: 2.8,
+      facialOverlay: { mouthSmile: 0.45, smileEyes: 0.35, browUp: 0.28 },
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        const nod = Math.sin(p * Math.PI * 2) * 0.024;
+        pose.addEuler(b.head, nod, 0, 0);
+        pose.addEuler(b.upperBody2, ease * 0.018, 0, 0);
+        // Graceful arm lift and natural wrist greeting wave
+        const waveAngle = Math.sin(p * Math.PI * 4) * 0.052 * ease;
+        pose.addEuler(b.armR, 0.06 * ease, 0, -0.08 * ease);
+        pose.addEuler(b.wristR, 0, 0, waveAngle);
+      }
+    });
+
+    // 13. Tiny Hand Movement (Hand and fingers relaxation)
+    this.behaviors.push({
+      name: 'tinyHandMovement',
+      duration: 2.8,
+      weight: 2.4,
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        const wristSway = Math.sin(p * Math.PI * 2) * 0.024;
+        pose.addEuler(b.wristL, ease * 0.012, 0, -wristSway);
+        pose.addEuler(b.wristR, ease * 0.012, 0, wristSway);
+        pose.addEuler(b.armL, 0, 0, -ease * 0.010);
+        pose.addEuler(b.armR, 0, 0, ease * 0.010);
+      }
+    });
+
+    // 14. Subtle Weight Shift (Organic human posture adjustment)
+    this.behaviors.push({
+      name: 'shiftWeight',
+      duration: 4.2,
       weight: 2.5,
       run: (t, p, pose, b) => {
-        const nod = Math.sin(p * Math.PI * 2) * 0.018;
-        const chest = Math.sin(p * Math.PI) * 0.008;
-        pose.addEuler(b.head, nod, 0, 0);
-        pose.addEuler(b.upperBody2, chest, 0, 0);
-        // Subtle friendly wave with arm and wrist
-        const waveAngle = Math.sin(p * Math.PI * 4) * 0.035 * Math.sin(p * Math.PI);
-        pose.addEuler(b.armR, 0.04 * Math.sin(p * Math.PI), 0, -0.06 * Math.sin(p * Math.PI));
-        pose.addEuler(b.wristR, 0, 0, waveAngle);
+        const roll = Math.sin(p * Math.PI) * 0.032;
+        pose.addEuler(b.waist, 0, 0, roll);
+        pose.addEuler(b.upperBody, 0, 0, -roll * 0.75);
+        pose.addEuler(b.head, 0, 0, -roll * 0.25);
+      }
+    });
+
+    // 15. Small Posture Adjustment (Shoulder roll & spine reset)
+    this.behaviors.push({
+      name: 'smallPostureAdjustment',
+      duration: 3.0,
+      weight: 2.5,
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        pose.addEuler(b.upperBody2, ease * 0.022, 0, 0);
+        pose.addEuler(b.shoulderL, 0, 0, -ease * 0.018);
+        pose.addEuler(b.shoulderR, 0, 0, ease * 0.018);
+      }
+    });
+
+    // 16. Relaxed Natural Resting Pose
+    this.behaviors.push({
+      name: 'relaxedPose',
+      duration: 4.0,
+      weight: 2.6,
+      facialOverlay: { smileEyes: 0.15, mouthSmile: 0.12 },
+      run: (t, p, pose, b) => {
+        const ease = Math.sin(p * Math.PI);
+        pose.addEuler(b.shoulderL, 0, 0, ease * 0.016);
+        pose.addEuler(b.shoulderR, 0, 0, -ease * 0.016);
+        pose.addEuler(b.head, ease * 0.014, 0, ease * 0.018);
+        pose.addEuler(b.upperBody, -ease * 0.014, 0, 0);
       }
     });
   }
 
   triggerGreeting() {
-    const greetingBehavior = this.behaviors.find(b => b.name === 'greeting');
+    const greetingBehavior = this.behaviors.find((b) => b.name === 'wave');
     if (greetingBehavior) {
       this.currentBehavior = greetingBehavior;
       this.behaviorElapsed = 0;
@@ -1461,23 +1843,32 @@ export class EvelynIdleMicroBehaviorScheduler {
   scheduleNext() {
     this.behaviorTimer = 0;
     this.behaviorElapsed = 0;
+    if (this.currentBehavior) {
+      this.lastBehaviorName = this.currentBehavior.name;
+    }
     this.currentBehavior = null;
-    this.behaviorNext = THREE.MathUtils.randFloat(3.5, 9.0);
+    this.behaviorNext = THREE.MathUtils.randFloat(3.0, 7.5);
   }
 
-  update(delta: number, pose: EvelynBonePoseAccumulator, isIdle: boolean) {
+  update(
+    delta: number,
+    pose: EvelynBonePoseAccumulator,
+    isIdle: boolean
+  ): { overlay?: Record<string, number>; weight?: number; gazeOffset?: THREE.Vector3 } | null {
     if (!isIdle) {
       this.currentBehavior = null;
-      return;
+      return null;
     }
 
     if (!this.currentBehavior) {
       this.behaviorTimer += delta;
       if (this.behaviorTimer >= this.behaviorNext) {
-        // Pick weighted random behavior
-        const totalWeight = this.behaviors.reduce((acc, b) => acc + b.weight, 0);
+        // Filter out the last performed behavior to guarantee non-repetitive organic variety
+        const available = this.behaviors.filter((b) => b.name !== this.lastBehaviorName);
+        const pool = available.length > 0 ? available : this.behaviors;
+        const totalWeight = pool.reduce((acc, b) => acc + b.weight, 0);
         let rnd = Math.random() * totalWeight;
-        for (const b of this.behaviors) {
+        for (const b of pool) {
           if (rnd < b.weight) {
             this.currentBehavior = b;
             this.behaviorElapsed = 0;
@@ -1486,7 +1877,7 @@ export class EvelynIdleMicroBehaviorScheduler {
           rnd -= b.weight;
         }
       }
-      return;
+      return null;
     }
 
     this.behaviorElapsed += delta;
@@ -1494,9 +1885,24 @@ export class EvelynIdleMicroBehaviorScheduler {
 
     this.currentBehavior.run(this.behaviorElapsed, progress, pose, this.bones);
 
+    // Compute active facial overlay and gaze offset weight
+    const easeWeight = Math.sin(progress * Math.PI);
+    const result: { overlay?: Record<string, number>; weight?: number; gazeOffset?: THREE.Vector3 } = {};
+
+    if (this.currentBehavior.facialOverlay) {
+      result.overlay = this.currentBehavior.facialOverlay;
+      result.weight = easeWeight;
+    }
+
+    if (this.currentBehavior.gazeOffset) {
+      result.gazeOffset = this.currentBehavior.gazeOffset.clone().multiplyScalar(easeWeight);
+    }
+
     if (progress >= 1.0) {
       this.scheduleNext();
     }
+
+    return result;
   }
 }
 
@@ -1518,6 +1924,7 @@ export class EvelynMasterAnimationOrchestrator {
   lipSync: EvelynLipSyncEngine;
 
   userLookTarget = new THREE.Vector3(0, 0, 2.5);
+  effectiveLookTarget = new THREE.Vector3(0, 0, 2.5);
 
   constructor(
     public model: ModelBoneContainer,
@@ -1525,14 +1932,18 @@ export class EvelynMasterAnimationOrchestrator {
     public morphMap: Record<string, any>,
     public bonesMap: CharacterBonesMap,
     public hairBonesL: string[] = [],
-    public hairBonesR: string[] = []
+    public hairBonesR: string[] = [],
+    public clothingBones: string[] = []
   ) {
     // 1. Initialize Pose Accumulator
     this.pose = new EvelynBonePoseAccumulator(model);
     const allBoneNames = Object.values(bonesMap).filter((b): b is string => !!b);
     this.pose.registerAll(allBoneNames);
+    // Explicitly register all standard semantic bone keys (resolves Japanese PMX & English names)
+    Object.keys(BONE_NAME_ALIASES).forEach((key) => this.pose.register(key));
     this.pose.registerAll(hairBonesL);
     this.pose.registerAll(hairBonesR);
+    this.pose.registerAll(clothingBones);
 
     // 2. Initialize Sub-Engines
     this.idleBreathing = new EvelynIdleBreathingPostureEngine(bonesMap, EVELYN_CHARACTER_CONFIG.idle);
@@ -1544,9 +1955,15 @@ export class EvelynMasterAnimationOrchestrator {
       EVELYN_CHARACTER_CONFIG.idle
     );
     this.boneInherit = new EvelynMMDAppendConstraintSolver(model);
-    this.hairPhysics = new EvelynSecondaryPhysicsSpring(model, hairBonesL, hairBonesR);
+    this.hairPhysics = new EvelynSecondaryPhysicsSpring(model, hairBonesL, hairBonesR, clothingBones);
     this.expressionBlender = new EvelynExpressionBlender(morphConsumer, morphMap, EVELYN_CHARACTER_CONFIG.idle);
     this.lipSync = new EvelynLipSyncEngine(EVELYN_CHARACTER_CONFIG.lipSync);
+  }
+
+  public hasNativePhysics: boolean = false;
+
+  public setHasNativePhysics(enabled: boolean) {
+    this.hasNativePhysics = enabled;
   }
 
   /**
@@ -1568,6 +1985,7 @@ export class EvelynMasterAnimationOrchestrator {
     if (userLookTarget) {
       this.userLookTarget.copy(userLookTarget);
     }
+    this.effectiveLookTarget.copy(this.userLookTarget);
 
     // 1. Reset bone accumulator for new frame
     this.pose.begin();
@@ -1579,29 +1997,49 @@ export class EvelynMasterAnimationOrchestrator {
     const activityName = status.toLowerCase() as 'idle' | 'listening' | 'thinking' | 'speaking';
     this.bodyLanguage.update(delta, this.pose, activityName, emotion);
 
-    // 4. Idle Micro-Behavior Library Scheduler (Nod, Head Tilt, Weight Shift, Look Around)
-    this.microBehaviors.update(delta, this.pose, isIdle);
+    // 4. Idle Micro-Behavior & Random Behaviour Library Scheduler
+    const microState = this.microBehaviors.update(delta, this.pose, isIdle);
+
+    // Apply micro-behavior gaze offset to look target
+    if (microState?.gazeOffset) {
+      this.effectiveLookTarget.add(microState.gazeOffset);
+    }
 
     // 5. Look-At & Saccades Gaze Tracking Layer
     this.lookAt.setEmotion(emotion);
-    this.lookAt.update(delta, this.pose, this.userLookTarget);
+    this.lookAt.update(delta, this.pose, this.effectiveLookTarget);
+
+    // Natural human spontaneous blink when eye gaze jumps to a new point of interest
+    if (this.lookAt.consumeBlinkRequest()) {
+      this.expressionBlender.triggerBlink();
+    }
 
     // 6. MMD Appended Bone Inherit Constraint Solver (zA)
     this.boneInherit.update(this.pose);
 
-    // 7. Secondary Spring-Bone Physics (Hair & Ribbons) (HA)
-    this.hairPhysics.update(delta, this.pose, this.idleBreathing.breathPhase, isSpeaking);
+    // 7. Full Physics System: Hair, Sleeves, Clothing & Tasteful Chest recoil (HA)
+    this.hairPhysics.update(
+      delta,
+      this.pose,
+      this.idleBreathing.breathPhase,
+      isSpeaking,
+      { pitch: this.lookAt.headPitch, yaw: this.lookAt.headYaw },
+      this.idleBreathing.breath,
+      this.hasNativePhysics
+    );
 
     // 8. Real-Time Lip-Sync Engine (Audio FFT spectrum & synthetic fallback) (DA)
     const visemes = this.lipSync.update(audioAnalyser, delta, isSpeaking);
     const speechAuthority = isSpeaking ? 1.0 : 0.0;
 
-    // 9. Facial Expression Blender + Eyelid Blink State Machine (NA)
+    // 9. Facial Expression Blender + Eyelid Blink State Machine with Micro-behavior Facial Overlays (NA)
     this.expressionBlender.setExpression(emotion);
     this.expressionBlender.update({
       delta,
       visemes,
-      speechAuthority
+      speechAuthority,
+      overlay: microState?.overlay,
+      overlayWeight: microState?.weight
     });
 
     // 10. Apply all accumulated transforms to Three.js Skeleton Bones

@@ -249,6 +249,100 @@ export class AgentToolRegistry {
       }
     });
 
+    // 4.5. control_settings (SAFE)
+    AgentToolRegistry.register({
+      name: 'control_settings',
+      description: 'Control phone external settings (system dark theme, eco mode/battery saver, torch/flashlight, wifi, bluetooth, silent/dnd) or Mayra app internal settings (darkMode, orbStyle, auraBorderMode, voiceVisualizer, headingFont).',
+      permissionLevel: 'SAFE',
+      requiresConfirmation: false,
+      timeoutMs: 4000,
+      parameters: {
+        type: 'object',
+        properties: {
+          settingName: {
+            type: 'string',
+            description: 'The setting to change (e.g., "darkMode", "ecoMode", "torch", "wifi", "bluetooth", "dnd", "orbStyle", "auraBorderMode", "headingFont")'
+          },
+          value: {
+            type: 'string',
+            description: 'Target value: "true", "false", "on", "off", or style name'
+          },
+          category: {
+            type: 'string',
+            description: 'Optional category: "device" (external phone setting) or "internal" (Mayra app setting)'
+          }
+        },
+        required: ['settingName']
+      },
+      execute: async (args) => {
+        const sName = (args.settingName || '').toLowerCase();
+        const strVal = String(args.value || 'true').toLowerCase();
+        const boolVal = strVal === 'true' || strVal === 'on' || strVal === 'enable' || strVal === '1';
+
+        if (sName.includes('dark') || sName.includes('theme')) {
+          await MayraSystemBridge.checkSystemDarkMode();
+          await MayraSystemBridge.setExternalDarkMode(boolVal);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mayra_apply_app_setting', {
+              detail: { appearance: { darkMode: boolVal } }
+            }));
+          }
+          return { success: true, setting: 'darkMode', value: boolVal, message: `Dark Mode set to ${boolVal}` };
+        }
+
+        if (sName.includes('eco') || sName.includes('battery')) {
+          const res = await MayraSystemBridge.setExternalEcoMode(boolVal);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mayra_apply_app_setting', {
+              detail: { custom: { ecoMode: boolVal } }
+            }));
+          }
+          return { success: true, setting: 'ecoMode', value: boolVal, message: res.message };
+        }
+
+        if (sName.includes('torch') || sName.includes('flash')) {
+          const res = await MayraSystemBridge.setExternalTorch(boolVal);
+          return { success: true, setting: 'torch', value: boolVal, message: res.message };
+        }
+
+        if (sName.includes('wifi')) {
+          const res = await MayraSystemBridge.setExternalWifi(boolVal);
+          return { success: true, setting: 'wifi', value: boolVal, message: res.message };
+        }
+
+        if (sName.includes('blue')) {
+          const res = await MayraSystemBridge.setExternalBluetooth(boolVal);
+          return { success: true, setting: 'bluetooth', value: boolVal, message: res.message };
+        }
+
+        if (sName.includes('dnd') || sName.includes('silent')) {
+          const res = await MayraSystemBridge.setExternalDnd(boolVal);
+          return { success: true, setting: 'dnd', value: boolVal, message: res.message };
+        }
+
+        if (sName.includes('aura')) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mayra_apply_app_setting', {
+              detail: { appearance: { auraBorderMode: boolVal } }
+            }));
+          }
+          return { success: true, setting: 'auraBorderMode', value: boolVal };
+        }
+
+        if (sName.includes('orb')) {
+          const style = args.value || 'cyber_matrix';
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mayra_apply_app_setting', {
+              detail: { appearance: { orbStyle: style as any } }
+            }));
+          }
+          return { success: true, setting: 'orbStyle', value: style };
+        }
+
+        return { success: true, setting: args.settingName, value: args.value };
+      }
+    });
+
     // 5. open_url (SAFE)
     AgentToolRegistry.register({
       name: 'open_url',

@@ -576,13 +576,66 @@ export function detectLanguage(text: string): MayraLanguage {
 }
 
 /**
- * Generates dynamic greeting according to user language preference
+ * Generates dynamic greeting according to user language preference, time of day,
+ * and random variation so the user never hears the exact same phrase twice.
  */
 export function getDynamicGreeting(name: string = 'Zafer', lang: MayraLanguage = 'en'): string {
+  const currentHour = new Date().getHours();
+  const isMorning = currentHour >= 5 && currentHour < 12;
+  const isAfternoon = currentHour >= 12 && currentHour < 17;
+  const isEvening = currentHour >= 17 && currentHour < 22;
+  const isLateNight = currentHour >= 22 || currentHour < 5;
+
   if (lang === 'hi') {
-    return `Hii ${name}, kaise hain aap? Aaj hum kya karein?`;
+    const hindiGreetings = [
+      `Arre ${name} bhai! Dekh ke chehre pe alag hi muskaan aa gayi. Batao aaj kya bada plan hai?`,
+      `Kaise ho ${name} bhai! Main to kab se aapka hi intezar kar rahi thi. Sab badhiya na?`,
+      `Arre ${name} bhai, swagat hai! Batao aaj kis cheez pe dhoom machani hai?`,
+      `Namaste ${name} bhai! Aapki energy aate hi poora mahoul fresh ho gaya. Chalo batao kya karein?`,
+      `Arre ${name} bhai! Aaj ka din kaisa chal raha hai? Batao aaj kis kaam mein saath doon?`,
+      `Suno na ${name} bhai, aap aaye to achcha laga! Chalo batao kya naya explore karna hai?`
+    ];
+
+    if (isMorning) {
+      hindiGreetings.push(
+        `Good morning ${name} bhai! Ek nayi shuruaat aur nayi energy... batao aaj kya focus rahega?`,
+        `Subah bakhair ${name} bhai! Taaza hawa aur fresh mood ke saath chalo shuru karte hain!`
+      );
+    } else if (isEvening) {
+      hindiGreetings.push(
+        `Good evening ${name} bhai! Din kaisa beeta? Chalo thodi guftagu karein ya koi kaam niptaayein?`,
+        `Shaam ho gayi ${name} bhai! Thoda din bhar ka update do, sab badhiya raha na?`
+      );
+    } else if (isLateNight) {
+      hindiGreetings.push(
+        `Arre ${name} bhai, itni raat tak jag rahe ho? Lagta hai koi bada thought chal raha hai dimag mein!`,
+        `Raat ka sukoon aur aapka saath... batao ${name} bhai, kis cheez pe dhyan lagaya hai?`
+      );
+    }
+
+    const randomIndex = Math.floor(Math.random() * hindiGreetings.length);
+    return hindiGreetings[randomIndex];
   }
-  return `Hi ${name}, how are you? What should we do today?`;
+
+  // English greetings pool
+  const englishGreetings = [
+    `Hey ${name}! Always an absolute pleasure to have you here. What exciting thing are we tackling today?`,
+    `Welcome back, ${name}! Your presence instantly sets the momentum. Tell me, what's on your mind?`,
+    `Hey ${name}! I was waiting for you. How's everything going? What are we building or solving?`,
+    `Great to see you, ${name}! Ready to jump into action whenever you are. What's our primary focus?`,
+    `Hey ${name}! Good to have you around. Let's make today count—where shall we begin?`
+  ];
+
+  if (isMorning) {
+    englishGreetings.push(`Good morning, ${name}! Hope your day kicks off with massive positive momentum. What's step one?`);
+  } else if (isEvening) {
+    englishGreetings.push(`Good evening, ${name}! Wrapping up the day or gearing up for an evening sprint?`);
+  } else if (isLateNight) {
+    englishGreetings.push(`Late night hustle, ${name}? I'm right here beside you—what are we working on?`);
+  }
+
+  const randomIndex = Math.floor(Math.random() * englishGreetings.length);
+  return englishGreetings[randomIndex];
 }
 
 /**

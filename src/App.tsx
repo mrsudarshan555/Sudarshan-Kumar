@@ -294,10 +294,50 @@ export default function App() {
         }
         break;
       }
+      case 'CHANGE_SETTING': {
+        const { category, key, value } = action.payload || {};
+        if (category === 'appearance') {
+          setAppearanceConfig((prev) => ({ ...prev, [key]: value }));
+          console.log(`[MAYRA Settings] Applied appearance setting: ${key} = ${value}`);
+        } else if (category === 'assistant') {
+          setAssistantConfig((prev) => ({ ...prev, [key]: value }));
+          console.log(`[MAYRA Settings] Applied assistant setting: ${key} = ${value}`);
+        } else if (category === 'power' || key === 'ecoMode') {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('mayra_battery_saver', String(value));
+            localStorage.setItem('mayra_glow_battery_saver', String(value));
+            localStorage.setItem('mayra_device_eco_mode', String(value));
+          }
+          console.log(`[MAYRA Settings] Applied Eco Mode power setting: ${value}`);
+        }
+        break;
+      }
       default:
         break;
     }
-  }, [setMemories, setActivePhoneTab, setIsSettingsOpen, setCurrentSubScreen, setPermissions]);
+  }, [setMemories, setActivePhoneTab, setIsSettingsOpen, setCurrentSubScreen, setPermissions, setAppearanceConfig, setAssistantConfig]);
+
+  // Listen for unified settings controller background updates
+  useEffect(() => {
+    const handleAppSettingUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail) return;
+      if (detail.appearance) {
+        setAppearanceConfig((prev) => ({ ...prev, ...detail.appearance }));
+      }
+      if (detail.assistant) {
+        setAssistantConfig((prev) => ({ ...prev, ...detail.assistant }));
+      }
+      if (detail.custom?.ecoMode !== undefined) {
+        localStorage.setItem('mayra_battery_saver', String(detail.custom.ecoMode));
+        localStorage.setItem('mayra_glow_battery_saver', String(detail.custom.ecoMode));
+        localStorage.setItem('mayra_device_eco_mode', String(detail.custom.ecoMode));
+      }
+    };
+
+    window.addEventListener('mayra_apply_app_setting', handleAppSettingUpdate);
+    return () => window.removeEventListener('mayra_apply_app_setting', handleAppSettingUpdate);
+  }, [setAppearanceConfig, setAssistantConfig]);
 
   // Decoupled voice assistant state machine & Gemini chat processing
   const {
@@ -322,6 +362,7 @@ export default function App() {
   } = useMayraAssistant({
     personalConfig,
     assistantConfig,
+    appearanceConfig,
     memories,
     onExecuteAction: handleExecuteAction,
     onModeSwitch: (mode) => {

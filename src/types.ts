@@ -436,7 +436,8 @@ export type AppActionType =
   | 'CONTACT_ACTION'
   | 'CHANGE_LANGUAGE'
   | 'TOGGLE_SKILL'
-  | 'TOGGLE_SUB_AGENT';
+  | 'TOGGLE_SUB_AGENT'
+  | 'CHANGE_SETTING';
 
 export interface AppAction {
   type: AppActionType;
