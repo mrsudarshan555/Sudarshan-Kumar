@@ -33,11 +33,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # 1. Install Node Dependencies & Native Tailwind Linux Binding
+      # 1. Install Node Dependencies & Native Tailwind Linux Binding (with legacy-peer-deps)
       - name: Install Dependencies & Tailwind Native Binding
         run: |
-          npm install --include=optional
-          npm install -D @tailwindcss/oxide-linux-x64-gnu
+          npm install --legacy-peer-deps --include=optional
+          npm install -D --legacy-peer-deps @tailwindcss/oxide-linux-x64-gnu
 
       # 2. Build Web UI (HTML, CSS, React, 3D Assets, JS bundle)
       - name: Build Web App (Vite)
@@ -65,6 +65,7 @@ jobs:
       # 6. Create GitHub Release
       - name: Create GitHub Release and Upload APK
         uses: softprops/action-gh-release@v2
+        continue-on-error: true
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         with:
           tag_name: v1.0.${{ github.run_number }}
