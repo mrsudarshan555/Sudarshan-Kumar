@@ -1,0 +1,56 @@
+name: Build Mayra Capacitor APK
+
+on:
+  workflow_dispatch: # इससे तुम फोन से 'Run workflow' बटन दबाकर कभी भी APK बना सकते हो
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 1. सारी वेब डिपेंडेंसी इंस्टॉल करो
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+
+      # 2. असली Web UI को बिल्ड करो (जिससे dist/out बनेगी)
+      - name: Build Web App
+        run: npm run build
+
+      # 3. Capacitor इंस्टॉल और Sync करो ताकि असली Web UI Android फोल्डर में कॉपी हो जाए
+      - name: Sync Capacitor to Android
+        run: |
+          npx cap add android || true
+          npx cap sync android
+
+      # 4. Android APK कंपाइल करो
+      - name: Build Debug APK
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      # 5. तैयार APK को डाउनलोड के लिए सेव करो
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mayra-App-Debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
