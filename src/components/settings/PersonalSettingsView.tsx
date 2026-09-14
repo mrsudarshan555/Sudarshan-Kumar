@@ -326,7 +326,14 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
           </p>
 
           <div>
-            <label className="text-[10px] font-sans text-purple-300/70 uppercase block mb-1">Gemini API Key Slot</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-sans text-purple-300/70 uppercase block">Gemini API Key Slot</label>
+              {config.geminiApiKey && config.geminiApiKey.startsWith('AIzaSy') && (
+                <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
+                  ✓ Valid Key Format
+                </span>
+              )}
+            </div>
             <div className="relative">
               <input
                 type={showKey ? 'text' : 'password'}
@@ -336,7 +343,11 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                   triggerSaveNotification();
                 }}
                 placeholder="AIzaSy... (Default server-side key enabled)"
-                className="w-full bg-white/[0.06] focus:bg-white/[0.12] border border-white/15 rounded-2xl pl-3.5 pr-9 py-2 text-white font-mono text-xs outline-none focus:border-purple-400/80 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40"
+                className={`w-full bg-white/[0.06] focus:bg-white/[0.12] border ${
+                  config.geminiApiKey && !config.geminiApiKey.startsWith('AIzaSy')
+                    ? 'border-amber-400/60 focus:border-amber-400'
+                    : 'border-white/15 focus:border-purple-400/80'
+                } rounded-2xl pl-3.5 pr-9 py-2 text-white font-mono text-xs outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] placeholder:text-purple-300/40`}
               />
               <button
                 type="button"
@@ -346,6 +357,22 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
+
+            {config.geminiApiKey && !config.geminiApiKey.startsWith('AIzaSy') ? (
+              <div className="mt-1.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200 leading-relaxed space-y-1">
+                <p className="font-semibold text-amber-300">⚠️ Key Format Notice</p>
+                <p>
+                  आपकी Key <code className="bg-black/40 px-1 py-0.5 rounded text-amber-100">{config.geminiApiKey.slice(0, 6)}...</code> से शुरू हो रही है। Google Gemini की असली API Key हमेशा <strong className="text-white">AIzaSy</strong> से शुरू होती है।
+                </p>
+                <p className="text-[10px] text-amber-300/80">
+                  फ़्री Key पाने के लिए: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="underline text-purple-300 hover:text-white">aistudio.google.com/apikey</a> पर लॉगिन करें। (तब तक Mayra का बिल्ट-इन इंजन आपकी मदद करेगा!)
+                </p>
+              </div>
+            ) : !config.geminiApiKey ? (
+              <p className="text-[10px] text-purple-300/60 mt-1">
+                ✓ बिल्ट-इन सर्वर AI इंजन सक्रिय है। खुद की Key जोड़ना वैकल्पिक (optional) है।
+              </p>
+            ) : null}
           </div>
 
           <div>

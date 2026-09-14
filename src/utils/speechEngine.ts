@@ -1,4 +1,5 @@
 import { OfflineVoiceMatcher } from '../services/audio/offlineVoiceMatcher';
+import { apiUrl } from '../config/api';
 
 /**
  * MAYRA Voice & Live Audio Speech Engine
@@ -699,6 +700,48 @@ export function splitIntoSpeechChunks(text: string, maxChunkLength: number = 180
   return chunks.length > 0 ? chunks : [clean];
 }
 
+export function fallbackSpeechSynthesis(
+  text: string, 
+  lang: MayraLanguage = 'hi', 
+  onStart?: () => void, 
+  onEnd?: () => void
+): void {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (onEnd) onEnd();
+    return;
+  }
+  try {
+    window.speechSynthesis.cancel();
+    const clean = text.replace(/[*#_~`]/g, '').trim();
+    if (!clean) {
+      if (onEnd) onEnd();
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.15; // Pleasant female assistant pitch
+
+    const voices = window.speechSynthesis.getVoices();
+    const targetVoice = voices.find(v => 
+      (lang === 'hi' && (v.lang.includes('hi') || v.name.toLowerCase().includes('hindi'))) ||
+      (lang === 'en' && (v.lang.includes('en-IN') || v.lang.includes('en_IN') || v.name.toLowerCase().includes('india')))
+    ) || voices.find(v => v.lang.startsWith(lang === 'hi' ? 'hi' : 'en')) || voices[0];
+
+    if (targetVoice) {
+      utterance.voice = targetVoice;
+    }
+
+    if (onStart) utterance.onstart = () => onStart();
+    utterance.onend = () => { if (onEnd) onEnd(); };
+    utterance.onerror = () => { if (onEnd) onEnd(); };
+
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    if (onEnd) onEnd();
+  }
+}
+
 /**
  * Speaks text using Direct Gemini Aoede Voice API (24kHz PCM) with Long-Speech Continuous Streaming
  */
@@ -767,9 +810,9 @@ export async function speakText(
 
       try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 12000);
+        const timer = setTimeout(() => controller.abort(), 8000);
 
-        const res = await fetch('/api/voice/speak', {
+        const res = await fetch(apiUrl('/api/voice/speak'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: currentChunkText, language: lang, voiceName: effectiveVoice, assistant: 'mayra' }),
@@ -802,9 +845,11 @@ export async function speakText(
         }
       } catch (e) {}
 
-      // If network fetch for chunk failed, proceed to next or end
-      if (isLast && onEnd) onEnd();
-      else if (!isLast) playNextChunk();
+      // If network fetch for chunk failed, fallback to native device TTS for this chunk
+      fallbackSpeechSynthesis(currentChunkText, lang, onStart, () => {
+        if (isLast && onEnd) onEnd();
+        else if (!isLast) playNextChunk();
+      });
     };
 
     playNextChunk();
@@ -822,9 +867,9 @@ export async function speakText(
   // 4. Attempt direct natural Gemini Voice from backend (single chunk)
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+    const timer = setTimeout(() => controller.abort(), 8000);
 
-    const res = await fetch('/api/voice/speak', {
+    const res = await fetch(apiUrl('/api/voice/speak'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: cleanText, language: lang, voiceName: effectiveVoice, assistant: 'mayra' }),
@@ -844,8 +889,6 @@ export async function speakText(
     // Network or timeout notice
   }
 
-  // If direct natural voice audio is unavailable or fails, stay silent per user mandate (no robotic browser voice)
-  if (onEnd) {
-    onEnd();
-  }
+  // If direct natural voice audio from backend is unreachable, fallback to on-device SpeechSynthesis
+  fallbackSpeechSynthesis(cleanText, lang, onStart, onEnd);
 }

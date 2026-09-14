@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { AssistantStatus, ChatMessage, UserPersonalConfig, AssistantConfig, AppAction, MemoryItem, AgentTaskContext } from '../types';
+import { apiUrl, getWebSocketUrl } from '../config/api';
+import { getMayraSmartFallback } from '../services/ai/mayraConversationalFallback';
 import { 
   getSavedLanguage, 
   saveLanguagePreference, 
@@ -352,9 +354,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     }
 
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const activeVoice = assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Aoede';
-      const wsUrl = `${protocol}//${window.location.host}/api/live-ws?voiceName=${encodeURIComponent(activeVoice)}`;
+      const wsUrl = getWebSocketUrl(`/api/live-ws?voiceName=${encodeURIComponent(activeVoice)}`);
       console.log('[LIVE_WS_STATE] CONNECTING ->', wsUrl);
       const ws = new WebSocket(wsUrl);
 
@@ -1264,41 +1265,46 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       imageName: activeImage?.name || 'none'
     });
 
+    let deliveredViaWs = false;
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ text: trimmed, image: activeImage, contextPrompt: effectiveContextPrompt, history: recentHistory }));
-      console.log(`[LIVE_TEXT_SENT] Dispatched text, history & image to /api/live-ws`);
-    } else if (ws && ws.readyState === WebSocket.CONNECTING) {
-      ws.addEventListener('open', () => {
-        try {
-          ws.send(JSON.stringify({ text: trimmed, image: activeImage, contextPrompt: effectiveContextPrompt, history: recentHistory }));
-          console.log(`[LIVE_TEXT_SENT] Dispatched queued text, history & image on WebSocket OPEN`);
-        } catch (err) {
-          console.warn('[LIVE_TEXT_SEND_ERROR]', err);
-        }
-      }, { once: true });
-    } else {
-      // Fallback via /api/chat if WebSocket is unavailable (with multi-turn history & sentence-level TTS streaming)
       try {
-        console.log('[LIVE_WS_STATE] Fallback to /api/chat');
-        const res = await fetch('/api/chat', {
+        ws.send(JSON.stringify({ text: trimmed, image: activeImage, contextPrompt: effectiveContextPrompt, history: recentHistory }));
+        console.log(`[LIVE_TEXT_SENT] Dispatched text, history & image to /api/live-ws`);
+        deliveredViaWs = true;
+      } catch (err) {
+        console.warn('[LIVE_TEXT_SEND_ERROR] Falling back to HTTP:', err);
+      }
+    }
+
+    if (!deliveredViaWs) {
+      // Direct HTTP /api/chat with timeout, native fallback, and custom API key validation
+      try {
+        console.log('[LIVE_WS_STATE] Dispatching via HTTP apiUrl(/api/chat)');
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
+        const res = await fetch(apiUrl('/api/chat'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: abortController.signal,
           body: JSON.stringify({
             message: trimmed,
             history: recentHistory,
             image: activeImage,
             contextPrompt: effectiveContextPrompt,
             persona: assistantConfig.personaTone,
-            model: personalConfig.geminiModel || 'gemini-3.1-flash-lite',
+            model: personalConfig.geminiModel || 'gemini-2.5-flash',
             temperature: personalConfig.temperature ?? 0.7,
             userName: personalConfig.preferredName || personalConfig.fullName,
             language: detected,
             assistant: 'mayra',
             voiceName: assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Aoede',
+            apiKey: personalConfig.geminiApiKey,
             returnAudio: true,
             stream: true
           })
         });
+        clearTimeout(timeoutId);
 
         // Handle SSE streaming response if returned
         if (res.ok && res.headers.get('content-type')?.includes('text/event-stream') && res.body) {
@@ -1364,45 +1370,67 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
               }
             }
           }
+          setStatus('READY');
           return;
         }
 
-        // Standard JSON response handling
-        const data = await res.json();
-        if (data.action && onExecuteAction) {
-          onExecuteAction(data.action);
+        if (res.ok) {
+          // Standard JSON response handling
+          const data = await res.json();
+          if (data.action && onExecuteAction) {
+            onExecuteAction(data.action);
+          }
+          if (data.autoMemorySaved && onExecuteAction) {
+            onExecuteAction({
+              type: 'AUTO_MEMORY_SAVED',
+              payload: data.autoMemorySaved
+            });
+          }
+          const reply = data.response || 'Ji Zafer bhai, main taiyar hoon!';
+          const assistantMsg: ChatMessage = {
+            id: `msg-m-${Date.now() + 1}`,
+            sender: 'mayra',
+            text: reply,
+            timestamp: Date.now()
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+          MemorySyncBridge.getInstance().syncConversationTurn('MAYRA', trimmed, reply).catch(() => {});
+          if (data.audioBase64) {
+            schedulePcm24kChunk(
+              data.audioBase64,
+              handleSpeechStart,
+              handleSpeechEnd
+            );
+          } else {
+            speakText(
+              reply,
+              detected,
+              handleSpeechStart,
+              handleSpeechEnd
+            );
+          }
+          setStatus('READY');
+          return;
         }
-        if (data.autoMemorySaved && onExecuteAction) {
-          onExecuteAction({
-            type: 'AUTO_MEMORY_SAVED',
-            payload: data.autoMemorySaved
-          });
-        }
-        const reply = data.response || 'Routine executed.';
+
+        throw new Error(`HTTP error ${res.status}`);
+      } catch (e) {
+        console.warn('[MAYRA Fallback] Remote /api/chat error, activating instant neural fallback:', e);
+        // Guaranteed zero-hang response: immediate warm reply in Hindi/English + voice synthesis
+        const smartFallback = getMayraSmartFallback(
+          trimmed, 
+          personalConfig.preferredName || personalConfig.fullName, 
+          personalConfig.geminiApiKey
+        );
         const assistantMsg: ChatMessage = {
           id: `msg-m-${Date.now() + 1}`,
           sender: 'mayra',
-          text: reply,
+          text: smartFallback.reply,
           timestamp: Date.now()
         };
         setMessages((prev) => [...prev, assistantMsg]);
-        MemorySyncBridge.getInstance().syncConversationTurn('MAYRA', trimmed, reply).catch(() => {});
-        if (data.audioBase64) {
-          schedulePcm24kChunk(
-            data.audioBase64,
-            handleSpeechStart,
-            handleSpeechEnd
-          );
-        } else {
-          speakText(
-            reply,
-            detected,
-            handleSpeechStart,
-            handleSpeechEnd
-          );
-        }
-      } catch (e) {
-        console.warn('Fallback error:', e);
+        MemorySyncBridge.getInstance().syncConversationTurn('MAYRA', trimmed, smartFallback.reply).catch(() => {});
+        speakText(smartFallback.reply, detected, handleSpeechStart, handleSpeechEnd);
         setStatus('READY');
       }
     }
