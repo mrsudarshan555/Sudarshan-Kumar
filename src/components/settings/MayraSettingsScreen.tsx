@@ -23,6 +23,18 @@ import { OptionalIntegrationsView } from './OptionalIntegrationsView';
 import { PrivacyView } from './PrivacyView';
 import { AboutView } from './AboutView';
 import { PermissionsCenterView } from './PermissionsCenterView';
+import { VoiceModelsView } from './VoiceModelsView';
+import { AuraControlView } from './AuraControlView';
+import { SubscriptionPlansView } from './SubscriptionPlansView';
+import { APICloudSettingsView } from './APICloudSettingsView';
+import { ConnectorsView } from './ConnectorsView';
+import { VoiceAuthView } from './VoiceAuthView';
+import { MyraSecurityView } from './MyraSecurityView';
+import { WakeWordView } from './WakeWordView';
+import { IntelligenceModesView } from './IntelligenceModesView';
+import { LicenseActivationView } from './LicenseActivationView';
+import { AccountProfileView } from './AccountProfileView';
+import { AIIdentityView } from './AIIdentityView';
 import { NativeIntegrationView } from './NativeIntegrationView';
 import { LinkedDevicesView } from './LinkedDevicesView';
 import { OfflineModelsView } from './OfflineModelsView';
@@ -44,6 +56,7 @@ import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground'
 import { MayraLogo } from '../common/MayraLogo';
 import { AppIconTile } from '../common/AppIconTile';
 import { ORB_STYLES, ORB_COLORS } from '../character/MayraOrb';
+import { detectUserDevice, DeviceTelemetry } from '../../utils/deviceDetector';
 import { NeuralTradingFinanceEngine } from '../../services/finance/NeuralTradingFinanceEngine';
 import { DeepAutomationMatrixEngine } from '../../services/automation/DeepAutomationMatrixEngine';
 import { SystemAutomationEmergencyEngine } from '../../services/automation/SystemAutomationEmergencyEngine';
@@ -57,7 +70,7 @@ import {
   Shield, CheckCircle2, Smartphone, PenTool, HardDrive,
   Palette, Moon, Sun, KeyRound, AlertOctagon, Car, MessageSquare,
   ScanText, Zap, Terminal, Brain, Volume2, TrendingUp, Activity,
-  BatteryCharging, Radio
+  BatteryCharging, Radio, Crown, Orbit, Mic, Fingerprint, Sliders
 } from 'lucide-react';
 
 interface SettingCategoryItem {
@@ -216,6 +229,12 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
   const [cameFromAdvanced, setCameFromAdvanced] = useState(false);
   const isDark = appearanceConfig?.darkMode ?? true;
+  const [telemetry, setTelemetry] = useState<DeviceTelemetry>(() => detectUserDevice());
+  const [showWidgetsCarousel, setShowWidgetsCarousel] = useState(false);
+
+  useEffect(() => {
+    setTelemetry(detectUserDevice());
+  }, []);
 
   // --- LIVE ENGINE SUBSCRIPTIONS FOR ANDROID WIDGET STACK ---
   const [tradingLive, setTradingLive] = useState(() => {
@@ -353,18 +372,127 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
     setMemories(restored);
   };
 
-  // Unified Liquid Magnifying Glass Atmosphere Wrapper
+  // Unified High-Performance Solid Native App Container
   const wrapWithAtmosphere = (content: React.ReactNode) => (
-    <div className="flex-1 flex flex-col h-full relative select-none overflow-hidden text-slate-100 bg-transparent">
-      {/* Dynamic Cosmic Velvet Atmosphere matching character home screen */}
-      <HomeAtmosphereBackground status="READY" />
-      <div className="relative z-10 flex-1 flex flex-col h-full overflow-hidden bg-transparent">
+    <div className="flex-1 flex flex-col h-full relative select-none overflow-hidden text-slate-100 bg-[#090a0f]">
+      <div className="relative z-10 flex-1 flex flex-col h-full overflow-hidden bg-[#090a0f]">
         {content}
       </div>
     </div>
   );
 
   // Sub-screen routing with persistent model atmosphere and magnifying glass effect
+  if (currentSubScreen === 'voice_models') {
+    return (
+      <VoiceModelsView
+        config={assistantConfig}
+        onChange={(updated) => setAssistantConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'aura_control') {
+    return (
+      <AuraControlView
+        appearanceConfig={appearanceConfig}
+        assistantConfig={assistantConfig}
+        onChangeAppearance={(updated) => setAppearanceConfig(prev => ({ ...prev, ...updated }))}
+        onChangeAssistant={(updated) => setAssistantConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => setCurrentSubScreen('root')}
+        onNavigateToSubscription={() => setCurrentSubScreen('subscription_plans')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'subscription_plans') {
+    return (
+      <SubscriptionPlansView
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'api_cloud_settings') {
+    return (
+      <APICloudSettingsView
+        personalConfig={personalConfig}
+        setPersonalConfig={setPersonalConfig}
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'connectors') {
+    return (
+      <ConnectorsView
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'voice_auth') {
+    return (
+      <VoiceAuthView
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'myra_security') {
+    return (
+      <MyraSecurityView
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'wake_word') {
+    return (
+      <WakeWordView
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'intelligence_modes') {
+    return (
+      <IntelligenceModesView
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'license_activation') {
+    return (
+      <LicenseActivationView
+        onBack={() => setCurrentSubScreen('root')}
+        onNavigateToPlans={() => setCurrentSubScreen('subscription_plans')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'account_profile') {
+    return (
+      <AccountProfileView
+        personalConfig={personalConfig}
+        setPersonalConfig={setPersonalConfig}
+        onBack={() => setCurrentSubScreen('root')}
+        onLogout={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
+  if (currentSubScreen === 'ai_identity') {
+    return (
+      <AIIdentityView
+        assistantConfig={assistantConfig}
+        onChange={(updated) => setAssistantConfig(prev => ({ ...prev, ...updated }))}
+        onBack={() => setCurrentSubScreen('root')}
+      />
+    );
+  }
+
   if (currentSubScreen === 'permissions') {
     return wrapWithAtmosphere(
       <PermissionsCenterView
@@ -908,12 +1036,9 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
   })).filter(section => section.items.length > 0);
 
   return (
-    <div className="flex-1 flex flex-col h-full relative select-none overflow-hidden text-slate-100 bg-transparent">
-      {/* Dynamic Cosmic Ambient Particle Background */}
-      <HomeAtmosphereBackground status="READY" />
-      
-      {/* Top Header - iPhone Liquid Frosted Glass */}
-      <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between z-10 shrink-0 bg-white/[0.06] backdrop-blur-3xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+    <div className="flex-1 flex flex-col h-full relative select-none overflow-hidden text-slate-100 bg-[#090a0f]">
+      {/* Top Header - Solid Native Android Bar matching Video */}
+      <div className="h-14 px-4 border-b border-white/5 flex items-center justify-between z-10 shrink-0 bg-[#0d0e14] shadow-md">
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
@@ -923,10 +1048,10 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                 onCloseSettings();
               }
             }}
-            className="p-2 -ml-1 rounded-full text-purple-300 hover:text-white hover:bg-white/10 transition-all active:scale-95 cursor-pointer"
+            className="p-2 -ml-1 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95 cursor-pointer"
             title={selectedCategory ? 'Back to Categories' : 'Back to Home'}
           >
-            <ArrowLeft className="w-5 h-5 stroke-[2] text-purple-200" />
+            <ArrowLeft className="w-5 h-5 stroke-[2] text-slate-200" />
           </button>
 
           <div className="flex flex-col min-w-0">
@@ -934,7 +1059,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
               {selectedCategory ? (CATEGORY_DETAILS[selectedCategory]?.name || selectedCategory) : 'Dashboard'}
             </h1>
             {selectedCategory && (
-              <span className="text-[10px] text-purple-300/70 font-sans -mt-0.5 font-medium">
+              <span className="text-[10px] text-slate-400 font-sans -mt-0.5 font-medium">
                 Dashboard &gt; {selectedCategory}
               </span>
             )}
@@ -945,36 +1070,36 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setAppearanceConfig(prev => ({ ...prev, darkMode: !prev.darkMode }))}
-            className="p-1.5 rounded-full border border-white/15 bg-white/[0.08] text-purple-200 hover:text-white hover:bg-white/[0.15] transition-all cursor-pointer shadow-sm"
+            className="p-1.5 rounded-full border border-white/10 bg-[#15161f] text-slate-300 hover:text-white transition-all cursor-pointer shadow-sm"
             title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
             {isDark ? <Moon className="w-4 h-4 stroke-[1.8]" /> : <Sun className="w-4 h-4 stroke-[1.8]" />}
           </button>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-purple-400/30 bg-purple-950/40 text-purple-200 shadow-[0_0_12px_rgba(168,85,247,0.2)]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-red-500/30 bg-[#ff2a4b]/10 text-red-200 shadow-[0_0_12px_rgba(255,42,75,0.2)]">
             <MayraLogo size={16} showGlow={false} />
-            <span className="text-[10px] font-sans font-bold tracking-wider text-purple-100">
+            <span className="text-[10px] font-sans font-bold tracking-wider text-white">
               ★MAYRA
             </span>
           </div>
         </div>
       </div>
 
-      {/* Search Input Bar - iPhone Frosted Pill */}
-      <div className="p-3 border-b border-white/10 shrink-0 bg-[#120626]/50 backdrop-blur-xl">
+      {/* Search Input Bar - High Performance Native Pill */}
+      <div className="p-3 border-b border-white/5 shrink-0 bg-[#0d0e14]">
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-300/70 stroke-[1.8]" />
+          <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 stroke-[1.8]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search in Dashboard..."
-            className="w-full pl-9 pr-8 py-2 border border-white/20 rounded-2xl text-xs bg-white/[0.06] focus:bg-white/[0.12] text-white placeholder:text-purple-300/40 focus:border-purple-400/80 focus:outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] font-sans"
+            className="w-full pl-9 pr-8 py-2 border border-white/10 rounded-2xl text-xs bg-[#15161f] focus:bg-[#1a1c28] text-white placeholder:text-slate-500 focus:border-[#ff2a4b]/80 focus:outline-none transition-all font-sans"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300/70 hover:text-white cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
             >
               <X className="w-3.5 h-3.5 stroke-[1.8]" />
             </button>
@@ -982,8 +1107,8 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
         </div>
       </div>
 
-      {/* Main Settings Body */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/20">
+      {/* Main Settings Body - Native Android smooth touch scroll */}
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-4 scrollbar-none overscroll-contain">
         
         {/* CASE 1: SEARCH QUERY ACTIVE - Show Matching Items Across All Categories */}
         {searchQuery.trim().length > 0 && (
@@ -1049,77 +1174,277 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
           </div>
         )}
 
-        {/* CASE 2: ROOT CATEGORY HUB (No search & no category selected) */}
+        {/* CASE 2: ROOT SETTINGS HUB - Screen Recording Pixel-Perfect Layout */}
         {!searchQuery && selectedCategory === null && (
           <div className="space-y-4">
-            {/* Top Glance Live Widgets Carousel */}
-            <SettingsTopWidgetCarousel
-              onNavigateSubScreen={(screen) => setCurrentSubScreen(screen)}
-              assistantConfig={assistantConfig}
-              voiceGuardianConfig={voiceGuardianConfig}
-              personalConfig={personalConfig}
-              permissions={permissions}
-              appLockConfig={appLockConfig}
-            />
+            {/* Profile & Aura Bar - Exact Video Top Banner */}
+            <div className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
+              isDark 
+                ? 'bg-[#121318] border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.5)]' 
+                : 'bg-white border-slate-200 shadow-sm'
+            }`}>
+              <div 
+                onClick={() => setCurrentSubScreen('account_profile')}
+                className="flex items-center gap-3 cursor-pointer group"
+              >
+                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#ff2a4b] to-rose-600 flex items-center justify-center text-white font-bold text-base shadow-[0_0_15px_rgba(255,42,75,0.4)] ring-2 ring-[#ff2a4b]/30">
+                  {personalConfig.fullName ? personalConfig.fullName.charAt(0).toUpperCase() : 'Z'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white group-hover:text-[#ff2a4b] transition-colors">
+                      {personalConfig.fullName || 'MindSet Zafer'}
+                    </span>
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[#ff2a4b]/20 text-[#ff2a4b] border border-[#ff2a4b]/40 font-bold">
+                      Free Tier
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {personalConfig.email || 'mindsetzafer@gmail.com'}
+                  </p>
+                </div>
+              </div>
 
-            {/* Category Hub Title */}
+              <button
+                onClick={() => setCurrentSubScreen('aura_control')}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#ff2a4b] to-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_12px_rgba(255,42,75,0.4)] active:scale-95 transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AURA</span>
+              </button>
+            </div>
+
+            {/* Live Phone Telemetry & Hardware Glance Banner (Collapsible to keep settings front & center) */}
+            <div className="rounded-2xl border border-white/5 bg-[#121318] overflow-hidden shadow-sm">
+              <button
+                type="button"
+                onClick={() => setShowWidgetsCarousel(prev => !prev)}
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                  <span className="text-xs font-bold text-white tracking-wide">Live Phone Telemetry & Hardware Glance</span>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
+                    {showWidgetsCarousel ? '18 Cards • Hide' : '18 Cards • View'}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400 font-mono">{showWidgetsCarousel ? '▲' : '▼'}</span>
+              </button>
+
+              {showWidgetsCarousel && (
+                <div className="p-3 pt-0 border-t border-white/5">
+                  <SettingsTopWidgetCarousel
+                    onNavigateSubScreen={(screen) => setCurrentSubScreen(screen)}
+                    assistantConfig={assistantConfig}
+                    voiceGuardianConfig={voiceGuardianConfig}
+                    personalConfig={personalConfig}
+                    permissions={permissions}
+                    appLockConfig={appLockConfig}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Section Header */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
-                <h3 className="text-xs font-sans font-bold tracking-wider uppercase text-purple-200">
-                  Categories
+                <span className="w-2 h-2 rounded-full bg-[#ff2a4b] shadow-[0_0_8px_rgba(255,42,75,0.8)]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                  Settings
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/30 font-bold">
-                  {settingSections.length}
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#121318] text-[#ff2a4b] border border-[#ff2a4b]/30 font-bold">
+                  14
                 </span>
               </div>
-              <span className="text-[10px] text-purple-300/60 font-sans">
-                Ek-ek category ko tap karke dekhein
+              <span className="text-[10px] text-slate-400">
+                Tap to customize
               </span>
             </div>
 
-            {/* Category Cards List with Magnifying Glass Frosted Finish */}
-            <div className="space-y-2.5">
-              {settingSections.map((section) => {
-                const meta = CATEGORY_DETAILS[section.category] || {
-                  name: section.category,
-                  subtitle: `${section.items.length} items`,
-                  icon: SettingsIcon,
-                  color: 'purple',
-                  countBadge: `${section.items.length} Settings`,
-                  tagline: 'Options configure karein'
-                };
-                const IconComp = meta.icon;
-
+            {/* Primary Settings List - Exactly Matching Screen Recording */}
+            <div className="space-y-2">
+              {[
+                {
+                  id: 'aura_control' as SettingsSubScreen,
+                  title: 'Aura Control',
+                  subtitle: 'Visual identity, launcher core, aura signature & language',
+                  badge: 'AURA',
+                  icon: Sparkles
+                },
+                {
+                  id: 'subscription_plans' as SettingsSubScreen,
+                  title: 'Subscription Plans',
+                  subtitle: 'Free, Basic, Premium, Elite & Lifetime Membership',
+                  badge: 'PLANS',
+                  icon: Crown
+                },
+                {
+                  id: 'orb_customization' as SettingsSubScreen,
+                  title: 'Orb Customization',
+                  subtitle: 'Classic, Energy, Neon, particle size & chromatic hue',
+                  badge: '3D ORB',
+                  icon: Orbit
+                },
+                {
+                  id: 'voice_models' as SettingsSubScreen,
+                  title: 'Voice Models',
+                  subtitle: '18 neural voice actors, playback speed & noise filters',
+                  badge: '18 VOICES',
+                  icon: Volume2
+                },
+                {
+                  id: 'ai_identity' as SettingsSubScreen,
+                  title: 'AI & Identity',
+                  subtitle: 'Normal, GF Mode, Friend Mode, Nautanki Mode & prompt',
+                  badge: 'PERSONALITY',
+                  icon: Bot
+                },
+                {
+                  id: 'api_cloud_settings' as SettingsSubScreen,
+                  title: 'API & Cloud Settings',
+                  subtitle: 'OpenRouter, Groq, Gemini, DeepSeek & Tavily keys',
+                  badge: 'MODELS',
+                  icon: Cpu
+                },
+                {
+                  id: 'connectors' as SettingsSubScreen,
+                  title: 'Connectors',
+                  subtitle: 'Groq, OpenAI, Claude, Perplexity, Tavily, YouTube, Spotify',
+                  badge: '17 READY',
+                  icon: Boxes
+                },
+                {
+                  id: 'permissions' as SettingsSubScreen,
+                  title: 'Permissions Center',
+                  subtitle: `${grantedPermissionsCount}/${permissions.length} granted • Hardware, mic, camera & listener`,
+                  badge: 'SHIELD',
+                  icon: ShieldCheck
+                },
+                {
+                  id: 'voice_auth' as SettingsSubScreen,
+                  title: 'Voice Authentication',
+                  subtitle: 'Enroll vocal biometric print & security threshold',
+                  badge: 'BIOMETRIC',
+                  icon: Mic
+                },
+                {
+                  id: 'myra_security' as SettingsSubScreen,
+                  title: 'MYRA Security',
+                  subtitle: 'App lock, fingerprint, GF Mode secret vault & master PIN',
+                  badge: 'SECURITY',
+                  icon: Lock
+                },
+                {
+                  id: 'wake_word' as SettingsSubScreen,
+                  title: 'Wake Word',
+                  subtitle: 'Voice hotword trigger, mic test & Picovoice access key',
+                  badge: 'WAKE WORD',
+                  icon: Radio
+                },
+                {
+                  id: 'intelligence_modes' as SettingsSubScreen,
+                  title: 'Intelligence & Modes',
+                  subtitle: 'WhatsApp/Gmail reader, auto-reply, Driving, Sleep & Work',
+                  badge: 'AUTOMATION',
+                  icon: Zap
+                },
+                {
+                  id: 'license_activation' as SettingsSubScreen,
+                  title: 'License & Subscription',
+                  subtitle: 'Verify activation ID, input license key & lifetime upgrade',
+                  badge: 'KEY',
+                  icon: KeyRound
+                },
+                {
+                  id: 'account_profile' as SettingsSubScreen,
+                  title: 'Account & Profile',
+                  subtitle: `${personalConfig.fullName || 'MindSet Zafer'} • UID: ${telemetry.uid} • ${telemetry.deviceName}`,
+                  badge: 'PROFILE',
+                  icon: User
+                }
+              ].map((item) => {
+                const IconComponent = item.icon;
                 return (
                   <button
-                    key={`cat-card-${section.category}`}
-                    onClick={() => setSelectedCategory(section.category)}
-                    className="w-full p-4 rounded-3xl bg-white/[0.07] hover:bg-white/[0.12] active:bg-white/[0.15] active:scale-[0.98] backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] flex items-center justify-between transition-all group text-left cursor-pointer"
+                    key={`video-item-${item.id}`}
+                    onClick={() => setCurrentSubScreen(item.id)}
+                    className={`w-full p-3.5 rounded-2xl border transition-all flex items-center justify-between text-left group active:scale-[0.99] cursor-pointer ${
+                      isDark 
+                        ? 'bg-[#121318] hover:bg-[#161822] border-white/5 hover:border-[#ff2a4b]/40 shadow-[0_2px_10px_rgba(0,0,0,0.3)]' 
+                        : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-[#ff2a4b]/40 shadow-sm'
+                    }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                      <AppIconTile icon={IconComp} color={meta.color} size="lg" />
+                      <div className="w-10 h-10 rounded-xl bg-[#ff2a4b]/10 border border-[#ff2a4b]/20 flex items-center justify-center shrink-0 text-[#ff2a4b] group-hover:scale-105 group-hover:bg-[#ff2a4b]/20 transition-all">
+                        <IconComponent className="w-5 h-5 stroke-[2]" />
+                      </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold font-sans tracking-tight text-white group-hover:text-purple-300 transition-colors">
-                            {meta.name}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-white group-hover:text-[#ff2a4b] transition-colors truncate">
+                            {item.title}
                           </span>
-                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-200 border border-purple-400/40 shrink-0">
-                            {meta.countBadge}
-                          </span>
+                          {item.badge && (
+                            <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#ff2a4b]/15 text-[#ff2a4b] border border-[#ff2a4b]/30 shrink-0">
+                              {item.badge}
+                            </span>
+                          )}
                         </div>
-                        <p className="text-[11px] font-normal font-sans text-purple-200/70 line-clamp-1 mt-0.5">
-                          {meta.subtitle}
+                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                          {item.subtitle}
                         </p>
                       </div>
                     </div>
 
-                    <div className="w-8 h-8 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-purple-500/20 group-hover:border-purple-400/40 transition-all">
-                      <ChevronRight className="w-4 h-4 text-purple-300 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                    <div className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-[#ff2a4b]/20 transition-all">
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#ff2a4b] group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </button>
                 );
               })}
+            </div>
+
+            {/* Extra Categories Accordion (For advanced tools) */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Browse by Category
+                </span>
+                <span className="text-[10px] text-slate-500">
+                  {settingSections.length} categories
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {settingSections.map((section) => {
+                  const meta = CATEGORY_DETAILS[section.category] || {
+                    name: section.category,
+                    icon: SettingsIcon
+                  };
+                  const IconComp = meta.icon;
+                  return (
+                    <button
+                      key={`cat-btn-${section.category}`}
+                      onClick={() => setSelectedCategory(section.category)}
+                      className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all active:scale-95 cursor-pointer ${
+                        isDark 
+                          ? 'bg-[#121318]/70 hover:bg-[#161822] border-white/5 hover:border-white/20' 
+                          : 'bg-white hover:bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 shrink-0">
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-white truncate">
+                          {meta.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          {section.items.length} items
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

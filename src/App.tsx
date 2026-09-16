@@ -21,9 +21,21 @@ import { ConfirmationGateService } from './services/markLII/confirmationGateServ
 
 export default function App() {
   // Initial App Startup / Splash screen state
-  const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const completed = localStorage.getItem('mayra_onboarding_completed');
+      return !completed;
+    }
+    return false;
+  });
+  const [isSplashVisible, setIsSplashVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const completed = localStorage.getItem('mayra_onboarding_completed');
+      return Boolean(completed);
+    }
+    return false;
+  });
   const [splashFading, setSplashFading] = useState(false);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   useEffect(() => {
     // Initialize unified shared markdown memory vault
@@ -46,15 +58,15 @@ export default function App() {
               setIsOnboardingOpen(true);
             }
           }
-        }, 700);
+        }, 250);
       }
     };
 
-    // Minimum display duration (1.2s)
+    // Fast startup minimum display duration (200ms)
     const minTimer = setTimeout(() => {
       minTimePassed = true;
       tryDismissSplash();
-    }, 1200);
+    }, 200);
 
     // Event fired strictly when the 3D character mesh has loaded and rendered its frames
     const onModelLoaded = () => {

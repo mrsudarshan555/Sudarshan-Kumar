@@ -1,10 +1,31 @@
 export type AppView = 'phone' | 'codebase' | 'settings_explorer' | 'memory' | 'tools' | 'architecture';
 
-export type PhoneNavTab = 'home' | 'scan' | 'memories' | 'chat';
+export type PhoneNavTab = 'home' | 'scan' | 'memories' | 'chat' | 'triggers' | 'settings';
 export type ActiveTab = PhoneNavTab;
 
 export type SettingsSubScreen = 
   | 'root'
+  | 'voice_models'
+  | 'voice_settings'
+  | 'orb_customization'
+  | 'aura_control'
+  | 'api_cloud_settings'
+  | 'connectors'
+  | 'permissions'
+  | 'voice_authentication'
+  | 'voice_auth'
+  | 'myra_security'
+  | 'wake_word'
+  | 'intelligence_modes'
+  | 'pc_connect'
+  | 'world_model'
+  | 'license_activation'
+  | 'subscription_plans'
+  | 'user_profile'
+  | 'account_profile'
+  | 'batch_update'
+  | 'account'
+  | 'ai_identity'
   | 'persona_voice_studio'
   | 'touch_security_vault'
   | 'system_unlock_automation'
@@ -17,13 +38,11 @@ export type SettingsSubScreen =
   | 'quantum_memory_vision'
   | 'automation_dialogue_matrix'
   | 'neural_trading_matrix'
-  | 'permissions'
   | 'native_integration'
   | 'personal'
   | 'country_code'
   | 'assistant'
   | 'appearance'
-  | 'orb_customization'
   | 'skills'
   | 'sub_agents'
   | 'voice_guardian'
@@ -259,6 +278,7 @@ export interface KotlinFile {
 export interface UserPersonalConfig {
   fullName: string;
   preferredName: string;
+  userName?: string;
   email: string;
   profession?: string;
   additionalInfo?: string;
@@ -267,6 +287,9 @@ export interface UserPersonalConfig {
   greetingStyle: 'warm' | 'formal' | 'casual' | 'brief';
   geminiApiKey: string;
   geminiModel: string;
+  openRouterApiKey?: string;
+  groqApiKey?: string;
+  deepSeekApiKey?: string;
   temperature: number;
   favoriteMusicGenre?: string;
   youtubeApiKey?: string;
@@ -276,6 +299,10 @@ export type AssistantMode = 'mayra' | 'stonicx';
 
 export interface AssistantConfig {
   activeMode?: AssistantMode; // 'mayra' | 'stonicx' (persisted active app-shell mode)
+  name?: string;
+  systemPrompt?: string;
+  personalityMode?: 'normal' | 'gf' | 'friend' | 'nautanki';
+  selectedVoice?: string;
   personaTone: 'executive' | 'friendly' | 'technical' | 'concise';
   voiceProfile: string;
   mayraVoice?: string; // Neural voice for Mayra (Aoede, Kore, Charon, Fenrir, etc.)

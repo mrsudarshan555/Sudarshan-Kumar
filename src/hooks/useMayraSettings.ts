@@ -137,12 +137,12 @@ function getInitialLauncherIcon(): 'cyan_default' | 'amber_gold' | 'violet_cosmi
 }
 
 function getInitialAppTheme(): AppThemePreset {
-  if (typeof window === 'undefined') return 'cyan';
+  if (typeof window === 'undefined') return 'purple';
   try {
     const saved = localStorage.getItem(APP_THEME_STORAGE_KEY) as AppThemePreset;
     if (saved && APP_THEMES[saved]) return saved;
   } catch (e) {}
-  return 'cyan';
+  return 'purple';
 }
 
 function getInitialCameraAspectRatio(): '9:16' | '3:4' | '1:1' | '4:3' | 'full' {

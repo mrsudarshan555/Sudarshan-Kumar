@@ -404,19 +404,19 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
         </div>
       )}
 
-      {/* Screen Body Viewport with AnimatePresence Transitions & Error Boundary */}
-      <div className="flex-1 flex flex-col relative overflow-hidden min-h-0">
+      {/* Screen Body Viewport with Fast Solid Native Transitions & Error Boundary */}
+      <div className="flex-1 flex flex-col relative overflow-hidden min-h-0 bg-[#090a0f]">
         <MayraErrorBoundary>
-          <AnimatePresence mode="wait" custom={direction}>
+          <AnimatePresence initial={false} custom={direction}>
             {/* Settings Full View */}
             {isSettingsOpen ? (
               <motion.div
                 key="settings-screen"
-                initial={{ opacity: 0, x: 30, scale: 0.99 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -30, scale: 0.99 }}
-                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-full flex flex-col"
+                initial={{ opacity: 0, scale: 0.99 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.99 }}
+                transition={{ duration: 0.12, ease: 'easeOut' }}
+                className="w-full h-full flex flex-col will-change-transform"
               >
                 <MayraSettingsScreen
                   currentSubScreen={currentSubScreen}
@@ -462,11 +462,11 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
               <motion.div
                 key={activeTab}
                 custom={direction}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-full flex flex-col min-h-0"
+                initial={{ opacity: 0.8 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0.8 }}
+                transition={{ duration: 0.1, ease: 'easeOut' }}
+                className="w-full h-full flex flex-col min-h-0 will-change-transform"
               >
                 {activeTab === 'home' && (
                   <HomeScreen

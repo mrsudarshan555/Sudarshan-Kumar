@@ -69,7 +69,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   const agentEngineRef = useRef<MayraAgentEngine | null>(null);
   const pendingQuizConfigRef = useRef<Partial<QuizConfig> | null>(null);
 
-  const userName = personalConfig.preferredName || personalConfig.fullName || 'Zafer';
+  const userName = personalConfig.preferredName || personalConfig.fullName || (typeof window !== 'undefined' ? localStorage.getItem('mayra_user_name') : null) || 'Friend';
   const initialGreeting = useRef(getDynamicGreeting(userName, getSavedLanguage())).current;
 
   // Initialize MayraAgentEngine
@@ -234,7 +234,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       ) {
         hasTriggeredIdleCheckinRef.current = true;
         const currentLang = lastSpokenLanguageRef.current || currentLanguage;
-        const userName = personalConfig.preferredName || personalConfig.fullName || 'Zafer';
+        const userName = personalConfig.preferredName || personalConfig.fullName || (typeof window !== 'undefined' ? localStorage.getItem('mayra_user_name') : null) || 'Friend';
         
         // Deep multi-turn empathy evaluation
         const empathy = MayraEmpathyEngine.evaluateEmpathyState(messages, status, true);
@@ -745,8 +745,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       const deployedNames = plan.activeAgents.map(a => a.name).join(', ');
 
       const immediateAck = (detected === 'hi')
-        ? `हाँ Zafer भाई, बिल्कुल! मल्टी-एजेंट स्वार्म को तैनात कर रही हूँ—${plan.activeAgents.length} एजेंट्स एक साथ समानांतर में जुट रहे हैं!`
-        : `Right away, Zafer! Deploying Multi-Agent Swarm with ${plan.activeAgents.length} specialized agents in parallel!`;
+        ? `हाँ ${userName} भाई, बिल्कुल! मल्टी-एजेंट स्वार्म को तैनात कर रही हूँ—${plan.activeAgents.length} एजेंट्स एक साथ समानांतर में जुट रहे हैं!`
+        : `Right away, ${userName}! Deploying Multi-Agent Swarm with ${plan.activeAgents.length} specialized agents in parallel!`;
 
       const ackMsg: ChatMessage = {
         id: `msg-m-swarm-ack-${Date.now()}`,
@@ -900,8 +900,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     if (isMultiStepIntent && agentEngineRef.current) {
       console.log(`[MAYRA Agent V1] Multi-step autonomous task detected: "${trimmed}"`);
       const immediateAck = (detected === 'hi')
-        ? 'हाँ भाई, बिल्कुल! मैं यह काम अभी स्टेप-बाय-स्टेप पूरा कर रही हूँ।'
-        : 'Right away, Zafer! Executing autonomous task loop now.';
+        ? `हाँ ${userName} भाई, बिल्कुल! मैं यह काम अभी स्टेप-बाय-स्टेप पूरा कर रही हूँ।`
+        : `Right away, ${userName}! Executing autonomous task loop now.`;
       const ackMsg: ChatMessage = {
         id: `msg-m-agent-ack-${Date.now()}`,
         sender: 'mayra',
@@ -1140,8 +1140,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     if (isAgentTask && agentEngineRef.current) {
       console.log(`[MAYRA Agent V1] Dispatching user request to Agent Engine: "${trimmed}"`);
       const immediateAck = (detected === 'hi')
-        ? 'हाँ भाई, बिल्कुल! मैं इस कार्य पर तुरंत लग रही हूँ।'
-        : 'Right away, Zafer! Executing action now.';
+        ? `हाँ ${userName} भाई, बिल्कुल! मैं इस कार्य पर तुरंत लग रही हूँ।`
+        : `Right away, ${userName}! Executing action now.`;
       const ackMsg: ChatMessage = {
         id: `msg-m-agent-ack-${Date.now()}`,
         sender: 'mayra',
@@ -1386,7 +1386,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
               payload: data.autoMemorySaved
             });
           }
-          const reply = data.response || 'Ji Zafer bhai, main taiyar hoon!';
+          const reply = data.response || (detected === 'hi' ? `जी ${userName} भाई, मैं तैयार हूँ!` : `Yes ${userName}, I am ready!`);
           const assistantMsg: ChatMessage = {
             id: `msg-m-${Date.now() + 1}`,
             sender: 'mayra',

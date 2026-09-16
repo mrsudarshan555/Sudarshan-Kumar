@@ -1,6 +1,6 @@
 {
   "name": "MAYRA",
-  "description": "MAYRA & STONICX - Private AI Assistant & Spatial AR Interface by Zafer & Sudarshan",
+  "description": "MAYRA - Private Android AI Assistant & Spatial AR Interface with Holographic Character and Settings Hub",
   "requestFramePermissions": ["microphone", "camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

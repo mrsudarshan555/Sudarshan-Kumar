@@ -23,7 +23,7 @@ import {
   Settings as SettingsIcon, Send, Paperclip, 
   Sparkles, ScreenShare, Lock, Unlock, FileText, 
   X, PenTool, Hand, Zap, Smartphone, ChevronDown, Check, Cpu, User,
-  Columns2
+  Columns2, Brain
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -48,6 +48,7 @@ interface HomeScreenProps {
   onOpenRoutines?: () => void;
   onOpenWidgetGuide?: () => void;
   onOpenSignIn?: () => void;
+  onOpenMemories?: () => void;
   currentUser?: UserAccount | null;
   modelMetadata?: CharacterModelMetadata;
   proactiveEnabled?: boolean;

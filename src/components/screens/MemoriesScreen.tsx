@@ -6,7 +6,7 @@ import { MemoryVaultService } from '../../services/memory/memoryVaultService';
 import { 
   Brain, Plus, Search, Pin, Trash2, 
   Tag, Clock, Check, Download, Sparkles, Filter,
-  Users, Phone, MessageSquare, Send, Heart, Edit3, X, Star, Shield, FolderGit2
+  Users, Phone, MessageSquare, Send, Heart, Edit3, X, Star, Shield, FolderGit2, ArrowLeft
 } from 'lucide-react';
 import { AnimatedCounter } from '../common/AnimatedCounter';
 import { SuccessConfettiToast } from '../common/SuccessConfettiToast';
@@ -21,6 +21,7 @@ interface MemoriesScreenProps {
   onTogglePin: (id: string) => void;
   onTriggerDirectMessage?: (contactName: string, service: 'whatsapp' | 'call') => void;
   triggerAddSignal?: number;
+  onBack?: () => void;
 }
 
 const FAMILY_CONTACTS_STORAGE_KEY = 'mayra_family_contacts';
@@ -45,7 +46,8 @@ export const MemoriesScreen: React.FC<MemoriesScreenProps> = ({
   onDeleteMemory,
   onTogglePin,
   onTriggerDirectMessage,
-  triggerAddSignal
+  triggerAddSignal,
+  onBack
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -178,6 +180,17 @@ export const MemoriesScreen: React.FC<MemoriesScreenProps> = ({
       {/* Header */}
       <div className="relative p-4 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#120626]/70 backdrop-blur-2xl z-10 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-2">
+          {onBack && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onBack}
+              className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer mr-0.5"
+              title="Back to Home"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </motion.button>
+          )}
           <div className="p-1.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-400/30">
             <Brain className="w-4 h-4" />
           </div>
