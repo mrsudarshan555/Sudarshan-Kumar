@@ -92,7 +92,7 @@ export const ConnectorsView: React.FC<ConnectorsViewProps> = ({ onBack }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search connectors..."
-            className="w-full bg-[#15161d] border border-white/5 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none focus:border-[#ff2a4b]/50 transition-colors"
+            className="w-full bg-[#15161d] border border-white/5 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none focus:border-purple-400/50 transition-colors"
           />
         </div>
 
@@ -104,7 +104,7 @@ export const ConnectorsView: React.FC<ConnectorsViewProps> = ({ onBack }) => {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === tab
-                  ? 'bg-[#ff2a4b] text-white shadow-[0_0_12px_rgba(255,42,75,0.4)]'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
                   : 'bg-[#15161d] text-gray-400 hover:text-white border border-white/5'
               }`}
             >
@@ -146,7 +146,7 @@ export const ConnectorsView: React.FC<ConnectorsViewProps> = ({ onBack }) => {
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   item.isConnected
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-[#181922] text-gray-300 hover:text-white border border-white/10 hover:border-[#ff2a4b]/50'
+                    : 'bg-[#181922] text-gray-300 hover:text-white border border-white/10 hover:border-purple-400/50'
                 }`}
               >
                 {item.isConnected ? (

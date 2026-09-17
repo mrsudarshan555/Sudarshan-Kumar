@@ -21,10 +21,11 @@ import { AgentTaskHUD } from './agent/AgentTaskHUD';
 import { ProactiveGuardianHUD } from './agent/ProactiveGuardianHUD';
 import { ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEngine';
 import { 
-  Home, Camera, Brain, MessageSquare, 
+  Home, Camera, Brain, MessageSquare, MessageCircleMore,
   Settings as SettingsIcon, Shield,
-  Trash2, Plus, Zap, Smartphone, UserCheck
+  Trash2, Plus, Zap, Smartphone, UserCheck, Sparkles, Search
 } from 'lucide-react';
+import { useLanguage } from '../services/i18n/languageContext';
 import { MarkLIIUndoToast } from './MarkLIIUndoToast';
 import { MarkLIIConfirmationModal } from './MarkLIIConfirmationModal';
 import { getThemePreset } from '../utils/themePresets';
@@ -140,6 +141,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
   setMessages,
   onOpenOnboarding
 }) => {
+  const { t } = useLanguage();
   const [isFloatingOverlayOpen, setIsFloatingOverlayOpen] = useState<boolean>(false);
   const [scanCaptureSignal, setScanCaptureSignal] = useState<number>(0);
   const [memoriesAddSignal, setMemoriesAddSignal] = useState<number>(0);
@@ -378,6 +380,33 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
               </button>
             )}
 
+            {/* Top Bar Memory Vault button when on Chat screen */}
+            {activeTab === 'chat' && (
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => handleTabSwitch('memories')}
+                className="p-1.5 text-purple-300 hover:text-white bg-purple-950/40 hover:bg-purple-900/50 rounded-full border border-purple-400/30 backdrop-blur-xl shadow-[0_0_10px_rgba(168,85,247,0.25)] transition-all shrink-0 cursor-pointer"
+                title="Open Memory Vault"
+              >
+                <Brain className="w-3.5 h-3.5 stroke-[1.8]" />
+              </motion.button>
+            )}
+
+            {/* Top Bar Back to Home button when on Memories screen */}
+            {activeTab === 'memories' && (
+              <motion.button
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => handleTabSwitch('home')}
+                className="flex items-center gap-1 px-2.5 py-1 bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 rounded-full text-[10px] font-sans text-purple-200 transition-all cursor-pointer shadow-sm"
+                title="Return to Home"
+              >
+                <Home className="w-3 h-3 text-purple-300" />
+                <span>Home</span>
+              </motion.button>
+            )}
+
             {/* If on Chat screen, place Delete / Trash icon right next to Settings */}
             {activeTab === 'chat' && (
               <motion.button
@@ -484,6 +513,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     onOpenRoutines={() => setIsRoutinesOpen(true)}
                     onOpenWidgetGuide={() => setIsWidgetGuideOpen(true)}
                     onOpenSignIn={() => setIsAuthModalOpen(true)}
+                    onOpenMemories={() => handleTabSwitch('memories')}
                     currentUser={currentUser}
                     personalConfig={personalConfig}
                     assistantConfig={assistantConfig}
@@ -526,6 +556,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                       onSubmitPrompt(prompt);
                     }}
                     triggerAddSignal={memoriesAddSignal}
+                    onBack={() => handleTabSwitch('home')}
                   />
                 )}
                 {activeTab === 'chat' && (
@@ -549,148 +580,259 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
         </MayraErrorBoundary>
       </div>
 
-      {/* Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar — Full Width Flush at Bottom with Top Curvature (rounded-t-[28px]) */}
       {!isSettingsOpen && (
-        <div className="h-16 px-3 z-20 shrink-0 grid grid-cols-5 items-center bg-white/[0.07] backdrop-blur-2xl border-t border-white/15 shadow-[0_-8px_32px_rgba(0,0,0,0.4),inset_0_1px_2px_rgba(255,255,255,0.25)] relative">
-          {/* Magnifying Glass Top Specular Sheen (Matching Mayra Chat Box Glass) */}
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+        <div className="relative w-full z-20 shrink-0 select-none bg-[#0c0517]/95 backdrop-blur-2xl rounded-t-[28px] rounded-b-none border-t border-purple-500/30 shadow-[0_-8px_32px_rgba(0,0,0,0.7),0_-1px_15px_rgba(168,85,247,0.25)]">
+          {/* Subtle Purple Specular Highlight Arc along top edge */}
+          <div className="absolute top-0 inset-x-0 h-[2px] rounded-t-[28px] bg-gradient-to-r from-transparent via-purple-400/80 to-transparent pointer-events-none z-30 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+          <div className="absolute top-[2px] left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-30" />
 
-          {/* Tab 1: Home */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.88 }}
-            onClick={() => handleTabSwitch('home')}
-            aria-label="Home"
-            title="Home"
-            className={`flex items-center justify-center w-full min-w-0 h-full bg-transparent border-0 outline-none focus:outline-none transition-colors cursor-pointer ${
-              activeTab === 'home' 
-                ? 'text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Home 
-              className={`w-5 h-5 shrink-0 transition-transform ${activeTab === 'home' ? 'scale-110' : 'opacity-70'}`}
-              strokeWidth={activeTab === 'home' ? 2.2 : 1.75}
-            />
-          </motion.button>
+          {/* Active / Loading State: Magnifying-Glass-Style Pulsing Indicator */}
+          {(status === 'THINKING' || status === 'LISTENING') && (
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none select-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, y: 4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                className="px-3.5 py-1 rounded-full bg-[#0d071d]/95 border border-purple-400/80 shadow-[0_0_20px_rgba(168,85,247,0.6)] backdrop-blur-xl flex items-center gap-2"
+              >
+                {/* Magnifying Glass with expanding pulsing lens aura */}
+                <div className="relative flex items-center justify-center">
+                  <motion.div
+                    className="absolute inset-0 -m-1 rounded-full bg-purple-500/30"
+                    animate={{ scale: [1, 2, 1], opacity: [0.8, 0, 0.8] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                  <motion.div
+                    animate={{ rotate: [0, 12, -12, 0], scale: [1, 1.15, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <Search className="w-3 h-3 text-purple-300 drop-shadow-[0_0_6px_rgba(192,132,252,0.95)]" />
+                  </motion.div>
+                </div>
 
-          {/* Tab 2: Scan */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.88 }}
-            onClick={() => handleTabSwitch('scan')}
-            aria-label="Scan"
-            title="Scan"
-            className={`flex items-center justify-center w-full min-w-0 h-full bg-transparent border-0 outline-none focus:outline-none transition-colors cursor-pointer ${
-              activeTab === 'scan' 
-                ? 'text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Camera 
-              className={`w-5 h-5 shrink-0 transition-transform ${activeTab === 'scan' ? 'scale-110' : 'opacity-70'}`}
-              strokeWidth={activeTab === 'scan' ? 2.2 : 1.75}
-            />
-          </motion.button>
+                <span className="text-[9.5px] font-mono font-bold text-purple-100 tracking-wider">
+                  {status === 'THINKING' ? 'MAYRA REASONING' : 'MAYRA LISTENING'}
+                </span>
 
-          {/* Tab 3: Center Large Dynamic Action Button (Frosted Glow Sphere) */}
-          <div className="flex flex-col items-center justify-center w-full min-w-0 -mt-3">
-            <motion.button
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleCenterAction}
-              onPointerDown={handlePointerDown}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerCancel}
-              onPointerLeave={handlePointerCancel}
-              className={`w-[54px] h-[54px] rounded-full flex items-center justify-center transition-all shrink-0 overflow-hidden relative cursor-pointer select-none touch-none ${
-                activeTab === 'scan'
-                  ? 'bg-gradient-to-tr from-purple-600 via-indigo-500 to-fuchsia-500 text-white shadow-[0_0_25px_rgba(168,85,247,0.8)] border border-white/50'
-                  : activeTab === 'memories'
-                  ? 'bg-gradient-to-tr from-purple-600 to-fuchsia-600 text-white shadow-[0_0_25px_rgba(168,85,247,0.8)] border border-white/50'
-                  : isPttActive
-                  ? 'bg-[#25074d] text-white shadow-[0_0_35px_rgba(217,70,239,0.95)] border-2 border-fuchsia-400 scale-105 ring-2 ring-fuchsia-500/50'
-                  : isListeningMode || status === 'LISTENING'
-                  ? 'bg-[#180735] text-white shadow-[0_0_30px_rgba(168,85,247,0.9)] border-2 border-purple-400'
-                  : status === 'SPEAKING'
-                  ? 'bg-[#180735] text-white shadow-[0_0_30px_rgba(192,132,252,0.85)] border-2 border-purple-300'
-                  : status === 'THINKING'
-                  ? 'bg-[#180735] text-white shadow-[0_0_25px_rgba(245,158,11,0.75)] border-2 border-amber-400'
-                  : 'bg-[#1a0c36]/90 hover:bg-[#25104d] text-purple-200 hover:text-white border border-white/30 shadow-[0_8px_25px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.4)]'
-              }`}
-              title={
-                activeTab === 'scan'
-                  ? 'Tap to Capture and Analyze'
-                  : activeTab === 'memories'
-                  ? 'Add Memory or Family Contact'
-                  : isPttActive
-                  ? 'Hold-to-Talk (PTT) active... Release to send'
-                  : isListeningMode || status === 'LISTENING'
-                  ? 'Listening (Hands-Free)... Tap to stop'
-                  : status === 'SPEAKING'
-                  ? 'Mayra Speaking... Tap to interrupt'
-                  : 'Hold to talk (PTT) / Tap for Hands-Free (Spacebar to hold)'
-              }
-            >
-              {activeTab === 'scan' ? (
-                <Camera className="w-5 h-5 stroke-[2] text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]" />
-              ) : activeTab === 'memories' ? (
-                <Plus className="w-5 h-5 stroke-[2.2] text-white" />
-              ) : (
-                <VoiceControlOrb
-                  status={status}
-                  isListeningMode={isListeningMode}
-                  appearanceConfig={appearanceConfig}
-                  size={48}
+                <motion.div
+                  className="w-1.5 h-1.5 rounded-full bg-purple-400"
+                  animate={{ scale: [1, 1.6, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
                 />
-              )}
+              </motion.div>
+            </div>
+          )}
+
+          {/* Navigation Bar Content Grid */}
+          <div className="h-[64px] px-2 relative grid grid-cols-5 items-center w-full">
+            {/* Tab 1: Home */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleTabSwitch('home')}
+              className={`flex flex-col items-center justify-center gap-1 w-full h-full cursor-pointer transition-colors ${
+                activeTab === 'home'
+                  ? 'text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Home"
+              aria-label="Home"
+            >
+              <Home
+                className={`w-[21px] h-[21px] transition-all ${
+                  activeTab === 'home'
+                    ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]'
+                    : 'text-gray-400'
+                }`}
+                strokeWidth={activeTab === 'home' ? 2.3 : 1.8}
+              />
+              <span
+                className={`text-[11px] font-medium leading-none tracking-tight ${
+                  activeTab === 'home' ? 'text-white font-semibold' : 'text-gray-400'
+                }`}
+              >
+                {t.home}
+              </span>
+            </motion.button>
+
+            {/* Tab 2: Chat */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleTabSwitch('chat')}
+              className={`flex flex-col items-center justify-center gap-1 w-full h-full cursor-pointer transition-colors ${
+                activeTab === 'chat'
+                  ? 'text-purple-300'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Chat"
+              aria-label="Chat"
+            >
+              <MessageCircleMore
+                className={`w-[21px] h-[21px] transition-all ${
+                  activeTab === 'chat'
+                    ? 'text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]'
+                    : 'text-purple-400/80 hover:text-purple-300'
+                }`}
+                strokeWidth={activeTab === 'chat' ? 2.2 : 1.8}
+              />
+              <span
+                className={`text-[11px] font-medium leading-none tracking-tight ${
+                  activeTab === 'chat' ? 'text-purple-300 font-semibold' : 'text-gray-400'
+                }`}
+              >
+                {t.chat}
+              </span>
+            </motion.button>
+
+            {/* Tab 3: Center MAYRA Orb / Voice Mic Button */}
+            <div className="flex flex-col items-center justify-center w-full min-w-0 relative">
+              <div className="relative -mt-7">
+                <motion.button
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={handleCenterAction}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerCancel}
+                  onPointerLeave={handlePointerCancel}
+                  className={`w-[64px] h-[64px] rounded-full p-[2.5px] flex items-center justify-center relative cursor-pointer select-none touch-none transition-all ${
+                    isPttActive
+                      ? 'ring-2 ring-fuchsia-400 shadow-[0_0_32px_rgba(217,70,239,0.95)] bg-gradient-to-b from-fuchsia-500 to-purple-800 scale-105'
+                      : isListeningMode || status === 'LISTENING'
+                      ? 'ring-2 ring-purple-400 shadow-[0_0_30px_rgba(168,85,247,0.95)] bg-gradient-to-b from-purple-500 via-fuchsia-600 to-purple-900 animate-pulse'
+                      : status === 'SPEAKING'
+                      ? 'ring-2 ring-purple-300 shadow-[0_0_30px_rgba(192,132,252,0.85)] bg-gradient-to-b from-purple-400 to-indigo-700'
+                      : status === 'THINKING'
+                      ? 'ring-2 ring-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.8)] bg-gradient-to-b from-amber-500 to-purple-900'
+                      : 'ring-[2.5px] ring-purple-500/90 hover:ring-purple-400 shadow-[0_0_22px_rgba(168,85,247,0.7),0_0_10px_rgba(239,68,68,0.35)] bg-gradient-to-b from-purple-500/80 via-fuchsia-600/60 to-purple-950'
+                  }`}
+                  title={
+                    activeTab === 'scan'
+                      ? 'Tap to Capture and Analyze'
+                      : activeTab === 'memories'
+                      ? 'Add Memory or Family Contact'
+                      : isPttActive
+                      ? 'Hold-to-Talk (PTT) active... Release to send'
+                      : isListeningMode || status === 'LISTENING'
+                      ? 'Listening (Hands-Free)... Tap to stop'
+                      : status === 'SPEAKING'
+                      ? 'Mayra Speaking... Tap to interrupt'
+                      : 'MAYRA Voice Orb — Tap to Talk / Hold for PTT'
+                  }
+                  aria-label="Voice Mic Orb"
+                >
+                  {/* Inner 3D Sphere Body */}
+                  <div className="w-full h-full rounded-full overflow-hidden relative bg-[#0e061c] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-3px_6px_rgba(0,0,0,0.85)]">
+                    {/* Top Specular Crescent Highlight */}
+                    <div className="absolute top-0.5 left-2 right-2 h-3.5 rounded-full bg-gradient-to-b from-white/60 via-white/10 to-transparent pointer-events-none z-20" />
+
+                    {/* Internal Ambient Starlight & Core */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#f97316]/50 via-[#a855f7]/60 to-[#ec4899]/40 rounded-full blur-[1px]" />
+                    <div className="absolute inset-1 rounded-full bg-[#130728]/85 flex items-center justify-center overflow-hidden">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_60%,rgba(249,115,22,0.5)_0%,rgba(168,85,247,0.5)_40%,transparent_70%)]" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-white/90 shadow-[0_0_8px_#ffffff] animate-ping" />
+                      <div className="absolute w-1 h-1 rounded-full bg-amber-300 top-2 left-3 blur-[0.5px]" />
+                      <div className="absolute w-1 h-1 rounded-full bg-purple-300 bottom-2 right-3 blur-[0.5px]" />
+                    </div>
+
+                    {/* Active State / Voice Animation */}
+                    {activeTab === 'scan' ? (
+                      <Camera className="w-5 h-5 text-white relative z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                    ) : activeTab === 'memories' ? (
+                      <Plus className="w-5 h-5 text-white relative z-10 stroke-[2.4]" />
+                    ) : (
+                      <div className="relative z-10">
+                        <VoiceControlOrb
+                          status={status}
+                          isListeningMode={isListeningMode}
+                          appearanceConfig={appearanceConfig}
+                          size={42}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Tab 4: Camera */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleTabSwitch('scan')}
+              className={`flex flex-col items-center justify-center gap-1 w-full h-full cursor-pointer transition-colors ${
+                activeTab === 'scan'
+                  ? 'text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Camera"
+              aria-label="Camera"
+            >
+              <Camera
+                className={`w-[21px] h-[21px] transition-all ${
+                  activeTab === 'scan'
+                    ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]'
+                    : 'text-gray-400'
+                }`}
+                strokeWidth={activeTab === 'scan' ? 2.3 : 1.8}
+              />
+              <span
+                className={`text-[11px] font-medium leading-none tracking-tight ${
+                  activeTab === 'scan' ? 'text-white font-semibold' : 'text-gray-400'
+                }`}
+              >
+                {t.camera}
+              </span>
+            </motion.button>
+
+            {/* Tab 5: Settings */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={handleOpenSettingsWithSpring}
+              className={`flex flex-col items-center justify-center gap-1 w-full h-full cursor-pointer transition-colors ${
+                isSettingsOpen
+                  ? 'text-cyan-300'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Settings"
+              aria-label="Settings"
+            >
+              <SettingsIcon
+                className={`w-[21px] h-[21px] transition-all ${
+                  isSettingsOpen
+                    ? 'text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)] rotate-45'
+                    : 'text-purple-400 hover:text-purple-300'
+                }`}
+                strokeWidth={isSettingsOpen ? 2.3 : 1.8}
+              />
+              <span
+                className={`text-[11px] font-medium leading-none tracking-tight ${
+                  isSettingsOpen
+                    ? 'text-cyan-300 font-semibold'
+                    : 'text-purple-400/90 hover:text-purple-300'
+                }`}
+              >
+                {t.settings}
+              </span>
             </motion.button>
           </div>
 
-          {/* Tab 4: Memories */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.88 }}
-            onClick={() => handleTabSwitch('memories')}
-            aria-label="Memories"
-            title="Memories"
-            className={`flex items-center justify-center w-full min-w-0 h-full bg-transparent border-0 outline-none focus:outline-none transition-colors cursor-pointer ${
-              activeTab === 'memories' 
-                ? 'text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Brain 
-              className={`w-5 h-5 shrink-0 transition-transform ${activeTab === 'memories' ? 'scale-110' : 'opacity-70'}`}
-              strokeWidth={activeTab === 'memories' ? 2.2 : 1.75}
-            />
-          </motion.button>
-
-          {/* Tab 5: Chat */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.88 }}
-            onClick={() => handleTabSwitch('chat')}
-            aria-label="Chat"
-            title="Chat"
-            className={`flex items-center justify-center w-full min-w-0 h-full bg-transparent border-0 outline-none focus:outline-none transition-colors cursor-pointer ${
-              activeTab === 'chat' 
-                ? 'text-purple-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <MessageSquare 
-              className={`w-5 h-5 shrink-0 transition-transform ${activeTab === 'chat' ? 'scale-110' : 'opacity-70'}`}
-              strokeWidth={activeTab === 'chat' ? 2.2 : 1.75}
-            />
-          </motion.button>
+          {/* Integrated Flush Bottom Base Home Indicator Line (Zero bottom gap) */}
+          <div className="h-3 flex items-center justify-center shrink-0 -mt-1 pb-1">
+            <div className="w-32 h-1 rounded-full bg-white/25"></div>
+          </div>
         </div>
       )}
 
-      {/* iPhone Home Indicator Line */}
-      <div className="h-4 flex items-center justify-center shrink-0 bg-white/[0.05] backdrop-blur-2xl border-t border-white/5">
-        <div className="w-32 h-1 rounded-full bg-white/25"></div>
-      </div>
+      {/* iPhone Home Indicator Line for Settings overlay */}
+      {isSettingsOpen && (
+        <div className="h-4 flex items-center justify-center shrink-0 bg-white/[0.05] backdrop-blur-2xl border-t border-white/5">
+          <div className="w-32 h-1 rounded-full bg-white/25"></div>
+        </div>
+      )}
 
       {/* Routines / Smart Shortcuts Modal */}
       <RoutinesModal

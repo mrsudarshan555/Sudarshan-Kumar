@@ -13,8 +13,8 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
   const [wakeWordEnabled, setWakeWordEnabled] = useState(true);
   const [sensitivity, setSensitivity] = useState(0.7);
   const [picovoiceKey, setPicovoiceKey] = useState('');
-  const [customWakeWord, setCustomWakeWord] = useState('MYRA');
-  const [currentWord, setCurrentWord] = useState('MYRA');
+  const [customWakeWord, setCustomWakeWord] = useState('MAYRA');
+  const [currentWord, setCurrentWord] = useState('MAYRA');
   const [isMicTesting, setIsMicTesting] = useState(false);
   const [micVolume, setMicVolume] = useState(0);
 
@@ -54,7 +54,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
             Wake Word
           </h1>
           <p className="text-[11px] text-gray-400">
-            Customize how you start MYRA
+            Customize how you start MAYRA
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
         {/* Toggle Card */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               <Radio className="w-5 h-5" />
             </div>
             <div>
@@ -83,7 +83,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
             type="button"
             onClick={() => setWakeWordEnabled(!wakeWordEnabled)}
             className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-              wakeWordEnabled ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+              wakeWordEnabled ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-[#222430]'
             }`}
           >
             <span
@@ -98,7 +98,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Mic className="w-4 h-4 text-[#ff2a4b]" />
+              <Mic className="w-4 h-4 text-purple-400" />
               <span className="text-xs font-bold text-white">Microphone Status</span>
             </div>
             <span className="text-[11px] text-emerald-400 font-medium">
@@ -114,7 +114,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
               </div>
               <div className="h-2 w-full bg-[#181924] rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-[#ff2a4b] transition-all duration-100" 
+                  className="h-full bg-gradient-to-r from-emerald-500 via-indigo-500 to-purple-500 transition-all duration-100" 
                   style={{ width: `${micVolume}%` }}
                 />
               </div>
@@ -143,7 +143,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
             value={picovoiceKey}
             onChange={(e) => setPicovoiceKey(e.target.value)}
             placeholder="Enter Picovoice access key..."
-            className="w-full bg-[#15161d] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#ff2a4b] transition-colors font-mono"
+            className="w-full bg-[#15161d] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-400 transition-colors font-mono"
           />
         </div>
 
@@ -153,7 +153,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
             <span className="text-xs font-bold text-white">
               Detection Sensitivity
             </span>
-            <span className="text-xs font-bold text-[#ff2a4b]">
+            <span className="text-xs font-bold text-purple-400">
               {Math.round(sensitivity * 100)}%
             </span>
           </div>
@@ -164,7 +164,7 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
             step="0.05"
             value={sensitivity}
             onChange={(e) => setSensitivity(parseFloat(e.target.value))}
-            className="w-full h-1.5 bg-[#1f212d] rounded-lg appearance-none cursor-pointer accent-[#ff2a4b]"
+            className="w-full h-1.5 bg-[#1f212d] rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
           <div className="flex justify-between text-[10px] text-gray-500 font-mono">
             <span>Low (Fewer false alarms)</span>
@@ -178,19 +178,19 @@ export const WakeWordView: React.FC<WakeWordViewProps> = ({ onBack }) => {
             Custom Wake Word
           </span>
           <p className="text-[11px] text-gray-400">
-            Just the name, e.g. Zara (not "Hey Zara")
+            Just the name, e.g. Mayra (not "Hey Mayra")
           </p>
           <div className="flex gap-2">
             <input
               type="text"
               value={customWakeWord}
               onChange={(e) => setCustomWakeWord(e.target.value)}
-              placeholder="e.g. Mayra, Jarvis, Nova"
-              className="flex-1 bg-[#15161d] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#ff2a4b] transition-colors"
+              placeholder="e.g. Mayra, Nova, Jarvis"
+              className="flex-1 bg-[#15161d] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-400 transition-colors"
             />
             <button
               onClick={handleSaveWakeWord}
-              className="px-4 py-2 bg-[#ff2a4b] hover:bg-[#e02040] text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-[0_0_10px_rgba(168,85,247,0.3)]"
             >
               Save
             </button>

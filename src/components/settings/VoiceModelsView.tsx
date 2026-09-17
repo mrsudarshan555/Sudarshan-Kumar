@@ -130,11 +130,11 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
         </button>
 
         <div className="text-center">
-          <h1 className="text-base font-bold text-[#ff2a4b] tracking-wide">
+          <h1 className="text-base font-bold text-purple-300 tracking-wide">
             Voice Models
           </h1>
           <p className="text-[11px] text-gray-400">
-            Choose the perfect voice for MYRA
+            Choose the perfect voice for MAYRA
           </p>
         </div>
 
@@ -142,7 +142,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
           onClick={() => setShowVoiceSettings(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#16171f] hover:bg-[#1f202b] border border-white/10 rounded-full text-xs font-medium text-gray-200 transition-colors cursor-pointer"
         >
-          <Sliders className="w-3.5 h-3.5 text-[#ff2a4b]" />
+          <Sliders className="w-3.5 h-3.5 text-purple-400" />
           <span>Voice Settings</span>
         </button>
       </div>
@@ -157,7 +157,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === tab
-                  ? 'bg-[#ff2a4b] text-white shadow-[0_0_15px_rgba(255,42,75,0.4)]'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
                   : 'bg-[#15161d] text-gray-400 hover:text-white border border-white/5'
               }`}
             >
@@ -174,7 +174,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search voice model..."
-            className="w-full bg-[#15161d] border border-white/5 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none focus:border-[#ff2a4b]/50 transition-colors"
+            className="w-full bg-[#15161d] border border-white/5 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none focus:border-purple-400/50 transition-colors"
           />
         </div>
 
@@ -198,7 +198,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                 }}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   personalityMode === item.id
-                    ? 'bg-[#ff2a4b] text-white shadow-[0_0_12px_rgba(255,42,75,0.4)]'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
                     : 'bg-[#15161d] text-gray-400 hover:text-white border border-white/5'
                 }`}
               >
@@ -221,7 +221,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                 onClick={() => onChange({ selectedVoice: voice.id })}
                 className={`p-3.5 rounded-2xl flex items-center justify-between transition-all cursor-pointer border ${
                   isSelected
-                    ? 'bg-[#161720] border-[#ff2a4b]/40 shadow-[0_0_15px_rgba(255,42,75,0.15)]'
+                    ? 'bg-[#161720] border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
                     : 'bg-[#121318] border-white/5 hover:border-white/10 hover:bg-[#161720]'
                 }`}
               >
@@ -244,7 +244,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                         {voice.name}
                       </span>
                       {isSelected && (
-                        <span className="px-1.5 py-0.2 bg-[#ff2a4b]/20 text-[#ff2a4b] text-[10px] font-bold rounded">
+                        <span className="px-2 py-0.5 bg-purple-950/80 text-purple-300 border border-purple-500/30 text-[10px] font-bold rounded">
                           Active
                         </span>
                       )}
@@ -254,7 +254,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                     </p>
 
                     <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-[#ff2a4b]/40 text-[#ff2a4b]">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-purple-500/30 text-purple-300 bg-purple-950/50">
                         {voice.gender}
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-white/10 text-gray-400">
@@ -269,7 +269,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   className="p-2 text-gray-500 hover:text-white transition-colors cursor-pointer"
                 >
                   <Heart
-                    className={`w-4 h-4 ${isFav ? 'text-[#ff2a4b] fill-[#ff2a4b]' : ''}`}
+                    className={`w-4 h-4 ${isFav ? 'text-purple-400 fill-purple-400' : ''}`}
                   />
                 </button>
               </div>
@@ -300,7 +300,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   Voice Settings
                 </h2>
                 <p className="text-[11px] text-gray-400">
-                  Tune how MYRA sounds and listens
+                  Tune how MAYRA sounds and listens
                 </p>
               </div>
               <div className="w-8" />
@@ -314,12 +314,12 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   <span className="text-xs font-bold text-gray-400 tracking-wider">
                     VOICE SPEED
                   </span>
-                  <span className="text-xs font-bold text-[#ff2a4b]">
+                  <span className="text-xs font-bold text-purple-400">
                     {voiceSpeed.toFixed(1)}x
                   </span>
                 </div>
                 <p className="text-[11px] text-gray-500 mb-3">
-                  How fast MYRA talks. Applied to her actual speech output (AudioTrack playback speed) - your own speaking/listening speed is unaffected.
+                  How fast MAYRA talks. Applied to her actual speech output (AudioTrack playback speed) - your own speaking/listening speed is unaffected.
                 </p>
                 <input
                   type="range"
@@ -328,7 +328,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   step="0.1"
                   value={voiceSpeed}
                   onChange={(e) => setVoiceSpeed(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-[#1f212d] rounded-lg appearance-none cursor-pointer accent-[#ff2a4b]"
+                  className="w-full h-1.5 bg-[#1f212d] rounded-lg appearance-none cursor-pointer accent-purple-500"
                 />
                 <div className="flex justify-between text-[10px] text-gray-500 mt-1 font-mono">
                   <span>0.5x</span>
@@ -342,7 +342,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   VOICE PITCH
                 </span>
                 <p className="text-[11px] text-gray-500 mb-2.5">
-                  Only changes MYRA's voice - never your microphone input.
+                  Only changes MAYRA's voice - never your microphone input.
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {(['Low', 'Normal', 'High'] as const).map(pitch => (
@@ -351,7 +351,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                       onClick={() => setVoicePitch(pitch)}
                       className={`py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                         voicePitch === pitch
-                          ? 'bg-[#ff2a4b] text-white shadow-[0_0_12px_rgba(255,42,75,0.4)]'
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
                           : 'bg-[#15161d] text-gray-400 hover:text-white border border-white/5'
                       }`}
                     >
@@ -385,18 +385,18 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   },
                   {
                     key: 'interruptWhileSpeaking',
-                    title: 'Interrupt MYRA While Speaking',
+                    title: 'Interrupt MAYRA While Speaking',
                     desc: 'Let you cut in and start talking any time, even mid-sentence.'
                   },
                   {
                     key: 'autoStopOnUserTalk',
                     title: 'Auto Stop When User Starts Talking',
-                    desc: 'Cuts MYRA\'s audio instantly on interruption. Off = lets the current buffered audio finish draining instead of an abrupt cut.'
+                    desc: 'Cuts MAYRA\'s audio instantly on interruption. Off = lets the current buffered audio finish draining instead of an abrupt cut.'
                   },
                   {
                     key: 'continueSpeakingAfterInterruption',
                     title: 'Continue Speaking After Interruption',
-                    desc: 'Adds a brief grace period before honoring an interruption, so a short blip doesn\'t cut MYRA off instantly.'
+                    desc: 'Adds a brief grace period before honoring an interruption, so a short blip doesn\'t cut MAYRA off instantly.'
                   }
                 ].map(item => {
                   const val = (speakingToggles as any)[item.key];
@@ -404,7 +404,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                     <div key={item.key} className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                          {item.key === 'fastResponse' && <Sparkles className="w-3.5 h-3.5 text-[#ff2a4b]" />}
+                          {item.key === 'fastResponse' && <Sparkles className="w-3.5 h-3.5 text-purple-400" />}
                           {item.title}
                         </p>
                         <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
@@ -415,7 +415,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                         type="button"
                         onClick={() => setSpeakingToggles(prev => ({ ...prev, [item.key]: !val }))}
                         className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer mt-0.5 ${
-                          val ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                          val ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-[#222430]'
                         }`}
                       >
                         <span
@@ -444,7 +444,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   {
                     key: 'echoCancellation',
                     title: 'Echo Cancellation',
-                    desc: 'Stops MYRA\'s own voice from being picked up as if you said it - matters most on speakerphone.'
+                    desc: 'Stops MAYRA\'s own voice from being picked up as if you said it - matters most on speakerphone.'
                   },
                   {
                     key: 'autoMicGain',
@@ -454,7 +454,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                   {
                     key: 'vad',
                     title: 'Voice Activity Detection',
-                    desc: 'How eagerly MYRA decides you\'ve finished talking. This can\'t be dialed back - it\'s how she knows when to reply at all - but this controls sensitivity.'
+                    desc: 'How eagerly MAYRA decides you\'ve finished talking. This can\'t be dialed back - it\'s how she knows when to reply at all - but this controls sensitivity.'
                   },
                   {
                     key: 'backgroundFilter',
@@ -477,7 +477,7 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
                         type="button"
                         onClick={() => setDetectionToggles(prev => ({ ...prev, [item.key]: !val }))}
                         className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer mt-0.5 ${
-                          val ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                          val ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-[#222430]'
                         }`}
                       >
                         <span

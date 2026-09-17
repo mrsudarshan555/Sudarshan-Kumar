@@ -30,7 +30,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
 
         <div className="text-center">
           <h1 className="text-base font-bold text-white tracking-wide">
-            MYRA Security
+            MAYRA Security
           </h1>
           <p className="text-[11px] text-gray-400">
             App lock, PIN, biometric, and GF Mode
@@ -45,7 +45,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
         {/* Enable App Lock */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               <Lock className="w-5 h-5" />
             </div>
             <div>
@@ -62,7 +62,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
             type="button"
             onClick={() => setAppLockEnabled(!appLockEnabled)}
             className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-              appLockEnabled ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+              appLockEnabled ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-[#222430]'
             }`}
           >
             <span
@@ -76,7 +76,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
         {/* Biometric Unlock */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               <Fingerprint className="w-5 h-5" />
             </div>
             <div>
@@ -93,7 +93,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
             type="button"
             onClick={() => setBiometricEnabled(!biometricEnabled)}
             className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-              biometricEnabled ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+              biometricEnabled ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-[#222430]'
             }`}
           >
             <span
@@ -107,7 +107,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
         {/* GF Mode Secret Protection */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               <EyeOff className="w-5 h-5" />
             </div>
             <div>
@@ -124,7 +124,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
             type="button"
             onClick={() => setGfModeSecretPin(!gfModeSecretPin)}
             className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-              gfModeSecretPin ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+              gfModeSecretPin ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-[#222430]'
             }`}
           >
             <span
@@ -139,10 +139,10 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold text-white flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-[#ff2a4b]" />
+              <KeyRound className="w-4 h-4 text-purple-400" />
               Security PIN Code
             </h4>
-            <span className="text-xs text-[#ff2a4b] font-mono tracking-widest">
+            <span className="text-xs text-purple-300 font-mono tracking-widest">
               ••••
             </span>
           </div>
@@ -155,12 +155,12 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
                 placeholder="Enter 4-6 digit PIN"
-                className="w-full bg-[#161720] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 font-mono tracking-widest text-center outline-none focus:border-[#ff2a4b]"
+                className="w-full bg-[#161720] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 font-mono tracking-widest text-center outline-none focus:border-purple-400"
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => setIsEditingPin(false)}
-                  className="flex-1 py-2 rounded-xl bg-white/5 text-gray-400 text-xs font-bold"
+                  className="flex-1 py-2 rounded-xl bg-white/5 text-gray-400 text-xs font-bold hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -172,7 +172,7 @@ export const MyraSecurityView: React.FC<MyraSecurityViewProps> = ({ onBack }) =>
                       setNewPin('');
                     }
                   }}
-                  className="flex-1 py-2 rounded-xl bg-[#ff2a4b] text-white text-xs font-bold"
+                  className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold shadow-[0_0_12px_rgba(168,85,247,0.4)] cursor-pointer"
                 >
                   Save PIN
                 </button>

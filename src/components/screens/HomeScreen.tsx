@@ -76,6 +76,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenRoutines,
   onOpenWidgetGuide,
   onOpenSignIn,
+  onOpenMemories,
   currentUser = null,
   modelMetadata,
   proactiveEnabled = true
@@ -632,6 +633,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               >
                 <User className="w-3 h-3 text-cyan-300 stroke-[2]" />
                 <span>Sign In</span>
+              </motion.button>
+            )}
+
+            {/* Memory Vault (Top Bar) */}
+            {onOpenMemories && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onOpenMemories}
+                className="p-1 rounded-md transition-all cursor-pointer text-purple-300 hover:text-white hover:bg-purple-500/20"
+                title="Memory Vault"
+              >
+                <Brain className="w-3.5 h-3.5 stroke-[1.8]" />
               </motion.button>
             )}
 

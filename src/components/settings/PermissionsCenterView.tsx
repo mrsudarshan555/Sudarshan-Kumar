@@ -5,6 +5,7 @@ import {
   ArrowLeft, Bell, Check, ExternalLink, 
   ShieldCheck, AlertCircle, Info, RefreshCw, X, ShieldAlert, Sparkles
 } from 'lucide-react';
+import { useLanguage } from '../../services/i18n/languageContext';
 
 interface PermissionsCenterViewProps {
   permissions: PermissionItem[];
@@ -17,6 +18,8 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
   setPermissions,
   onBack
 }) => {
+  const { t, getPermissionDetails } = useLanguage();
+
   // Modal states for authentic Android system flows
   const [activeSystemModal, setActiveSystemModal] = useState<
     | null
@@ -49,20 +52,48 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
     } else if (perm.id === 'notification_access') {
       setActiveSystemModal('notification_dialog');
     } else {
+      // Hardware / browser API triggers when requesting
+      if (perm.status !== 'granted') {
+        if (perm.id === 'mic_core' || perm.id === 'microphone') {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {});
+          }
+        } else if (perm.id === 'cam_vision' || perm.id === 'camera') {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true }).catch(() => {});
+          }
+        } else if (perm.id === 'location' || perm.id === 'precise_location') {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(() => {}, () => {});
+          }
+        } else if (perm.id === 'notif_alerts' || perm.id === 'notifications') {
+          if (typeof Notification !== 'undefined' && Notification.requestPermission) {
+            Notification.requestPermission().catch(() => {});
+          }
+        }
+      }
+
       // Toggle permission state between granted and not_granted for standard permissions
-      setPermissions((prev) =>
-        prev.map((p) => {
+      setPermissions((prev) => {
+        const updated = prev.map((p) => {
           if (p.id === perm.id) {
             const nextStatus: PermissionStatusType = p.status === 'granted' ? 'not_granted' : 'granted';
             return {
               ...p,
               status: nextStatus,
-              statusLabel: nextStatus === 'granted' ? 'Granted' : 'Grant'
+              statusLabel: nextStatus === 'granted' ? 'Granted' : 'Grant',
+              actionLabel: nextStatus === 'granted' ? 'Granted' : 'Grant'
             };
           }
           return p;
-        })
-      );
+        });
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('mayra_permissions_snapshot', JSON.stringify(updated));
+          } catch (e) {}
+        }
+        return updated;
+      });
     }
   };
 
@@ -124,65 +155,115 @@ export const PermissionsCenterView: React.FC<PermissionsCenterViewProps> = ({
       {/* Permissions List Stream */}
       <div className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 scrollbar-thin scrollbar-thumb-purple-500/20">
         
-        {/* Top Disclaimer / Instruction text */}
+        {/* Top Disclaimer / Instruction text in selected language */}
         <div className="px-2 py-1 text-purple-300/80 text-[11px] font-sans font-normal leading-relaxed">
-          Mayra needs these permissions to do everything for you. Allow only what you want.
+          {t.permissionCenterNotice || 'Mayra needs these permissions to do everything for you. Allow only what you want.'}
         </div>
 
         {/* Permission Cards */}
         {permissions.map((perm) => {
           const isGranted = perm.status === 'granted';
           const isDefaultRole = perm.id === 'default_assistant';
+          const details = getPermissionDetails(perm.id);
 
           return (
             <div
               key={perm.id}
-              className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 rounded-3xl flex items-center justify-between gap-3 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]"
+              className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 hover:border-purple-400/40 rounded-3xl flex flex-col gap-3 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]"
             >
-              {/* Left Details */}
-              <div className="flex-1 pr-1 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs font-bold text-white font-sans tracking-wide">
+              {/* Header Row: Permission Name, Required Badge & Real Toggle Button */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white font-sans tracking-wide">
                     {perm.name}
                   </h3>
                   {perm.isRequired && (
-                    <span className="text-[8px] font-sans font-bold text-purple-200 bg-purple-950/80 border border-purple-400/40 px-2 py-0.5 rounded-full shadow-sm">
-                      REQUIRED
+                    <span className="text-[9px] font-sans font-bold text-purple-200 bg-purple-950/80 border border-purple-400/40 px-2 py-0.5 rounded-full shadow-sm">
+                      {t.required}
                     </span>
                   )}
                 </div>
 
-                <p className="text-[11px] font-normal text-purple-300/70 leading-relaxed font-sans">
-                  {perm.description}
+                {/* Right Action / Status Toggle */}
+                <div className="shrink-0 flex items-center">
+                  {isDefaultRole ? (
+                    <button
+                      onClick={() => handleActionClick(perm)}
+                      className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white text-xs font-bold rounded-full transition-all shadow-md shadow-purple-600/30 cursor-pointer border border-white/20"
+                    >
+                      MAYRA
+                    </button>
+                  ) : isGranted ? (
+                    <button
+                      onClick={() => handleActionClick(perm)}
+                      className="text-xs font-bold text-emerald-300 hover:text-white transition-colors px-3 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-400/40 flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                      title="Click to toggle or revoke"
+                    >
+                      <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
+                      <span>{t.granted}</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleActionClick(perm)}
+                      className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white text-xs font-bold rounded-full transition-all shadow-md shadow-purple-600/30 cursor-pointer border border-white/20"
+                    >
+                      {t.grant}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* General Description */}
+              <p className="text-[11.5px] font-normal text-purple-200/80 leading-relaxed font-sans">
+                {details.description || perm.description}
+              </p>
+
+              {/* a. What will happen / what becomes possible if permission is granted */}
+              <div className="p-2.5 rounded-2xl bg-purple-950/30 border border-purple-500/25 text-xs leading-relaxed space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-purple-300 text-[11px]">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                  <span>{t.whatBecomesPossibleLabel}</span>
+                </div>
+                <p className="text-[11.5px] text-purple-100/90 font-normal">
+                  {details.whatBecomesPossible}
                 </p>
               </div>
 
-              {/* Right Action / Status Badge */}
-              <div className="shrink-0 flex items-center">
-                {isDefaultRole ? (
-                  <button
-                    onClick={() => handleActionClick(perm)}
-                    className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white text-xs font-bold rounded-full transition-all shadow-md shadow-purple-600/30 cursor-pointer border border-white/20"
-                  >
-                    MAYRA
-                  </button>
-                ) : isGranted ? (
-                  <button
-                    onClick={() => handleActionClick(perm)}
-                    className="text-xs font-bold text-purple-300 hover:text-white transition-colors px-2.5 py-1 rounded-full bg-purple-950/40 border border-purple-400/30 flex items-center gap-1 cursor-pointer"
-                    title="Click to toggle or manage"
-                  >
-                    <Check className="w-3 h-3 text-emerald-400" />
-                    <span>Granted</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleActionClick(perm)}
-                    className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white text-xs font-bold rounded-full transition-all shadow-md shadow-purple-600/30 cursor-pointer border border-white/20"
-                  >
-                    Grant
-                  </button>
-                )}
+              {/* b. Sub-permissions and capabilities tied to it */}
+              <div className="p-2.5 rounded-2xl bg-slate-900/40 border border-slate-700/40 text-xs leading-relaxed space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-blue-300 text-[11px]">
+                  <Info className="w-3.5 h-3.5 text-blue-400" />
+                  <span>{t.subCapabilitiesLabel}</span>
+                </div>
+                <p className="text-[11px] text-slate-300 font-normal">
+                  {details.subCapabilities}
+                </p>
+              </div>
+
+              {/* c. Warning-style emoji (⚠️) next to sensitive / potential privacy risk */}
+              <div className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-400/35 text-amber-200 text-xs leading-relaxed flex items-start gap-2">
+                <span className="text-base select-none shrink-0 leading-none">⚠️</span>
+                <div className="space-y-0.5">
+                  <span className="font-bold text-amber-300 text-[11px] block">
+                    {t.riskWarningLabel}
+                  </span>
+                  <p className="text-[11px] text-amber-200/95 font-normal">
+                    {details.riskWarning}
+                  </p>
+                </div>
+              </div>
+
+              {/* d. Concise, clearly written inline privacy policy explanation */}
+              <div className="p-2.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-100 text-xs leading-relaxed flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-bold text-emerald-300 text-[11px] block">
+                    {t.privacyPolicyLabel}
+                  </span>
+                  <p className="text-[11px] text-emerald-200/90 font-normal">
+                    {details.privacyPolicy}
+                  </p>
+                </div>
               </div>
             </div>
           );

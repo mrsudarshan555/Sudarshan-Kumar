@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, User, Mail, Shield, Smartphone, KeyRound, 
   Gift, Tag, FileText, History, Download, Trash2, Key, 
-  Database, FileCheck, LogOut, ChevronRight, X, Check, RefreshCw
+  Database, FileCheck, LogOut, ChevronRight, X, Check, RefreshCw, Camera, Sparkles
 } from 'lucide-react';
 import { UserPersonalConfig } from '../../types';
 import { detectUserDevice, DeviceTelemetry } from '../../utils/deviceDetector';
+import { ProfilePhotoUploadModal, FALLBACK_DEFAULT_PHOTO } from './ProfilePhotoUploadModal';
 
 interface AccountProfileViewProps {
   personalConfig: UserPersonalConfig;
@@ -22,12 +23,15 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
   onLogout
 }) => {
   const [showRedeemModal, setShowRedeemModal] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [accessKeyInput, setAccessKeyInput] = useState('');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [userName, setUserName] = useState(personalConfig.userName || personalConfig.fullName || 'MindSet Zafer');
   const [telemetry, setTelemetry] = useState<DeviceTelemetry>(() => detectUserDevice());
   const [isRefreshingDevice, setIsRefreshingDevice] = useState(false);
+
+  const activeAvatar = personalConfig.profilePhoto || personalConfig.avatarUrl || (typeof window !== 'undefined' ? localStorage.getItem('mayra_user_avatar') : null) || FALLBACK_DEFAULT_PHOTO;
 
   useEffect(() => {
     setTelemetry(detectUserDevice());
@@ -85,21 +89,38 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
         {/* User Card */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-tr from-purple-900 to-red-900 border border-white/10 p-0.5 shrink-0 shadow-[0_0_15px_rgba(255,42,75,0.3)]">
-              <img
-                src="/mayra_logo.png"
-                alt="Avatar"
-                className="w-full h-full object-cover rounded-xl"
-                onError={(e) => {
-                  (e.target as any).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
-                }}
-              />
+            <div 
+              onClick={() => setIsPhotoModalOpen(true)}
+              className="relative group cursor-pointer"
+              title="Click to update profile photo"
+            >
+              <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gradient-to-tr from-purple-900 to-indigo-900 border border-purple-400/30 p-0.5 shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.35)] group-hover:border-purple-400 transition-all">
+                <img
+                  src={activeAvatar}
+                  alt="Avatar"
+                  className="w-full h-full object-cover rounded-xl"
+                  onError={(e) => {
+                    (e.target as any).src = FALLBACK_DEFAULT_PHOTO;
+                  }}
+                />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-purple-600 border-2 border-[#121318] flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                <Camera className="w-3 h-3 stroke-[2.2]" />
+              </div>
             </div>
 
             <div>
-              <h2 className="text-sm font-extrabold text-white">
-                {userName}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-extrabold text-white">
+                  {userName}
+                </h2>
+                <button
+                  onClick={() => setIsPhotoModalOpen(true)}
+                  className="text-[10px] text-purple-400 hover:text-purple-300 font-semibold underline underline-offset-2 cursor-pointer"
+                >
+                  Edit Photo
+                </button>
+              </div>
               <p className="text-xs text-gray-400 mt-0.5">
                 mindsetzafer@gmail.com
               </p>
@@ -116,7 +137,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
             }}
             className="px-3 py-1.5 rounded-xl bg-[#181922] hover:bg-[#20222f] border border-white/10 text-xs font-bold text-gray-200 transition-colors cursor-pointer"
           >
-            Edit Profile
+            Edit Name
           </button>
         </div>
 
@@ -124,7 +145,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-white/5">
             <span className="text-xs text-gray-400">Current Plan</span>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#ff2a4b]/10 text-[#ff2a4b] border border-[#ff2a4b]/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-purple-950/80 text-purple-300 border border-purple-500/30">
               Free Tier
             </span>
           </div>
@@ -180,7 +201,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleEditDeviceName}
-                className="text-[10px] text-[#ff2a4b] hover:underline font-semibold cursor-pointer"
+                className="text-[10px] text-purple-400 hover:underline font-semibold cursor-pointer"
               >
                 Change
               </button>
@@ -258,8 +279,8 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
                 className="p-3.5 rounded-2xl bg-[#121318] border border-white/5 hover:bg-[#161720] flex items-center justify-between transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
-                    <Icon className={`w-4 h-4 ${item.color || 'text-[#ff2a4b]'}`} />
+                  <div className="w-9 h-9 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-purple-400 shrink-0">
+                    <Icon className={`w-4 h-4 ${item.color || 'text-purple-400'}`} />
                   </div>
                   <span className={`text-xs font-bold ${item.color || 'text-white'}`}>
                     {item.title}
@@ -278,7 +299,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
               if (onLogout) onLogout();
               showToast('Logged out successfully.');
             }}
-            className="w-full py-3.5 rounded-2xl bg-transparent border border-[#ff2a4b]/50 hover:bg-[#ff2a4b]/10 text-[#ff2a4b] text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full py-3.5 rounded-2xl bg-transparent border border-purple-500/50 hover:bg-purple-950/20 text-purple-300 text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>Log Out from Account</span>
@@ -293,7 +314,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="absolute bottom-6 inset-x-6 py-2.5 px-4 bg-[#181924] border border-white/10 rounded-xl text-center text-xs font-semibold text-white shadow-2xl z-40"
+            className="absolute bottom-6 inset-x-6 py-2.5 px-4 bg-[#181924] border border-purple-500/30 rounded-xl text-center text-xs font-semibold text-white shadow-2xl z-40"
           >
             {toastMsg}
           </motion.div>
@@ -323,7 +344,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
               </div>
 
               <p className="text-xs text-gray-400 leading-relaxed">
-                Enter the access key you received to activate a MYRA plan on this account.
+                Enter the access key you received to activate a MAYRA plan on this account.
               </p>
 
               <input
@@ -331,7 +352,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
                 value={accessKeyInput}
                 onChange={(e) => setAccessKeyInput(e.target.value)}
                 placeholder="ACCESS-KEY-XXXX"
-                className="w-full bg-[#161720] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-gray-500 font-mono outline-none focus:border-[#ff2a4b]"
+                className="w-full bg-[#161720] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white placeholder-gray-500 font-mono outline-none focus:border-purple-400"
               />
 
               <div className="flex justify-end gap-2 pt-2">
@@ -349,7 +370,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
                       showToast('Access Key Redeemed Successfully!');
                     }
                   }}
-                  className="px-5 py-2 rounded-xl bg-[#ff2a4b] text-white text-xs font-bold shadow-[0_0_12px_rgba(255,42,75,0.4)]"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold shadow-[0_0_12px_rgba(168,85,247,0.4)]"
                 >
                   REDEEM
                 </button>
@@ -358,6 +379,17 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Profile Photo Upload Modal */}
+      <ProfilePhotoUploadModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        personalConfig={personalConfig}
+        setPersonalConfig={setPersonalConfig}
+        onPhotoUpdated={(newUrl) => {
+          showToast('Profile photo updated successfully!');
+        }}
+      />
     </div>
   );
 };

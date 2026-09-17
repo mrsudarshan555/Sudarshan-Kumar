@@ -63,6 +63,7 @@ import { SystemAutomationEmergencyEngine } from '../../services/automation/Syste
 import { TouchSecurityEngine } from '../../services/security/TouchSecurityEngine';
 import { UnifiedAppHubEngine } from '../../services/hub/UnifiedAppHubEngine';
 import { SmartLifestyleIoTEngine } from '../../services/lifestyle/SmartLifestyleIoTEngine';
+import { ProfilePhotoUploadModal, FALLBACK_DEFAULT_PHOTO } from './ProfilePhotoUploadModal';
 import { 
   Settings as SettingsIcon, User, Globe, Sparkles, 
   Wrench, Bot, ShieldCheck, ShieldAlert, Database, Cpu, 
@@ -70,7 +71,7 @@ import {
   Shield, CheckCircle2, Smartphone, PenTool, HardDrive,
   Palette, Moon, Sun, KeyRound, AlertOctagon, Car, MessageSquare,
   ScanText, Zap, Terminal, Brain, Volume2, TrendingUp, Activity,
-  BatteryCharging, Radio, Crown, Orbit, Mic, Fingerprint, Sliders
+  BatteryCharging, Radio, Crown, Orbit, Mic, Fingerprint, Sliders, Camera
 } from 'lucide-react';
 
 interface SettingCategoryItem {
@@ -227,6 +228,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isWidgetModalOpen, setIsWidgetModalOpen] = useState(false);
+  const [isProfilePhotoModalOpen, setIsProfilePhotoModalOpen] = useState(false);
   const [cameFromAdvanced, setCameFromAdvanced] = useState(false);
   const isDark = appearanceConfig?.darkMode ?? true;
   const [telemetry, setTelemetry] = useState<DeviceTelemetry>(() => detectUserDevice());
@@ -1076,7 +1078,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
             {isDark ? <Moon className="w-4 h-4 stroke-[1.8]" /> : <Sun className="w-4 h-4 stroke-[1.8]" />}
           </button>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-red-500/30 bg-[#ff2a4b]/10 text-red-200 shadow-[0_0_12px_rgba(255,42,75,0.2)]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-purple-500/30 bg-purple-950/60 text-purple-200 shadow-[0_0_12px_rgba(168,85,247,0.25)]">
             <MayraLogo size={16} showGlow={false} />
             <span className="text-[10px] font-sans font-bold tracking-wider text-white">
               ★MAYRA
@@ -1094,7 +1096,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search in Dashboard..."
-            className="w-full pl-9 pr-8 py-2 border border-white/10 rounded-2xl text-xs bg-[#15161f] focus:bg-[#1a1c28] text-white placeholder:text-slate-500 focus:border-[#ff2a4b]/80 focus:outline-none transition-all font-sans"
+            className="w-full pl-9 pr-8 py-2 border border-white/10 rounded-2xl text-xs bg-[#15161f] focus:bg-[#1a1c28] text-white placeholder:text-slate-500 focus:border-purple-400/80 focus:outline-none transition-all font-sans"
           />
           {searchQuery && (
             <button
@@ -1183,19 +1185,34 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                 ? 'bg-[#121318] border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.5)]' 
                 : 'bg-white border-slate-200 shadow-sm'
             }`}>
-              <div 
-                onClick={() => setCurrentSubScreen('account_profile')}
-                className="flex items-center gap-3 cursor-pointer group"
-              >
-                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#ff2a4b] to-rose-600 flex items-center justify-center text-white font-bold text-base shadow-[0_0_15px_rgba(255,42,75,0.4)] ring-2 ring-[#ff2a4b]/30">
-                  {personalConfig.fullName ? personalConfig.fullName.charAt(0).toUpperCase() : 'Z'}
+              <div className="flex items-center gap-3">
+                <div 
+                  onClick={() => setIsProfilePhotoModalOpen(true)}
+                  className="relative w-11 h-11 rounded-full overflow-hidden bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-[0_0_15px_rgba(168,85,247,0.4)] ring-2 ring-purple-500/40 shrink-0 group cursor-pointer"
+                  title="Update Profile Photo"
+                >
+                  <img
+                    src={personalConfig.profilePhoto || personalConfig.avatarUrl || (typeof window !== 'undefined' ? localStorage.getItem('mayra_user_avatar') : null) || FALLBACK_DEFAULT_PHOTO}
+                    alt="User"
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      (e.target as any).src = FALLBACK_DEFAULT_PHOTO;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Camera className="w-3.5 h-3.5 text-white" />
+                  </div>
                 </div>
-                <div>
+
+                <div 
+                  onClick={() => setCurrentSubScreen('account_profile')}
+                  className="cursor-pointer group"
+                >
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-white group-hover:text-[#ff2a4b] transition-colors">
+                    <span className="text-sm font-bold text-white group-hover:text-purple-300 transition-colors">
                       {personalConfig.fullName || 'MindSet Zafer'}
                     </span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[#ff2a4b]/20 text-[#ff2a4b] border border-[#ff2a4b]/40 font-bold">
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-purple-950/60 text-purple-300 border border-purple-500/40 font-bold">
                       Free Tier
                     </span>
                   </div>
@@ -1205,13 +1222,23 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={() => setCurrentSubScreen('aura_control')}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#ff2a4b] to-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_12px_rgba(255,42,75,0.4)] active:scale-95 transition-all cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>AURA</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsProfilePhotoModalOpen(true)}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
+                  title="Upload profile photo"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => setCurrentSubScreen('aura_control')}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_12px_rgba(168,85,247,0.4)] active:scale-95 transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AURA</span>
+                </button>
+              </div>
             </div>
 
             {/* Live Phone Telemetry & Hardware Glance Banner (Collapsible to keep settings front & center) */}
@@ -1248,11 +1275,11 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
             {/* Section Header */}
             <div className="flex items-center justify-between px-1 pt-1">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#ff2a4b] shadow-[0_0_8px_rgba(255,42,75,0.8)]" />
+                <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
                   Settings
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#121318] text-[#ff2a4b] border border-[#ff2a4b]/30 font-bold">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#121318] text-purple-400 border border-purple-500/30 font-bold">
                   14
                 </span>
               </div>
@@ -1329,7 +1356,7 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                 },
                 {
                   id: 'myra_security' as SettingsSubScreen,
-                  title: 'MYRA Security',
+                  title: 'MAYRA Security',
                   subtitle: 'App lock, fingerprint, GF Mode secret vault & master PIN',
                   badge: 'SECURITY',
                   icon: Lock
@@ -1370,21 +1397,21 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                     onClick={() => setCurrentSubScreen(item.id)}
                     className={`w-full p-3.5 rounded-2xl border transition-all flex items-center justify-between text-left group active:scale-[0.99] cursor-pointer ${
                       isDark 
-                        ? 'bg-[#121318] hover:bg-[#161822] border-white/5 hover:border-[#ff2a4b]/40 shadow-[0_2px_10px_rgba(0,0,0,0.3)]' 
-                        : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-[#ff2a4b]/40 shadow-sm'
+                        ? 'bg-[#121318] hover:bg-[#161822] border-white/5 hover:border-purple-500/40 shadow-[0_2px_10px_rgba(0,0,0,0.3)]' 
+                        : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-purple-500/40 shadow-sm'
                     }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                      <div className="w-10 h-10 rounded-xl bg-[#ff2a4b]/10 border border-[#ff2a4b]/20 flex items-center justify-center shrink-0 text-[#ff2a4b] group-hover:scale-105 group-hover:bg-[#ff2a4b]/20 transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-400 group-hover:scale-105 group-hover:bg-purple-900/60 transition-all">
                         <IconComponent className="w-5 h-5 stroke-[2]" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-white group-hover:text-[#ff2a4b] transition-colors truncate">
+                          <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate">
                             {item.title}
                           </span>
                           {item.badge && (
-                            <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#ff2a4b]/15 text-[#ff2a4b] border border-[#ff2a4b]/30 shrink-0">
+                            <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-950/60 text-purple-300 border border-purple-500/30 shrink-0">
                               {item.badge}
                             </span>
                           )}
@@ -1395,8 +1422,8 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
                       </div>
                     </div>
 
-                    <div className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-[#ff2a4b]/20 transition-all">
-                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#ff2a4b] group-hover:translate-x-0.5 transition-all" />
+                    <div className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-purple-950/60 transition-all">
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </button>
                 );
@@ -1677,6 +1704,14 @@ export const MayraSettingsScreen: React.FC<MayraSettingsScreenProps> = ({
           onCloseSettings();
           if (onLaunchRoutine) onLaunchRoutine(routinePrompt);
         }}
+      />
+
+      {/* Profile Photo Upload Modal */}
+      <ProfilePhotoUploadModal
+        isOpen={isProfilePhotoModalOpen}
+        onClose={() => setIsProfilePhotoModalOpen(false)}
+        personalConfig={personalConfig}
+        setPersonalConfig={setPersonalConfig}
       />
 
     </div>

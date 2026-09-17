@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Mic, Camera, Shield, ArrowRight, ArrowLeft, Check, 
-  Moon, Sun, Bell, User, Mail, Smartphone, RefreshCw, Layers
+  Moon, Sun, Bell, User, Mail, Smartphone, RefreshCw, Layers,
+  Globe, AlertTriangle, Search
 } from 'lucide-react';
 import { MayraLogo } from '../common/MayraLogo';
 import { 
@@ -10,6 +11,7 @@ import {
   PermissionItem, AppThemePreset 
 } from '../../types';
 import { APP_THEMES } from '../../utils/themePresets';
+import { useLanguage, LanguageCode } from '../../services/i18n/languageContext';
 
 interface OnboardingFlowModalProps {
   isOpen: boolean;
@@ -72,13 +74,16 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
   permissions,
   setPermissions
 }) => {
-  // Step 0: Welcome Hero (Exact match of user's screenshot IMG_20260915_193902.jpg)
-  // Step 1: Sign In & Profile Setup (User enters their name, email/phone)
-  // Step 2: System Permissions (Grant All or toggle)
-  // Step 3: Assistant Language & Style
+  // Step 0: Language Selection (Before anything else - requirement 2)
+  // Step 1: Welcome Hero (Exact match of user's screenshot)
+  // Step 2: Sign In & Profile Setup (User enters their name, email/phone)
+  // Step 3: System Permissions (With inline explanations, sub-capabilities, risk warnings, and privacy policy)
   // Step 4: Theme Selection (Default: Purple, Live Dark/Light mode update)
   // Step 5: Final Ready to Launch (Welcome Hero with user's customized name)
   const [currentStep, setCurrentStep] = useState<number>(0);
+  const [languageSearchQuery, setLanguageSearchQuery] = useState<string>('');
+
+  const { currentLanguage, setLanguage, languages, t, getPermissionDetails } = useLanguage();
 
   // Local state for interactive editing before final sync
   const [tempName, setTempName] = useState<string>(() => {
@@ -89,7 +94,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
   });
   const [tempEmail, setTempEmail] = useState<string>(personalConfig.email || '');
   const [tempPhone, setTempPhone] = useState<string>('');
-  const [tempLanguage, setTempLanguage] = useState<string>(assistantConfig.language || 'hi');
+  const [tempLanguage, setTempLanguage] = useState<string>(currentLanguage || assistantConfig.language || 'hi');
   const [isCelebrating, setIsCelebrating] = useState<boolean>(false);
   const [allGrantedFeedback, setAllGrantedFeedback] = useState<boolean>(false);
 
@@ -184,6 +189,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
 
   const handleSelectLanguage = (lang: string) => {
     setTempLanguage(lang);
+    setLanguage(lang as LanguageCode);
     setAssistantConfig(prev => ({ ...prev, language: lang }));
     if (typeof window !== 'undefined') {
       localStorage.setItem('mayra_preferred_language', lang);
@@ -235,18 +241,151 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
     }, 1200);
   };
 
-  // Core permissions for step 2
+  // Core permissions for step 3
   const corePermissions = permissions.filter(p => 
     ['mic_core', 'cam_vision', 'storage_vault', 'notif_alerts'].includes(p.id)
   );
+
+  const filteredLanguages = languages.filter(l => 
+    l.label.toLowerCase().includes(languageSearchQuery.toLowerCase()) ||
+    l.native.toLowerCase().includes(languageSearchQuery.toLowerCase()) ||
+    l.code.toLowerCase().includes(languageSearchQuery.toLowerCase())
+  );
+
+  const currentLangObj = languages.find(l => l.code === currentLanguage) || languages[0];
 
   return (
     <div className="fixed inset-0 z-[99999] flex flex-col bg-[#05060b] text-white select-none overflow-hidden font-sans">
       
       {/* ========================================================================= */}
-      {/* STEP 0 & STEP 5: WELCOME HERO (EXACT MATCH OF USER'S SCREENSHOT IMG_20260915_193902.jpg) */}
+      {/* STEP 0: LANGUAGE SELECTION (BEFORE ANYTHING ELSE - REQUIREMENT 2) */}
       {/* ========================================================================= */}
-      {(currentStep === 0 || currentStep === 5) && (
+      {currentStep === 0 && (
+        <div className="relative flex-1 w-full h-full flex flex-col justify-between overflow-hidden bg-gradient-to-b from-[#0e0f17] via-[#090a10] to-[#05060b]">
+          {/* Glowing Atmospheric Aura */}
+          <div 
+            className="absolute top-0 right-0 w-[350px] h-[350px] opacity-40 pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(99, 102, 241, 0.2) 40%, transparent 70%)',
+              filter: 'blur(50px)'
+            }}
+          />
+
+          {/* Top App Bar */}
+          <div className="relative z-10 pt-6 px-6 flex items-center justify-between border-b border-white/5 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+                <Globe className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold tracking-wider text-purple-300 uppercase block">
+                  MAYRA AI • STEP 1 OF 5
+                </span>
+                <span className="text-[11px] text-gray-400">
+                  Initial Setup
+                </span>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-purple-950/70 text-purple-300 text-[10px] font-bold border border-purple-500/40">
+              16 Languages
+            </span>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="relative z-10 flex-1 overflow-y-auto px-6 py-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/20">
+            <div className="space-y-1 text-center max-w-sm mx-auto">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Choose Your Language
+              </h1>
+              <p className="text-sm font-semibold text-purple-400">
+                अपनी पसंदीदा भाषा चुनें
+              </p>
+              <p className="text-[11.5px] text-gray-400 leading-relaxed pt-1">
+                Select how you'd like MAYRA to communicate. All settings, permission explanations, risk alerts, and privacy policies will immediately adapt to this language.
+              </p>
+            </div>
+
+            {/* Search Filter Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={languageSearchQuery}
+                onChange={(e) => setLanguageSearchQuery(e.target.value)}
+                placeholder="Search language / भाषा खोजें..."
+                className="w-full bg-[#12131a] border border-white/10 focus:border-purple-500 rounded-xl pl-9.5 pr-4 py-2.5 text-xs text-white placeholder-gray-500 outline-none transition-all shadow-inner"
+              />
+            </div>
+
+            {/* Languages List */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-2">
+              {filteredLanguages.map((lang) => {
+                const isSelected = currentLanguage === lang.code;
+                return (
+                  <div
+                    key={lang.code}
+                    onClick={() => handleSelectLanguage(lang.code)}
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-purple-950/40 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)] ring-1 ring-purple-500/30'
+                        : 'bg-[#121318] border-white/5 hover:border-white/15 hover:bg-[#161720]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm ${
+                        isSelected
+                          ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]'
+                          : 'bg-white/5 text-gray-300'
+                      }`}>
+                        {lang.native.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white">
+                            {lang.label}
+                          </span>
+                          {lang.badge && (
+                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">
+                              {lang.badge}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-purple-300/80 font-medium">
+                          {lang.native}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'bg-purple-600 border-purple-400 text-white shadow-[0_0_8px_rgba(168,85,247,0.6)]'
+                        : 'border-white/20 bg-transparent'
+                    }`}>
+                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Action Bar */}
+          <div className="relative z-10 p-5 bg-[#0a0b10]/90 backdrop-blur-xl border-t border-white/10 shrink-0">
+            <button
+              onClick={() => setCurrentStep(1)}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-purple-600/40 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+            >
+              <span>{t.continueBtn} ({currentLangObj.label})</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* STEP 1 & STEP 5: WELCOME HERO (EXACT MATCH OF USER'S SCREENSHOT IMG_20260915_193902.jpg) */}
+      {/* ========================================================================= */}
+      {(currentStep === 1 || currentStep === 5) && (
         <div className="relative flex-1 w-full h-full flex flex-col justify-between overflow-hidden">
           
           {/* Top 60%: High-Altitude Deep Oceanic / Atmospheric Sky Aurora */}
@@ -276,14 +415,31 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
           {/* Top Spacer & App Bar */}
           <div className="relative z-10 pt-6 px-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
+              {currentStep === 1 && (
+                <button
+                  onClick={handleBack}
+                  className="p-1.5 -ml-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer mr-1"
+                  title="Change Language"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              )}
               <span className="text-xs font-semibold tracking-widest text-white/70 uppercase">
                 MAYRA AI
               </span>
             </div>
-            {currentStep === 5 && (
+            {currentStep === 5 ? (
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/30">
                 Ready to Launch
               </span>
+            ) : (
+              <button
+                onClick={() => setCurrentStep(0)}
+                className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] font-medium flex items-center gap-1 border border-white/20 transition-all cursor-pointer"
+              >
+                <Globe className="w-3 h-3 text-purple-300" />
+                <span>{currentLangObj.native}</span>
+              </button>
             )}
           </div>
 
@@ -313,16 +469,16 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
               <span className="font-bold">Mayra AI</span>
             </motion.h1>
 
-            {/* Pagination Indicators: [ — ] [ · ] [ · ] */}
+            {/* Pagination Indicators */}
             <div className="flex items-center gap-1.5 mb-6">
               <div 
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  currentStep === 0 ? 'w-8 bg-white' : 'w-4 bg-white/30'
+                  currentStep === 1 ? 'w-8 bg-white' : 'w-4 bg-white/30'
                 }`} 
               />
               <div 
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  currentStep > 0 && currentStep < 5 ? 'w-8 bg-white' : 'w-4 bg-white/30'
+                  currentStep > 1 && currentStep < 5 ? 'w-8 bg-white' : 'w-4 bg-white/30'
                 }`} 
               />
               <div 
@@ -336,8 +492,8 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                if (currentStep === 0) {
-                  setCurrentStep(1); // Proceed to Sign In / Profile setup
+                if (currentStep === 1) {
+                  setCurrentStep(2); // Proceed to Sign In / Profile setup
                 } else {
                   handleCompleteOnboarding(); // Finish and launch
                 }
@@ -351,7 +507,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
 
               {/* Center Text: Get Started / Launch MAYRA */}
               <span className="text-white font-semibold text-base sm:text-lg tracking-wide select-none">
-                {currentStep === 0 ? 'Get Started' : 'Launch MAYRA'}
+                {currentStep === 1 ? (t.getStarted || 'Get Started') : (t.launchMayra || 'Launch MAYRA')}
               </span>
 
               {/* Right Star / Sparkle Icon */}
@@ -366,10 +522,11 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
         </div>
       )}
 
+
       {/* ========================================================================= */}
-      {/* STEP 1: SIGN IN & USER PROFILE SETUP ("sabse pahle साइन इन करने वाला आए") */}
+      {/* STEP 2: SIGN IN & USER PROFILE SETUP */}
       {/* ========================================================================= */}
-      {currentStep === 1 && (
+      {currentStep === 2 && (
         <div className="relative flex-1 w-full h-full flex flex-col justify-between overflow-y-auto px-6 py-6 scrollbar-none">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
@@ -380,8 +537,8 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="text-center">
-              <span className="text-[11px] font-mono font-bold text-blue-400 uppercase tracking-widest">
-                STEP 1 OF 4
+              <span className="text-[11px] font-mono font-bold text-purple-400 uppercase tracking-widest">
+                STEP 2 OF 5
               </span>
               <h2 className="text-base font-bold text-white">Sign In & Profile</h2>
             </div>
@@ -412,7 +569,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
             <div className="space-y-3 max-w-sm mx-auto w-full">
               <div>
                 <label className="text-xs font-semibold text-gray-300 block mb-1">
-                  Your Name / Call-Sign <span className="text-[#ff2a4b]">*</span>
+                  Your Name / Call-Sign <span className="text-purple-400">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <input
@@ -478,11 +635,11 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
                 if (!tempName.trim()) {
                   handleNameChange('Zafer');
                 }
-                setCurrentStep(2);
+                setCurrentStep(3);
               }}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
             >
-              <span>Continue to Permissions (आगे बढ़ें)</span>
+              <span>{t.continueBtn} to Permissions (अनुमतियाँ दें)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -490,104 +647,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* STEP 2: SYSTEM PERMISSIONS ("drop kare to waise hi saare bhar ke") */}
-      {/* ========================================================================= */}
-      {currentStep === 2 && (
-        <div className="relative flex-1 w-full h-full flex flex-col justify-between overflow-y-auto px-6 py-6 scrollbar-none">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
-            <button
-              onClick={handleBack}
-              className="p-2 -ml-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="text-center">
-              <span className="text-[11px] font-mono font-bold text-blue-400 uppercase tracking-widest">
-                STEP 2 OF 4
-              </span>
-              <h2 className="text-base font-bold text-white">System Permissions</h2>
-            </div>
-            <div className="w-8" />
-          </div>
-
-          {/* Body */}
-          <div className="flex-1 py-4 space-y-3.5">
-            <div className="text-center space-y-1">
-              <h3 className="text-xl font-bold text-white">
-                Hardware & Sensor Access
-              </h3>
-              <p className="text-xs text-gray-400 max-w-xs mx-auto">
-                Enable device hardware for real-time voice conversations, gesture tracking, and security.
-              </p>
-            </div>
-
-            {/* Grant All Button */}
-            <button
-              onClick={handleGrantAllPermissions}
-              className={`w-full py-2.5 px-4 rounded-xl border font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                allGrantedFeedback
-                  ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-                  : 'bg-white/5 hover:bg-white/10 border-white/15 text-white'
-              }`}
-            >
-              <Check className="w-4 h-4 text-emerald-400" />
-              <span>Allow All Permissions (सभी अनुमतियाँ दें)</span>
-            </button>
-
-            {/* Permissions List */}
-            <div className="space-y-2">
-              {corePermissions.map((perm) => {
-                const isGranted = perm.status === 'granted';
-                return (
-                  <div
-                    key={perm.id}
-                    onClick={() => handleToggleSinglePermission(perm.id)}
-                    className="p-3 rounded-2xl bg-[#121318] border border-white/10 flex items-center justify-between cursor-pointer hover:border-white/20 transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                        isGranted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'
-                      }`}>
-                        {perm.id === 'mic_core' && <Mic className="w-4 h-4" />}
-                        {perm.id === 'cam_vision' && <Camera className="w-4 h-4" />}
-                        {perm.id === 'storage_vault' && <Shield className="w-4 h-4" />}
-                        {perm.id === 'notif_alerts' && <Bell className="w-4 h-4" />}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white">{perm.name}</p>
-                        <p className="text-[10px] text-gray-400">{perm.description}</p>
-                      </div>
-                    </div>
-
-                    <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                      isGranted 
-                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' 
-                        : 'bg-white/5 border-white/10 text-gray-400'
-                    }`}>
-                      {isGranted ? 'Granted' : 'Grant'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Continue Button */}
-          <div className="pt-3 shrink-0">
-            <button
-              onClick={() => setCurrentStep(3)}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
-            >
-              <span>Continue to Language (आगे बढ़ें)</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* STEP 3: ASSISTANT LANGUAGE & SPEAKING STYLE */}
+      {/* STEP 3: SYSTEM PERMISSIONS (INLINE EXPLANATIONS, RISKS & PRIVACY POLICY) */}
       {/* ========================================================================= */}
       {currentStep === 3 && (
         <div className="relative flex-1 w-full h-full flex flex-col justify-between overflow-y-auto px-6 py-6 scrollbar-none">
@@ -600,50 +660,105 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="text-center">
-              <span className="text-[11px] font-mono font-bold text-blue-400 uppercase tracking-widest">
-                STEP 3 OF 4
+              <span className="text-[11px] font-mono font-bold text-purple-400 uppercase tracking-widest">
+                STEP 3 OF 5
               </span>
-              <h2 className="text-base font-bold text-white">Language & Voice</h2>
+              <h2 className="text-base font-bold text-white">System Permissions</h2>
             </div>
             <div className="w-8" />
           </div>
 
           {/* Body */}
-          <div className="flex-1 py-4 space-y-4">
+          <div className="flex-1 py-4 space-y-3.5">
             <div className="text-center space-y-1">
               <h3 className="text-xl font-bold text-white">
-                How should MAYRA speak?
+                Hardware & Sensor Access
               </h3>
-              <p className="text-xs text-gray-400 max-w-xs mx-auto">
-                Choose your primary language for natural voice conversation.
+              <p className="text-xs text-purple-300/90 max-w-xs mx-auto">
+                {t.permissionCenterNotice || 'Enable device hardware for real-time voice, camera vision, and system intelligence.'}
               </p>
             </div>
 
-            {/* Language Cards */}
-            <div className="space-y-2.5">
-              {[
-                { id: 'hi', label: 'Hindi (हिन्दी / Hinglish)', desc: 'प्राकृतिक भारतीय बातचीत और दोस्ताना लहजा', sample: 'नमस्ते भाई! आज क्या प्लान है?' },
-                { id: 'en', label: 'English (Global)', desc: 'Clear, authoritative & concise speech', sample: 'Hello! All systems are ready.' }
-              ].map((lang) => {
-                const isSelected = tempLanguage === lang.id;
+            {/* Grant All Button */}
+            <button
+              onClick={handleGrantAllPermissions}
+              className={`w-full py-2.5 px-4 rounded-xl border font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                allGrantedFeedback
+                  ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
+                  : 'bg-purple-950/40 hover:bg-purple-900/40 border-purple-500/30 text-white'
+              }`}
+            >
+              <Check className="w-4 h-4 text-emerald-400" />
+              <span>Allow All Permissions (सभी अनुमतियाँ दें)</span>
+            </button>
+
+            {/* Permissions List with Inline Explanations, Risks, and Privacy Policies */}
+            <div className="space-y-3">
+              {corePermissions.map((perm) => {
+                const isGranted = perm.status === 'granted';
+                const details = getPermissionDetails(perm.id);
+
                 return (
                   <div
-                    key={lang.id}
-                    onClick={() => handleSelectLanguage(lang.id)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-blue-600/15 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-                        : 'bg-[#121318] border-white/10 hover:border-white/20'
-                    }`}
+                    key={perm.id}
+                    className="p-3.5 rounded-2xl bg-[#121318] border border-white/10 flex flex-col gap-2.5 hover:border-purple-500/30 transition-all"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-white">{lang.label}</p>
-                      {isSelected && <Check className="w-4 h-4 text-blue-400" />}
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                          isGranted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'
+                        }`}>
+                          {perm.id === 'mic_core' && <Mic className="w-4 h-4" />}
+                          {perm.id === 'cam_vision' && <Camera className="w-4 h-4" />}
+                          {perm.id === 'storage_vault' && <Shield className="w-4 h-4" />}
+                          {perm.id === 'notif_alerts' && <Bell className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white">{perm.name}</p>
+                          <span className="text-[10px] text-purple-300 font-medium">
+                            {details.description || perm.description}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleToggleSinglePermission(perm.id)}
+                        className={`px-3 py-1 rounded-full text-[11px] font-bold border cursor-pointer active:scale-95 transition-all ${
+                          isGranted 
+                            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]' 
+                            : 'bg-purple-600 hover:bg-purple-500 border-purple-400/40 text-white'
+                        }`}
+                      >
+                        {isGranted ? t.granted : t.grant}
+                      </button>
                     </div>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{lang.desc}</p>
-                    <p className="text-[11px] text-blue-300/80 font-mono mt-2 bg-black/30 p-2 rounded-lg">
-                      "{lang.sample}"
-                    </p>
+
+                    {/* Sub-capabilities */}
+                    {details.subCapabilities && (
+                      <div className="p-2 rounded-xl bg-black/40 border border-white/5 space-y-1">
+                        <span className="text-[10px] font-bold text-purple-300 block">
+                          {t.subCapabilitiesLabel || 'Included Capabilities:'}
+                        </span>
+                        <p className="text-[10px] text-gray-300 leading-relaxed font-normal">
+                          {details.subCapabilities}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Risk Warning Alert */}
+                    {details.riskWarning && (
+                      <div className="p-2 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start gap-2 text-[10px] text-amber-200">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <span><strong>⚠️ Risk Warning:</strong> {details.riskWarning}</span>
+                      </div>
+                    )}
+
+                    {/* Privacy Policy Inline Note */}
+                    {details.privacyPolicy && (
+                      <div className="p-2 rounded-xl bg-purple-950/20 border border-purple-500/20 text-[10px] text-purple-200/90 leading-relaxed">
+                        <strong className="text-purple-300">Privacy Policy:</strong> {details.privacyPolicy}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -654,7 +769,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
           <div className="pt-3 shrink-0">
             <button
               onClick={() => setCurrentStep(4)}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
             >
               <span>Continue to Theme (थीम चुनें)</span>
               <ArrowRight className="w-4 h-4" />
@@ -662,6 +777,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
           </div>
         </div>
       )}
+
 
       {/* ========================================================================= */}
       {/* STEP 4: THEME SELECTION ("sabse last mein theme chunne wala aaye... purple wala") */}
@@ -678,7 +794,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
             </button>
             <div className="text-center">
               <span className="text-[11px] font-mono font-bold text-purple-400 uppercase tracking-widest">
-                STEP 4 OF 4 (THEME & LOOK)
+                STEP 4 OF 5 (THEME & LOOK)
               </span>
               <h2 className="text-base font-bold text-white">Choose Your Theme</h2>
             </div>

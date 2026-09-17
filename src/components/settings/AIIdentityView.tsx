@@ -20,9 +20,9 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
   const [personalityMode, setPersonalityMode] = useState<'normal' | 'gf' | 'friend' | 'nautanki'>(
     assistantConfig.personalityMode || 'friend'
   );
-  const [aiName, setAiName] = useState(assistantConfig.name || 'MYRA');
+  const [aiName, setAiName] = useState(assistantConfig.name || 'MAYRA');
   const [systemPrompt, setSystemPrompt] = useState(
-    assistantConfig.systemPrompt || 'You are MYRA, an advanced artificial neural intelligence entity. You speak with warm emotional resonance, sharp wit, and deep loyalty. Always prioritize direct, helpful action.'
+    assistantConfig.systemPrompt || 'You are MAYRA, an advanced artificial neural intelligence entity. You speak with warm emotional resonance, sharp wit, and deep loyalty. Always prioritize direct, helpful action.'
   );
   const [tone, setTone] = useState<'friendly' | 'professional' | 'humorous' | 'romantic' | 'sarcastic'>('friendly');
   const [storeHistory, setStoreHistory] = useState(true);
@@ -55,7 +55,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
             AI & Identity
           </h1>
           <p className="text-[11px] text-gray-400">
-            Define MYRA's personality, behavior & tone
+            Define MAYRA's personality, behavior & tone
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
                 onClick={() => setPersonalityMode(item.id)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   personalityMode === item.id
-                    ? 'bg-[#ff2a4b] text-white shadow-[0_0_12px_rgba(255,42,75,0.4)]'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
                     : 'bg-[#15161d] text-gray-400 hover:text-white border border-white/5'
                 }`}
               >
@@ -96,8 +96,8 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white">Assistant Name</span>
             <button
-              onClick={() => setAiName('MYRA')}
-              className="text-[11px] text-[#ff2a4b] hover:underline"
+              onClick={() => setAiName('MAYRA')}
+              className="text-[11px] text-purple-400 hover:underline cursor-pointer"
             >
               Reset to default
             </button>
@@ -106,7 +106,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
             type="text"
             value={aiName}
             onChange={(e) => setAiName(e.target.value)}
-            className="w-full bg-[#15161d] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-[#ff2a4b]"
+            className="w-full bg-[#15161d] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-purple-400"
           />
         </div>
 
@@ -114,16 +114,16 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white">Custom System Prompt</span>
-            <Sparkles className="w-4 h-4 text-[#ff2a4b]" />
+            <Sparkles className="w-4 h-4 text-purple-400" />
           </div>
           <p className="text-[11px] text-gray-400 leading-relaxed">
-            Give MYRA specific instructions on how to behave, respond, and interact with you.
+            Give MAYRA specific instructions on how to behave, respond, and interact with you.
           </p>
           <textarea
             rows={4}
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
-            className="w-full bg-[#15161d] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-gray-500 outline-none focus:border-[#ff2a4b] leading-relaxed resize-none"
+            className="w-full bg-[#15161d] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-gray-500 outline-none focus:border-purple-400 leading-relaxed resize-none"
           />
         </div>
 
@@ -145,7 +145,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
                 onClick={() => setTone(t.id as any)}
                 className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   tone === t.id
-                    ? 'bg-[#181924] border-[#ff2a4b]/50'
+                    ? 'bg-[#181924] border-purple-500/50'
                     : 'bg-[#121318] border-white/5 hover:border-white/10'
                 }`}
               >
@@ -154,7 +154,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
                   <p className="text-[10px] text-gray-400 mt-0.5">{t.desc}</p>
                 </div>
                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  tone === t.id ? 'border-[#ff2a4b] bg-[#ff2a4b]' : 'border-gray-600'
+                  tone === t.id ? 'border-purple-500 bg-purple-600' : 'border-gray-600'
                 }`}>
                   {tone === t.id && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
                 </div>
@@ -176,7 +176,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
               type="button"
               onClick={() => setStoreHistory(!storeHistory)}
               className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                storeHistory ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                storeHistory ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-[#222430]'
               }`}
             >
               <span
@@ -196,7 +196,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
               type="button"
               onClick={() => setAutoForget(!autoForget)}
               className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                autoForget ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                autoForget ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-[#222430]'
               }`}
             >
               <span
@@ -221,7 +221,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
       <div className="p-4 bg-[#0d0e14] border-t border-white/5 absolute bottom-0 inset-x-0">
         <button
           onClick={handleSave}
-          className="w-full py-3 rounded-xl bg-[#ff2a4b] hover:bg-[#e02040] text-white text-xs font-bold shadow-[0_0_15px_rgba(255,42,75,0.4)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
         >
           {saved ? (
             <>

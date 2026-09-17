@@ -7,6 +7,9 @@ import {
 
 interface SubscriptionPlansViewProps {
   onBack: () => void;
+  currentTier?: string;
+  isSubscribed?: boolean;
+  onUpgrade?: (tier: string) => void;
 }
 
 interface PlanItem {
@@ -18,19 +21,17 @@ interface PlanItem {
   creditBadge: string;
   features: string[];
   icon: any;
-  isCurrent?: boolean;
 }
 
 const PLANS: PlanItem[] = [
   {
     id: 'free',
     name: 'FREE',
-    tagline: 'Try MYRA free for a day.',
+    tagline: 'Try MAYRA free for a day.',
     price: '₹ 0',
     period: '/ month',
     creditBadge: '10 CREDITS • 1-DAY TRIAL',
     icon: Sparkles,
-    isCurrent: true,
     features: [
       '10 Credits - 1 Day Trial',
       'Standard AI Responses',
@@ -99,7 +100,7 @@ const PLANS: PlanItem[] = [
     ]
   },
   {
-    id: 'membership',
+    id: 'lifetime',
     name: 'MEMBERSHIP',
     tagline: 'Unlimited power. Unlimited possibilities',
     price: '₹ 999',
@@ -116,13 +117,28 @@ const PLANS: PlanItem[] = [
   }
 ];
 
-export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ onBack }) => {
-  const [selectedPlan, setSelectedPlan] = useState<string>('free');
+export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ 
+  onBack,
+  currentTier = 'free',
+  isSubscribed = false,
+  onUpgrade
+}) => {
+  const [selectedPlan, setSelectedPlan] = useState<string>(isSubscribed ? currentTier : 'free');
   const [showCreditInfo, setShowCreditInfo] = useState<boolean>(false);
+  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+  const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
 
   const handleSubscribe = (planId: string) => {
-    setSelectedPlan(planId);
-    alert(`Redirecting to secure gateway for ${planId.toUpperCase()} plan activation...`);
+    setUpgradingPlan(planId);
+    setTimeout(() => {
+      setUpgradingPlan(null);
+      setSelectedPlan(planId);
+      setUpgradeSuccess(planId);
+      if (onUpgrade) {
+        onUpgrade(planId);
+      }
+      setTimeout(() => setUpgradeSuccess(null), 3000);
+    }, 1200);
   };
 
   return (
@@ -137,8 +153,8 @@ export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ on
         </button>
 
         <div className="text-center">
-          <h1 className="text-sm font-extrabold text-[#ff2a4b] tracking-wider uppercase">
-            MYRA
+          <h1 className="text-sm font-extrabold text-purple-300 tracking-wider uppercase">
+            MAYRA
           </h1>
           <p className="text-[11px] text-gray-400">
             Subscription Plans
@@ -155,19 +171,30 @@ export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ on
 
       {/* Main Plans List */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-none pb-24">
+        {/* Upgrade Success Notification */}
+        {upgradeSuccess && (
+          <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-white flex items-center gap-3 animate-fadeIn">
+            <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-emerald-200">Plan Upgraded Successfully!</p>
+              <p className="text-[10px] text-emerald-300/80">All features of the {upgradeSuccess.toUpperCase()} tier are now fully unlocked.</p>
+            </div>
+          </div>
+        )}
+
         {/* Banner Card */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-[#ff2a4b]/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute right-0 top-0 w-32 h-32 bg-purple-600/10 rounded-full blur-2xl pointer-events-none" />
           
           <h2 className="text-base font-bold text-white leading-snug">
-            Unlock the full power <br /> of MYRA
+            Unlock the full power <br /> of MAYRA
           </h2>
           <p className="text-xs text-gray-400 mt-1 leading-relaxed">
             Choose the perfect plan and supercharge your AI experience.
           </p>
 
           <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-[#181922] border border-white/10 rounded-full text-[11px] font-medium text-gray-300">
-            <Sparkles className="w-3.5 h-3.5 text-[#ff2a4b]" />
+            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
             <span>1 Credit = 1 Action</span>
           </div>
         </div>
@@ -176,20 +203,21 @@ export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ on
         {PLANS.map(plan => {
           const IconComp = plan.icon;
           const isCurrent = plan.id === selectedPlan;
+          const isProcessing = upgradingPlan === plan.id;
 
           return (
             <div
               key={plan.id}
               className={`p-4 rounded-2xl bg-[#121318] border transition-all ${
                 isCurrent 
-                  ? 'border-[#ff2a4b]/50 shadow-[0_0_20px_rgba(255,42,75,0.15)]' 
+                  ? 'border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.2)]' 
                   : 'border-white/5 hover:border-white/10'
               }`}
             >
               {/* Header inside plan */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
                     <IconComp className="w-5 h-5" />
                   </div>
                   <div>
@@ -202,7 +230,7 @@ export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ on
                   </div>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#ff2a4b]/10 text-[#ff2a4b] border border-[#ff2a4b]/30">
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-purple-950/80 text-purple-300 border border-purple-500/30">
                   {plan.creditBadge}
                 </span>
               </div>
@@ -221,16 +249,18 @@ export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ on
                 {isCurrent ? (
                   <button
                     disabled
-                    className="px-5 py-2 rounded-xl bg-[#1f202b] text-gray-400 text-xs font-bold"
+                    className="px-5 py-2 rounded-xl bg-purple-950/40 border border-purple-500/40 text-purple-300 text-xs font-bold flex items-center gap-1.5"
                   >
-                    Current
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Active</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => handleSubscribe(plan.id)}
-                    className="px-6 py-2 rounded-xl bg-[#ff2a4b] hover:bg-[#e02040] text-white text-xs font-bold shadow-[0_0_12px_rgba(255,42,75,0.4)] transition-all active:scale-95 cursor-pointer"
+                    disabled={isProcessing}
+                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                   >
-                    Subscribe
+                    {isProcessing ? 'Activating...' : (plan.id === 'free' ? 'Select Free' : 'Subscribe')}
                   </button>
                 )}
               </div>
@@ -250,7 +280,7 @@ export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ on
 
         {/* Footer Guarantee Links */}
         <div className="pt-4 space-y-3 text-center">
-          <div className="flex items-center justify-center gap-1 text-xs text-[#ff2a4b] font-medium cursor-pointer">
+          <div className="flex items-center justify-center gap-1 text-xs text-purple-400 font-medium cursor-pointer">
             <span>How Credits Work?</span>
             <span className="underline ml-1">View Credit Usage &gt;</span>
           </div>
@@ -290,7 +320,7 @@ export const SubscriptionPlansView: React.FC<SubscriptionPlansViewProps> = ({ on
           </div>
 
           <p className="text-[10px] text-gray-600 pt-2">
-            By continuing, you agree to MYRA's Terms of Service and Privacy Policy.
+            By continuing, you agree to MAYRA's Terms of Service and Privacy Policy.
           </p>
         </div>
       </div>

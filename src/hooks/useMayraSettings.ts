@@ -39,10 +39,12 @@ const LAUNCHER_ICON_STORAGE_KEY = 'mayra_launcher_icon';
 const APP_THEME_STORAGE_KEY = 'mayra_app_theme';
 const HEADING_FONT_STORAGE_KEY = 'mayra_heading_font';
 const CAMERA_ASPECT_RATIO_STORAGE_KEY = 'mayra_camera_aspect_ratio';
+const THEME_MODE_STORAGE_KEY = 'mayra_theme_mode';
 
 const DEFAULT_PERSONAL_CONFIG: UserPersonalConfig = {
   fullName: '',
   preferredName: '',
+  userName: '',
   email: '',
   profession: '',
   additionalInfo: '',
@@ -53,7 +55,11 @@ const DEFAULT_PERSONAL_CONFIG: UserPersonalConfig = {
   geminiModel: 'gemini-3.1-flash-lite',
   temperature: 0.7,
   favoriteMusicGenre: 'Lofi & Ambient Bollywood',
-  youtubeApiKey: ''
+  youtubeApiKey: '',
+  subscription: {
+    tier: 'free',
+    isActive: false
+  }
 };
 
 function getInitialPersonalConfig(): UserPersonalConfig {
@@ -66,6 +72,17 @@ function getInitialPersonalConfig(): UserPersonalConfig {
     }
   } catch (e) {}
   return DEFAULT_PERSONAL_CONFIG;
+}
+
+function getInitialThemeMode(): 'light' | 'dark' | 'cosmic' {
+  if (typeof window === 'undefined') return 'cosmic';
+  try {
+    const saved = localStorage.getItem(THEME_MODE_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark' || saved === 'cosmic') return saved;
+    const darkSaved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
+    if (darkSaved === 'false') return 'light';
+  } catch (e) {}
+  return 'cosmic'; // Default: Cosmic Violet (Avatar Velvet)
 }
 
 function getInitialDarkMode(): boolean {
@@ -414,6 +431,7 @@ export function useMayraSettings() {
   // Appearance State (Dark Mode, Orb Style, Orb Color, Orb Size, Use Orb On Home, Orb Type, Custom Hue, Voice Visualizer, Aura Border, Launcher Icon)
   const [appearanceConfig, setAppearanceConfigState] = useState<AppearanceConfig>(() => ({
     darkMode: getInitialDarkMode(),
+    themeMode: getInitialThemeMode(),
     orbStyle: getInitialOrbStyle(),
     orbColor: getInitialOrbColor(),
     orbSize: getInitialOrbSize(),
@@ -431,6 +449,18 @@ export function useMayraSettings() {
   const setAppearanceConfig = useCallback((update: React.SetStateAction<AppearanceConfig> | Partial<AppearanceConfig>) => {
     setAppearanceConfigState((prev) => {
       const next = typeof update === 'function' ? update(prev) : { ...prev, ...update };
+      if (next.themeMode !== undefined && next.themeMode !== prev.themeMode) {
+        try {
+          localStorage.setItem(THEME_MODE_STORAGE_KEY, next.themeMode);
+          if (next.themeMode === 'light') {
+            next.darkMode = false;
+            localStorage.setItem(DARK_MODE_STORAGE_KEY, 'false');
+          } else {
+            next.darkMode = true;
+            localStorage.setItem(DARK_MODE_STORAGE_KEY, 'true');
+          }
+        } catch (e) {}
+      }
       if (next.darkMode !== undefined && next.darkMode !== prev.darkMode) {
         try {
           localStorage.setItem(DARK_MODE_STORAGE_KEY, String(next.darkMode));

@@ -64,7 +64,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
           {/* Notification Access */}
           <div className="p-3.5 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
                 <Bell className="w-4 h-4" />
               </div>
               <div>
@@ -77,7 +77,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 notifAccessGranted 
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                  : 'bg-[#ff2a4b] text-white shadow-[0_0_10px_rgba(255,42,75,0.4)]'
+                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]'
               }`}
             >
               {notifAccessGranted ? 'GRANTED' : 'ENABLE'}
@@ -132,7 +132,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
                   type="button"
                   onClick={() => item.setVal(!item.val)}
                   className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                    item.val ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                    item.val ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-[#222430]'
                   }`}
                 >
                   <span
@@ -162,7 +162,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
               return (
                 <div key={item.title} className="p-3.5 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="text-xs font-bold text-white">{item.title}</span>
@@ -171,7 +171,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
                     type="button"
                     onClick={() => item.setVal(!item.val)}
                     className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                      item.val ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                      item.val ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-[#222430]'
                     }`}
                   >
                     <span
@@ -194,7 +194,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
 
           <div className="space-y-2">
             {[
-              { title: 'Auto Reply', desc: 'Allow MYRA to compose autonomous smart replies', val: autoReply, setVal: setAutoReply },
+              { title: 'Auto Reply', desc: 'Allow MAYRA to compose autonomous smart replies', val: autoReply, setVal: setAutoReply },
               { title: 'Reply While Chat is Open', desc: 'Only read aloud if phone screen is locked or earphones in', val: replyWhileChatOpen, setVal: setReplyWhileChatOpen },
               { title: 'Spam Filter', desc: 'Silence promotional messages & OTPs automatically', val: spamFilter, setVal: setSpamFilter },
               { title: 'Priority Filter', desc: 'Only announce urgent VIP contacts in high priority mode', val: priorityFilter, setVal: setPriorityFilter }
@@ -208,7 +208,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
                   type="button"
                   onClick={() => item.setVal(!item.val)}
                   className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                    item.val ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                    item.val ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-[#222430]'
                   }`}
                 >
                   <span
@@ -238,7 +238,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
               return (
                 <div key={item.title} className="p-3.5 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
@@ -250,7 +250,7 @@ export const IntelligenceModesView: React.FC<IntelligenceModesViewProps> = ({ on
                     type="button"
                     onClick={() => item.setVal(!item.val)}
                     className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-                      item.val ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+                      item.val ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-[#222430]'
                     }`}
                   >
                     <span

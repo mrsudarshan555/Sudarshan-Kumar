@@ -8,15 +8,19 @@ import {
 interface LicenseActivationViewProps {
   onBack: () => void;
   onNavigateToPlans?: () => void;
+  isSubscribed?: boolean;
+  onActivateSuccess?: (tier: 'pro' | 'lifetime') => void;
 }
 
 export const LicenseActivationView: React.FC<LicenseActivationViewProps> = ({ 
   onBack,
-  onNavigateToPlans 
+  onNavigateToPlans,
+  isSubscribed = false,
+  onActivateSuccess
 }) => {
   const [licenseKey, setLicenseKey] = useState('');
   const [isActivating, setIsActivating] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(isSubscribed);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleActivate = () => {
@@ -29,6 +33,9 @@ export const LicenseActivationView: React.FC<LicenseActivationViewProps> = ({
     setTimeout(() => {
       setIsActivating(false);
       setIsSuccess(true);
+      if (onActivateSuccess) {
+        onActivateSuccess('lifetime');
+      }
     }, 1500);
   };
 
@@ -48,7 +55,7 @@ export const LicenseActivationView: React.FC<LicenseActivationViewProps> = ({
             License & Subscription
           </h1>
           <p className="text-[11px] text-gray-400">
-            Secure MYRA premium access
+            Secure MAYRA premium access
           </p>
         </div>
 
@@ -59,7 +66,7 @@ export const LicenseActivationView: React.FC<LicenseActivationViewProps> = ({
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-none pb-24">
         {/* Status Card */}
         <div className="p-5 rounded-2xl bg-[#121318] border border-white/5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-[0_0_12px_rgba(168,85,247,0.3)]">
             {isSuccess ? <ShieldCheck className="w-6 h-6 text-emerald-400" /> : <Lock className="w-6 h-6" />}
           </div>
           <div>
@@ -88,11 +95,11 @@ export const LicenseActivationView: React.FC<LicenseActivationViewProps> = ({
               type="text"
               value={licenseKey}
               onChange={(e) => setLicenseKey(e.target.value)}
-              placeholder="MYRA-XXXX-XXXX-XXXX"
-              className="w-full bg-[#15161d] border border-white/10 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-600 outline-none focus:border-[#ff2a4b] transition-colors font-mono uppercase tracking-wider"
+              placeholder="MAYRA-XXXX-XXXX-XXXX"
+              className="w-full bg-[#15161d] border border-white/10 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-400 transition-colors font-mono uppercase tracking-wider"
             />
             {errorMsg && (
-              <p className="text-[11px] text-[#ff2a4b] flex items-center gap-1">
+              <p className="text-[11px] text-rose-400 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 <span>{errorMsg}</span>
               </p>
@@ -102,7 +109,7 @@ export const LicenseActivationView: React.FC<LicenseActivationViewProps> = ({
           <button
             onClick={handleActivate}
             disabled={isActivating}
-            className="w-full py-3 rounded-xl bg-[#ff2a4b] hover:bg-[#e02040] text-white text-xs font-bold shadow-[0_0_15px_rgba(255,42,75,0.4)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
           >
             {isActivating ? (
               <span>Verifying Cryptographic Signature...</span>
@@ -123,7 +130,7 @@ export const LicenseActivationView: React.FC<LicenseActivationViewProps> = ({
             onClick={onNavigateToPlans}
             className="w-full py-3 rounded-xl bg-[#181922] hover:bg-[#20222f] border border-white/10 text-xs font-bold text-white flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
-            <ShoppingCart className="w-4 h-4 text-[#ff2a4b]" />
+            <ShoppingCart className="w-4 h-4 text-purple-400" />
             <span>Buy License from Official Website</span>
           </button>
         </div>

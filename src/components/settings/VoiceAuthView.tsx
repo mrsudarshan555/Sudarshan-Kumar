@@ -52,7 +52,7 @@ export const VoiceAuthView: React.FC<VoiceAuthViewProps> = ({ onBack }) => {
         {/* Enable Voice Authentication Card */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1a1b24] border border-white/10 flex items-center justify-center text-[#ff2a4b] shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               <Mic className="w-5 h-5" />
             </div>
             <div>
@@ -69,7 +69,7 @@ export const VoiceAuthView: React.FC<VoiceAuthViewProps> = ({ onBack }) => {
             type="button"
             onClick={() => setIsEnabled(!isEnabled)}
             className={`w-11 h-6 rounded-full transition-colors relative shrink-0 cursor-pointer ${
-              isEnabled ? 'bg-[#ff2a4b]' : 'bg-[#222430]'
+              isEnabled ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-[#222430]'
             }`}
           >
             <span
@@ -89,7 +89,7 @@ export const VoiceAuthView: React.FC<VoiceAuthViewProps> = ({ onBack }) => {
               <span>Voice Profile Enrolled</span>
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#ff2a4b]/10 text-[#ff2a4b] border border-[#ff2a4b]/20">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-950/40 text-purple-300 border border-purple-500/30">
               <AlertCircle className="w-3.5 h-3.5" />
               <span>Voice Not Enrolled</span>
             </span>
@@ -102,13 +102,13 @@ export const VoiceAuthView: React.FC<VoiceAuthViewProps> = ({ onBack }) => {
             Voice Profile
           </h3>
           <p className="text-xs text-gray-400 leading-relaxed">
-            Record a short sample so MYRA can recognize your voice. Takes about a minute.
+            Record a short sample so MAYRA can recognize your voice. Takes about a minute.
           </p>
 
           <button
             onClick={handleEnrollVoice}
             disabled={isRecording}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(255,42,75,0.4)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white text-xs font-bold shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
           >
             {isRecording ? (
               <>
@@ -136,7 +136,7 @@ export const VoiceAuthView: React.FC<VoiceAuthViewProps> = ({ onBack }) => {
                 onClick={() => setThreshold(th)}
                 className={`py-2 rounded-xl text-xs font-semibold capitalize transition-all cursor-pointer ${
                   threshold === th
-                    ? 'bg-[#ff2a4b] text-white shadow-[0_0_12px_rgba(255,42,75,0.4)]'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
                     : 'bg-[#15161d] text-gray-400 hover:text-white border border-white/5'
                 }`}
               >
@@ -161,7 +161,7 @@ export const VoiceAuthView: React.FC<VoiceAuthViewProps> = ({ onBack }) => {
                 onClick={() => setVerifyMode(vm.id as any)}
                 className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   verifyMode === vm.id
-                    ? 'bg-[#181924] border-[#ff2a4b]/50'
+                    ? 'bg-[#181924] border-purple-500/50'
                     : 'bg-[#15161d] border-white/5 hover:border-white/10'
                 }`}
               >
@@ -170,7 +170,7 @@ export const VoiceAuthView: React.FC<VoiceAuthViewProps> = ({ onBack }) => {
                   <p className="text-[11px] text-gray-400 mt-0.5">{vm.desc}</p>
                 </div>
                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  verifyMode === vm.id ? 'border-[#ff2a4b] bg-[#ff2a4b]' : 'border-gray-600'
+                  verifyMode === vm.id ? 'border-purple-500 bg-purple-600' : 'border-gray-600'
                 }`}>
                   {verifyMode === vm.id && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
                 </div>

@@ -1651,26 +1651,26 @@ export const SettingsTopWidgetCarousel: React.FC<SettingsTopWidgetCarouselProps>
         ========================================================================= */}
         <div 
           onClick={() => onNavigateSubScreen('emergency_sos')}
-          className="w-[275px] h-[290px] shrink-0 snap-start bg-gradient-to-br from-[#290915] via-[#1a050f] to-[#0c0208] text-white rounded-[28px] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.45)] border border-rose-500/30 flex flex-col justify-between transition-all cursor-pointer active:scale-[0.98] group relative overflow-hidden select-none"
+          className="w-[275px] h-[290px] shrink-0 snap-start bg-gradient-to-br from-[#1e0a38] via-[#130726] to-[#0a0314] text-white rounded-[28px] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.45)] border border-purple-500/30 flex flex-col justify-between transition-all cursor-pointer active:scale-[0.98] group relative overflow-hidden select-none"
         >
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-400/40 flex items-center justify-center shadow-inner">
-                <AlertOctagon className="w-4 h-4 text-rose-400" />
+              <div className="w-8 h-8 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-400/40 flex items-center justify-center shadow-inner">
+                <AlertOctagon className="w-4 h-4 text-purple-300" />
               </div>
               <div>
                 <h4 className="text-xs font-bold text-white tracking-tight">
                   Emergency & Safety
                 </h4>
-                <p className="text-[9px] font-mono text-rose-300/70">
+                <p className="text-[9px] font-mono text-purple-300/70">
                   Road Guardian Shield
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-xl bg-rose-950/80 text-rose-300 border border-rose-500/40 text-[9px] font-mono font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-xl bg-purple-950/80 text-purple-300 border border-purple-500/40 text-[9px] font-mono font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
               <span>SOS READY</span>
             </div>
           </div>
@@ -1678,8 +1678,8 @@ export const SettingsTopWidgetCarousel: React.FC<SettingsTopWidgetCarouselProps>
           {/* Middle Body */}
           <div className="my-2 p-2.5 rounded-2xl bg-white/[0.06] border border-white/10 space-y-2">
             <div className="flex items-center justify-between text-[10px]">
-              <span className="text-rose-200/90 flex items-center gap-1">
-                <Car className="w-3 h-3 text-rose-400" />
+              <span className="text-purple-200/90 flex items-center gap-1">
+                <Car className="w-3 h-3 text-purple-300" />
                 <span>Driving Shield</span>
               </span>
               <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30">
@@ -1688,30 +1688,30 @@ export const SettingsTopWidgetCarousel: React.FC<SettingsTopWidgetCarouselProps>
             </div>
 
             {/* 1-Tap Trigger Button */}
-            <div className="p-2 rounded-xl bg-rose-600/20 border border-rose-500/40 flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <PhoneCall className="w-4 h-4 text-rose-400 animate-pulse" />
+                <PhoneCall className="w-4 h-4 text-purple-300 animate-pulse" />
                 <span className="text-[11px] font-bold text-white">Emergency Dials</span>
               </div>
-              <span className="text-[9px] font-mono font-bold text-rose-200 bg-rose-500/30 px-1.5 py-0.5 rounded">
+              <span className="text-[9px] font-mono font-bold text-purple-200 bg-purple-500/30 px-1.5 py-0.5 rounded">
                 112 / 108
               </span>
             </div>
 
             {/* Speed & Auto-Reply SMS */}
-            <div className="flex items-center justify-between text-[9px] font-mono text-rose-200/70">
+            <div className="flex items-center justify-between text-[9px] font-mono text-purple-200/70">
               <span>Auto-SMS on Call</span>
               <span className="text-white font-bold">{emergencyState.contactsCount || 3} Contacts Saved</span>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-rose-300/80">
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-purple-300/80">
             <span className="flex items-center gap-1">
-              <Car className="w-3 h-3 text-rose-400" />
+              <Car className="w-3 h-3 text-purple-400" />
               <span>Emergency & Driving Protocol</span>
             </span>
-            <ChevronRight className="w-3.5 h-3.5 text-rose-300/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-3.5 h-3.5 text-purple-300/50 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
           </div>
         </div>
 

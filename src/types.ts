@@ -275,10 +275,19 @@ export interface KotlinFile {
   content: string;
 }
 
+export interface SubscriptionStatus {
+  tier: 'free' | 'basic' | 'premium' | 'elite' | 'elite_pro' | 'membership';
+  isActive: boolean;
+  activatedAt?: number;
+  licenseKey?: string;
+}
+
 export interface UserPersonalConfig {
   fullName: string;
   preferredName: string;
   userName?: string;
+  profilePhoto?: string;
+  avatarUrl?: string;
   email: string;
   profession?: string;
   additionalInfo?: string;
@@ -293,6 +302,7 @@ export interface UserPersonalConfig {
   temperature: number;
   favoriteMusicGenre?: string;
   youtubeApiKey?: string;
+  subscription?: SubscriptionStatus;
 }
 
 export type AssistantMode = 'mayra' | 'stonicx';
@@ -387,6 +397,7 @@ export type CameraAspectRatio = '9:16' | '3:4' | '1:1' | '4:3' | 'full';
 
 export interface AppearanceConfig {
   darkMode: boolean;
+  themeMode?: 'light' | 'dark' | 'cosmic'; // 'light' (clean white/slate), 'dark' (obsidian dark), 'cosmic' (avatar velvet violet theme)
   orbStyle: OrbStyleType;
   orbColor: OrbColorType;
   orbSize: number; // Size in dp (44 to 140, default 64)

@@ -77,14 +77,14 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
             <ArrowLeft className="w-4 h-4 stroke-[2]" />
           </button>
           <div className="flex items-center gap-2">
-            <div className={`p-1.5 rounded-full shadow-md text-white border border-red-400/50 ${isSosActive ? 'bg-red-600 animate-pulse' : 'bg-red-600'}`}>
+            <div className={`p-1.5 rounded-full shadow-md text-white border ${isSosActive ? 'bg-red-600 animate-pulse border-red-400' : 'bg-gradient-to-r from-purple-600 to-indigo-600 border-purple-400/40'}`}>
               <AlertOctagon className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-xs font-sans font-bold text-white uppercase tracking-wider">
                 Emergency SOS & Escalation
               </h2>
-              <p className="text-[10px] text-purple-300/70 font-sans">Features 62-66: Voice Trigger, GPS Dispatch & Dialer</p>
+              <p className="text-[10px] text-purple-300/70 font-sans">Voice Trigger, GPS Dispatch & Emergency Dialer</p>
             </div>
           </div>
         </div>
@@ -92,22 +92,22 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
 
       <div className="p-4 space-y-4 text-xs font-sans pb-12">
         {/* SAFETY FIRST CRITICAL DISCLAIMER */}
-        <div className="p-4 bg-amber-500/10 backdrop-blur-xl border border-amber-500/30 rounded-3xl flex items-start gap-3 text-amber-200 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]">
-          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <div className="p-4 bg-purple-950/40 backdrop-blur-xl border border-purple-500/30 rounded-3xl flex items-start gap-3 text-purple-200 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]">
+          <ShieldAlert className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-sans font-bold text-[9px] border border-amber-500/30">
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-sans font-bold text-[9px] border border-purple-500/30">
                 SIMULATION / DEMO MODE
               </span>
-              <span className="font-bold text-[11px] text-amber-300">Safety Notice</span>
+              <span className="font-bold text-[11px] text-purple-300">Safety Notice</span>
             </div>
-            <p className="text-[10px] text-amber-200/90 leading-relaxed font-sans">
+            <p className="text-[10px] text-purple-200/90 leading-relaxed font-sans">
               Browser environment mein background SIM SMS dispatch simulated hota hai. Real-life emergency mein kripya sidhe niche diye gaye <strong>Call 112 (National Emergency)</strong> button ya apne phone ke hardware SOS button ka upyog karein.
             </p>
             <div className="pt-1 flex gap-2">
               <a
                 href="tel:112"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-sans font-bold text-[10px] rounded-xl shadow transition-transform active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-sans font-bold text-[10px] rounded-xl shadow transition-transform active:scale-95"
               >
                 <PhoneCall className="w-3 h-3" /> CALL 112 (REAL NATIONAL EMERGENCY)
               </a>
@@ -115,20 +115,20 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
           </div>
         </div>
 
-        {/* Big SOS Trigger Button - Magnifying Glass */}
+        {/* Big SOS Trigger Button */}
         <div className={`p-5 rounded-3xl border text-center flex flex-col items-center gap-3 transition-all backdrop-blur-2xl ${
           isSosActive
             ? 'bg-red-900/60 border-red-500 shadow-[0_8px_32px_rgba(239,68,68,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
             : 'bg-white/[0.07] border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]'
         }`}>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-sans text-[9px] font-bold">
+            <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-sans text-[9px] font-bold">
               FEATURE TEST BENCH (SIMULATED SMS)
             </span>
           </div>
 
           <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 backdrop-blur-xl ${
-            isSosActive ? 'bg-red-600 border-white text-white animate-ping' : 'bg-red-600/20 border-red-400 text-red-400'
+            isSosActive ? 'bg-red-600 border-white text-white animate-ping' : 'bg-purple-950/60 border-purple-400 text-purple-400'
           }`}>
             <AlertOctagon className="w-8 h-8" />
           </div>
@@ -138,7 +138,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
               {isSosActive ? 'EMERGENCY PROTOCOL SIMULATION ACTIVE' : 'VOICE SOS TEST READY'}
             </h3>
             <p className="text-[11px] text-purple-200/70 mt-0.5 font-sans">
-              Say <span className="text-red-400 font-bold">"STONICX SOS Activate Karo"</span> to test live GPS lookup & alert simulation.
+              Say <span className="text-purple-300 font-bold">&quot;MAYRA SOS Activate Karo&quot;</span> to test live GPS lookup & alert simulation.
             </p>
           </div>
 
@@ -153,7 +153,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
             ) : (
               <button
                 onClick={handleTriggerSOS}
-                className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold font-sans text-xs rounded-2xl shadow-md cursor-pointer transition-opacity"
+                className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold font-sans text-xs rounded-2xl shadow-md cursor-pointer transition-opacity"
               >
                 🚨 TEST SIMULATED SOS DISPATCH
               </button>
@@ -162,21 +162,21 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
         </div>
 
         {sosStatusLog && (
-          <div className="p-3.5 bg-red-950/60 backdrop-blur-2xl border border-red-500/40 rounded-2xl font-sans text-[11px] text-red-200 shadow-md">
+          <div className="p-3.5 bg-purple-950/60 backdrop-blur-2xl border border-purple-500/40 rounded-2xl font-sans text-[11px] text-purple-200 shadow-md">
             {sosStatusLog}
           </div>
         )}
 
-        {/* Priority Emergency Contacts List - Magnifying Glass */}
+        {/* Priority Emergency Contacts List */}
         <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-sans font-bold text-slate-200 uppercase flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-red-400" /> Priority Emergency Contacts ({contacts.length}/5)
+              <Users className="w-3.5 h-3.5 text-purple-400" /> Priority Emergency Contacts ({contacts.length}/5)
             </span>
             {contacts.length < 5 && (
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
-                className="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 text-red-300 font-sans text-[10px] font-bold rounded-xl border border-red-500/30 flex items-center gap-1 transition-colors cursor-pointer"
+                className="px-3 py-1 bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 font-sans text-[10px] font-bold rounded-xl border border-purple-500/30 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Plus className="w-3 h-3" /> Add Contact
               </button>
@@ -185,20 +185,20 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
 
           {/* Add Contact Modal Form */}
           {showAddForm && (
-            <div className="p-3.5 bg-white/[0.06] backdrop-blur-xl border border-red-500/30 rounded-2xl space-y-2">
+            <div className="p-3.5 bg-white/[0.06] backdrop-blur-xl border border-purple-500/30 rounded-2xl space-y-2">
               <input
                 type="text"
                 placeholder="Full Name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-red-400/50"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400/50"
               />
               <input
                 type="text"
                 placeholder="Phone Number (e.g. +91 98765 43210)"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none font-mono focus:border-red-400/50"
+                className="w-full bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-white text-xs outline-none font-mono focus:border-purple-400/50"
               />
               <div className="flex justify-end gap-2 pt-1">
                 <button
@@ -209,7 +209,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
                 </button>
                 <button
                   onClick={handleAddContact}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-[10px] font-sans cursor-pointer shadow-md"
+                  className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-[10px] font-sans cursor-pointer shadow-md"
                 >
                   Save Priority Contact
                 </button>
@@ -224,7 +224,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
                 className="p-3 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-red-950/60 border border-red-500/40 text-red-400 flex items-center justify-center font-sans font-bold text-xs">
+                  <div className="w-7 h-7 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-400 flex items-center justify-center font-sans font-bold text-xs">
                     #{idx + 1}
                   </div>
                   <div>
@@ -238,7 +238,7 @@ export const EmergencySOSView: React.FC<EmergencySOSViewProps> = ({ onBack }) =>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => engine.removeEmergencyContact(contact.id)}
-                    className="p-1.5 text-purple-300/50 hover:text-red-400 transition-colors cursor-pointer"
+                    className="p-1.5 text-purple-300/50 hover:text-purple-200 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

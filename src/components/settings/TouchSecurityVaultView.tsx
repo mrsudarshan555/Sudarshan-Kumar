@@ -82,7 +82,7 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
           </button>
           <div className="flex items-center gap-2">
             <div className={`p-1.5 rounded-full shadow-md text-white border ${
-              isAlarming ? 'bg-rose-600 animate-ping border-rose-400' : isArmed ? 'bg-emerald-600 border-emerald-400' : 'bg-rose-600/80 border-rose-400/40'
+              isAlarming ? 'bg-rose-600 animate-ping border-rose-400' : isArmed ? 'bg-emerald-600 border-emerald-400' : 'bg-gradient-to-r from-purple-600 to-indigo-600 border-purple-400/40'
             }`}>
               <ShieldAlert className="w-4 h-4" />
             </div>
@@ -298,13 +298,13 @@ export const TouchSecurityVaultView: React.FC<TouchSecurityVaultViewProps> = ({ 
         {/* 3. 'Who Touched It' History Gallery (Feature 54) */}
         <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-sans font-bold text-rose-400 uppercase flex items-center gap-1.5">
-              <Camera className="w-3.5 h-3.5" /> 'Who Touched It' Intruder Gallery ({logs.length})
+            <span className="text-[11px] font-sans font-bold text-purple-300 uppercase flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5 text-purple-400" /> &apos;Who Touched It&apos; Intruder Gallery ({logs.length})
             </span>
             {logs.length > 0 && (
               <button
                 onClick={() => engine.clearLogs()}
-                className="text-[10px] font-sans text-purple-300/60 hover:text-rose-400 flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-[10px] font-sans text-purple-300/60 hover:text-purple-200 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-3 h-3" /> Clear Gallery
               </button>
