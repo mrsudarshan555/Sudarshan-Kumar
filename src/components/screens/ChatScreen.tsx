@@ -13,6 +13,7 @@ import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
 import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
 import { PullToRefresh } from '../common/PullToRefresh';
 import { InteractiveQuizWidget } from '../quiz/InteractiveQuizWidget';
+import { GoogleDriveChatCard } from '../drive/GoogleDriveChatCard';
 import { MayraEmpathyEngine, EmpathyState } from '../../services/character/mayraEmpathyEngine';
 
 interface ChatScreenProps {
@@ -45,6 +46,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [isAttachmentSheetOpen, setIsAttachmentSheetOpen] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
+  const [keyboardOffset, setKeyboardOffset] = useState<number>(0);
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messagesContainerRef.current) {
@@ -55,16 +57,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }
   };
 
-  // Keyboard open/close layout coordinator via visualViewport
+  // Keyboard layout coordinator via visualViewport: elevates ONLY input + suggestions
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
 
     const handleVisualResize = () => {
       if (!window.visualViewport) return;
-      if (isInputFocused) {
+      const windowH = window.innerHeight;
+      const viewportH = window.visualViewport.height;
+      const diff = Math.max(0, windowH - viewportH);
+      
+      setKeyboardOffset(prev => (Math.abs(prev - diff) > 1 ? diff : prev));
+      if (diff > 50 || isInputFocused) {
         setTimeout(() => {
           scrollToBottom('smooth');
-        }, 60);
+        }, 50);
       }
     };
 
@@ -157,6 +164,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               suggestions={samplePrompts.slice(0, 3)}
               onSelectSuggestion={(sug) => {
                 setInputText(sug);
+                setIsInputFocused(true);
               }}
             />
           </div>
@@ -257,7 +265,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                             <button
                               key={chipIdx}
                               type="button"
-                              onClick={() => onSubmitPrompt(chip.actionValue)}
+                              onClick={() => {
+                                setInputText(chip.actionValue);
+                                setIsInputFocused(true);
+                              }}
                               className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/10 hover:bg-white/20 border border-white/15 text-cyan-200 hover:text-white backdrop-blur-md transition-all shadow-sm active:scale-95 flex items-center gap-1 cursor-pointer"
                             >
                               <span>{chip.label}</span>
@@ -276,6 +287,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                           onExplainResults={(score) => {
                             onSubmitPrompt(`Maine quiz me ${score.correct}/${score.total} score kiya. Meri galtiyan samjhao aur important concepts revise karao.`);
                           }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Interactive Google Drive Backup Card */}
+                    {msg.driveBackupPrompt && (
+                      <div className="w-full max-w-[98%] mt-2 self-stretch">
+                        <GoogleDriveChatCard 
+                          folderName={msg.driveBackupPrompt.folderName || 'Mayra'} 
                         />
                       </div>
                     )}
@@ -337,9 +357,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Chat Input Bar - Morphing Aurora Capsule (Fully Blended with Space Ambient Glow) */}
-      <div className="w-full px-3 pb-1 pt-0.5 bg-transparent shrink-0 flex flex-col items-center z-10">
-        {/* Dynamic Suggested Quick Chips: Bhavna / Emotion & Context-aware pills (matching screenshot) */}
+      {/* Chat Input Bar - Morphing Aurora Capsule (Only input & suggestions elevate above keyboard) */}
+      <div 
+        className="w-full px-3 pb-2 pt-0.5 bg-transparent shrink-0 flex flex-col items-center z-10 transition-transform duration-150 ease-out"
+        style={{
+          transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : 'none'
+        }}
+      >
+        {/* Dynamic Suggested Quick Chips: Bhavna / Emotion & Context-aware pills */}
         {samplePrompts.length > 0 && (
           <div className="w-full max-w-lg mb-1.5 flex gap-2 overflow-x-auto scrollbar-none px-1 py-0.5">
             {samplePrompts.slice(0, 5).map((p, pIdx) => (
@@ -347,8 +372,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 key={`chat-prompt-${p}-${pIdx}`}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.95 }}
+                type="button"
                 onClick={() => {
-                  onSubmitPrompt(p);
+                  setInputText(p);
+                  setIsInputFocused(true);
                 }}
                 className="px-3.5 py-1.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/30 hover:border-cyan-400/60 rounded-full text-xs text-purple-200 hover:text-white whitespace-nowrap backdrop-blur-xl transition-all shadow-[0_0_10px_rgba(168,85,247,0.15)] cursor-pointer shrink-0"
               >

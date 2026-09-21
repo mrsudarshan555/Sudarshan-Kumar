@@ -21,6 +21,7 @@ import {
   Flame, Zap, Check
 } from 'lucide-react';
 import { Mouth } from '../../services/audio/mouth';
+import { apiUrl } from '../../config/api';
 
 interface BarehandsCameraStageProps {
   isOpen: boolean;
@@ -56,13 +57,13 @@ export const BarehandsCameraStage: React.FC<BarehandsCameraStageProps> = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    fetch('/api/barehands/persona', {
+    fetch(apiUrl('/api/barehands/persona'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ persona })
     }).catch(() => {});
 
-    fetch('/api/barehands/orb', {
+    fetch(apiUrl('/api/barehands/orb'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -76,7 +77,7 @@ export const BarehandsCameraStage: React.FC<BarehandsCameraStageProps> = ({
   const dispatchCommand = useCallback(async (cmd: Record<string, any>, announceText?: string) => {
     setActiveCommand(cmd.a);
     try {
-      const res = await fetch('/cmd', {
+      const res = await fetch(apiUrl('/cmd'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cmd)
@@ -92,7 +93,7 @@ export const BarehandsCameraStage: React.FC<BarehandsCameraStageProps> = ({
     }
 
     if (announceText && !isMuted) {
-      const voiceTarget = persona === 'STONICX' ? 'Charon' : 'Aoede';
+      const voiceTarget = persona === 'STONICX' ? 'Charon' : 'Kore';
       const personaTarget = persona === 'STONICX' ? 'STONICX' : 'MAYRA';
       setAiSpeechResponse(announceText);
 

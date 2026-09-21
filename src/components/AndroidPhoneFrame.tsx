@@ -241,6 +241,51 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
     setCurrentSubScreen('permissions');
   };
 
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && target.getAttribute('type') !== 'button' && target.getAttribute('type') !== 'file'))) {
+        setIsKeyboardVisible(prev => (prev ? prev : true));
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        const active = document.activeElement;
+        if (!active || (active.tagName !== 'TEXTAREA' && active.tagName !== 'INPUT')) {
+          setIsKeyboardVisible(prev => (!prev ? prev : false));
+        }
+      }, 120);
+    };
+
+    const handleViewportResize = () => {
+      if (window.visualViewport) {
+        const active = document.activeElement;
+        const isInputActive = active && (active.tagName === 'TEXTAREA' || (active.tagName === 'INPUT' && (active as HTMLElement).getAttribute('type') !== 'button' && (active as HTMLElement).getAttribute('type') !== 'file'));
+        const heightDiff = window.innerHeight - window.visualViewport.height;
+        if (isInputActive && heightDiff > 120) {
+          setIsKeyboardVisible(prev => (prev ? prev : true));
+        } else if (!isInputActive || heightDiff < 60) {
+          setIsKeyboardVisible(prev => (!prev ? prev : false));
+        }
+      }
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
+
   const pressTimerRef = useRef<any>(null);
   const isHoldingPttRef = useRef<boolean>(false);
   const pressStartTimeRef = useRef<number>(0);
@@ -581,7 +626,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       </div>
 
       {/* Bottom Navigation Bar — Full Width Flush at Bottom with Top Curvature (rounded-t-[28px]) */}
-      {!isSettingsOpen && (
+      {!isSettingsOpen && !isKeyboardVisible && (
         <div className="relative w-full z-20 shrink-0 select-none bg-[#0c0517]/95 backdrop-blur-2xl rounded-t-[28px] rounded-b-none border-t border-purple-500/30 shadow-[0_-8px_32px_rgba(0,0,0,0.7),0_-1px_15px_rgba(168,85,247,0.25)]">
           {/* Subtle Purple Specular Highlight Arc along top edge */}
           <div className="absolute top-0 inset-x-0 h-[2px] rounded-t-[28px] bg-gradient-to-r from-transparent via-purple-400/80 to-transparent pointer-events-none z-30 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { AssistantStatus, ChatMessage, UserPersonalConfig, AssistantConfig } from '../types';
-import { playPcmAudio, stopCurrentSpeech } from '../utils/speechEngine';
+import { playPcmAudio, stopCurrentSpeech, playAudioPayload } from '../utils/speechEngine';
+import { apiUrl } from '../config/api';
 import { OfflineVoiceMatcher } from '../services/audio/offlineVoiceMatcher';
 import {
   StonicxUserProfile,
@@ -146,9 +147,12 @@ export function useStonicxAssistant({ personalConfig, assistantConfig, onSwitchT
     };
 
     try {
-      // 1. Primary: Fetch Gemini Voice PCM Audio
+      // 1. Primary: Fetch Gemini Voice Audio
       const targetVoice = assistantConfig?.stonicxVoice || 'Charon';
-      const res = await fetch('/api/voice/speak', {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+
+      const res = await fetch(apiUrl('/api/voice/speak'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,14 +160,16 @@ export function useStonicxAssistant({ personalConfig, assistantConfig, onSwitchT
           voiceName: targetVoice,
           assistant: 'stonicx',
           language: 'en'
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timer);
 
       if (res.ok) {
         const data = await res.json();
-        if (data.audioBase64) {
-          const played = playPcmAudio(
-            data.audioBase64,
+        if (data.audioBase64 || data.audioUrl || data.wavBase64) {
+          const played = playAudioPayload(
+            { audioBase64: data.audioBase64, wavBase64: data.wavBase64, audioUrl: data.audioUrl },
             () => setStatus('SPEAKING'),
             handleSpeechEnd
           );

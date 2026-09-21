@@ -3,11 +3,17 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, User, Mail, Shield, Smartphone, KeyRound, 
   Gift, Tag, FileText, History, Download, Trash2, Key, 
-  Database, FileCheck, LogOut, ChevronRight, X, Check, RefreshCw, Camera, Sparkles
+  Database, FileCheck, LogOut, ChevronRight, X, Check, RefreshCw, Camera, Sparkles, Wifi, Cpu
 } from 'lucide-react';
 import { UserPersonalConfig } from '../../types';
-import { detectUserDevice, DeviceTelemetry } from '../../utils/deviceDetector';
+import { 
+  detectUserDevice, 
+  DeviceTelemetry, 
+  subscribeDeviceTelemetry, 
+  initDynamicDeviceDetector 
+} from '../../utils/deviceDetector';
 import { ProfilePhotoUploadModal, FALLBACK_DEFAULT_PHOTO } from './ProfilePhotoUploadModal';
+import { LegalTermsPrivacyModal } from './LegalTermsPrivacyModal';
 
 interface AccountProfileViewProps {
   personalConfig: UserPersonalConfig;
@@ -24,6 +30,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
 }) => {
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<'privacy' | 'terms' | null>(null);
   const [accessKeyInput, setAccessKeyInput] = useState('');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -33,26 +40,53 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
 
   const activeAvatar = personalConfig.profilePhoto || personalConfig.avatarUrl || (typeof window !== 'undefined' ? localStorage.getItem('mayra_user_avatar') : null) || FALLBACK_DEFAULT_PHOTO;
 
+  // Real-time live hardware & network updates
   useEffect(() => {
+    // Initial sync
     setTelemetry(detectUserDevice());
+    
+    // Async client hints for true model names
+    initDynamicDeviceDetector().then(detected => {
+      setTelemetry(detected);
+    });
+
+    // Subscribe to live network type (5G/4G/Wi-Fi) shifts and battery
+    const unsubscribe = subscribeDeviceTelemetry((updated) => {
+      setTelemetry(updated);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleRefreshDevice = () => {
     setIsRefreshingDevice(true);
-    setTimeout(() => {
+    initDynamicDeviceDetector().then((detected) => {
+      setTelemetry(detected);
+      setIsRefreshingDevice(false);
+      showToast(`Hardware Updated: ${detected.deviceName} • ${detected.networkType}`);
+    }).catch(() => {
       const detected = detectUserDevice();
       setTelemetry(detected);
       setIsRefreshingDevice(false);
-      showToast(`Device detected: ${detected.deviceName}`);
-    }, 400);
+      showToast(`Device verified: ${detected.deviceName}`);
+    });
   };
 
   const handleEditDeviceName = () => {
-    const custom = prompt('Enter your phone model name (e.g. Samsung Galaxy S23, Realme 9 Pro, etc.):', telemetry.deviceName);
+    const custom = prompt('Enter your phone model name (e.g. Samsung Galaxy S23, Realme 9 Pro 5G, etc.):', telemetry.deviceName);
     if (custom && custom.trim()) {
       localStorage.setItem('mayra_custom_device_name', custom.trim());
       setTelemetry(prev => ({ ...prev, deviceName: custom.trim() }));
-      showToast('Device name updated!');
+      showToast('Device model updated!');
+    }
+  };
+
+  const handleEditRam = () => {
+    const custom = prompt('Enter your phone RAM capacity (e.g. 6 GB RAM, 8 GB RAM, 12 GB RAM):', telemetry.ramEstimate);
+    if (custom && custom.trim()) {
+      localStorage.setItem('mayra_custom_device_ram', custom.trim());
+      setTelemetry(prev => ({ ...prev, ramEstimate: custom.trim() }));
+      showToast('RAM information updated!');
     }
   };
 
@@ -192,7 +226,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
           </div>
         </div>
 
-        {/* Device & App Info */}
+        {/* Device & App Info (Live Real Hardware Detection) */}
         <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-gray-400 tracking-wider">
@@ -202,6 +236,7 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
               <button
                 onClick={handleEditDeviceName}
                 className="text-[10px] text-purple-400 hover:underline font-semibold cursor-pointer"
+                title="Change phone model name"
               >
                 Change
               </button>
@@ -216,12 +251,12 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="flex justify-between py-1 border-b border-white/5">
+            <div className="flex justify-between py-1 border-b border-white/5 items-center">
               <span className="text-gray-400">Current Device</span>
               <span className="text-white font-medium flex items-center gap-1.5">
                 <span>{telemetry.deviceName}</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded">
-                  DETECTED
+                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded">
+                  LIVE
                 </span>
               </span>
             </div>
@@ -229,9 +264,21 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
               <span className="text-gray-400">Android OS</span>
               <span className="text-white font-medium">{telemetry.osVersion}</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-white/5">
-              <span className="text-gray-400">RAM / Memory</span>
-              <span className="text-white font-medium">{telemetry.ramEstimate} ({telemetry.cpuCores} Cores)</span>
+            <div className="flex justify-between py-1 border-b border-white/5 items-center">
+              <span className="text-gray-400 flex items-center gap-1">
+                <span>RAM / Memory</span>
+                <button
+                  onClick={handleEditRam}
+                  className="text-[10px] text-purple-400 hover:underline font-normal cursor-pointer ml-1"
+                  title="Edit RAM"
+                >
+                  (Adjust)
+                </button>
+              </span>
+              <span className="text-white font-medium flex items-center gap-1.5">
+                <span>{telemetry.ramEstimate}</span>
+                <span className="text-gray-400 font-normal">({telemetry.cpuCores} Cores)</span>
+              </span>
             </div>
             <div className="flex justify-between py-1 border-b border-white/5">
               <span className="text-gray-400">Display Resolution</span>
@@ -239,15 +286,21 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
             </div>
             <div className="flex justify-between py-1 border-b border-white/5">
               <span className="text-gray-400">Runtime Package</span>
-              <span className="text-white font-medium">MAYRA Native APK (v2.1.48)</span>
+              <span className="text-white font-medium">{telemetry.browserOrRuntime}</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-white/5">
-              <span className="text-gray-400">Network Telemetry</span>
-              <span className="text-white font-medium">{telemetry.networkType}</span>
+            <div className="flex justify-between py-1 border-b border-white/5 items-center">
+              <span className="text-gray-400 flex items-center gap-1">
+                <Wifi className="w-3 h-3 text-purple-400" />
+                <span>Network Telemetry</span>
+              </span>
+              <span className="text-white font-medium flex items-center gap-1.5">
+                <span>{telemetry.networkType}</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
+              </span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-gray-400">Voice Pipeline Status</span>
-              <span className="text-white font-medium text-emerald-400">Engine Ready</span>
+              <span className="text-white font-medium text-emerald-400">Engine Ready (24kHz HD)</span>
             </div>
           </div>
         </div>
@@ -268,8 +321,8 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
             }},
             { title: 'Change Password', icon: Key, action: () => showToast('Change Password is coming soon!') },
             { title: 'Backup & Restore', icon: Database, action: () => showToast('Backup & Restore is coming soon!') },
-            { title: 'Privacy Policy', icon: FileCheck, action: () => window.open('#', '_blank') },
-            { title: 'Terms & Conditions', icon: FileCheck, action: () => window.open('#', '_blank') }
+            { title: 'Privacy Policy', icon: Shield, action: () => setLegalModalTab('privacy') },
+            { title: 'Terms & Conditions', icon: FileCheck, action: () => setLegalModalTab('terms') }
           ].map(item => {
             const Icon = item.icon;
             return (
@@ -389,6 +442,13 @@ export const AccountProfileView: React.FC<AccountProfileViewProps> = ({
         onPhotoUpdated={(newUrl) => {
           showToast('Profile photo updated successfully!');
         }}
+      />
+
+      {/* Standard Privacy Policy & Terms & Conditions Modal */}
+      <LegalTermsPrivacyModal
+        isOpen={legalModalTab !== null}
+        onClose={() => setLegalModalTab(null)}
+        defaultTab={legalModalTab || 'privacy'}
       />
     </div>
   );

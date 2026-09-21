@@ -6,6 +6,7 @@ import {
   Package, ShieldCheck
 } from 'lucide-react';
 import { MemoryBackupService } from '../../services/memory/memoryBackupService';
+import { GoogleDriveBackupView } from '../drive/GoogleDriveBackupView';
 
 interface BackupViewProps {
   memories: MemoryItem[];
@@ -151,6 +152,15 @@ export const BackupView: React.FC<BackupViewProps> = ({
             <span className="text-emerald-400 font-sans font-bold">SQLite / Room Ready</span>
           </div>
         </div>
+
+        {/* Google Drive Cloud Backup (Mayra Folder) */}
+        <GoogleDriveBackupView 
+          folderName="Mayra"
+          onBackupSuccess={(link, count) => {
+            setLastBackup(new Date().toLocaleTimeString());
+            showStatus(`Successfully saved ${count} files to Google Drive 'Mayra' folder!`);
+          }}
+        />
 
         {/* Export Controls */}
         <div className="p-4 bg-white/[0.07] backdrop-blur-2xl border border-white/15 rounded-3xl space-y-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]">

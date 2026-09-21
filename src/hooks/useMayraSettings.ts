@@ -287,8 +287,8 @@ function getInitialCharacterSkinTone(): number {
 const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   activeMode: 'mayra',
   personaTone: 'executive',
-  voiceProfile: 'Aoede',
-  mayraVoice: 'Aoede',
+  voiceProfile: 'Kore',
+  mayraVoice: 'Kore',
   stonicxVoice: 'Charon',
   language: 'en-IN',
   speechRate: 1.0,
@@ -323,6 +323,8 @@ function getInitialAssistantConfig(): AssistantConfig {
     const saved = localStorage.getItem(ASSISTANT_CONFIG_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      if (parsed.voiceProfile === 'Aoede' || !parsed.voiceProfile) parsed.voiceProfile = 'Kore';
+      if (parsed.mayraVoice === 'Aoede' || !parsed.mayraVoice) parsed.mayraVoice = 'Kore';
       return { ...base, ...parsed };
     }
   } catch (e) {}

@@ -163,6 +163,10 @@ export interface ChatMessage {
   };
   quizData?: QuizPayload;
   quizConfigPrompt?: QuizConfigPrompt;
+  driveBackupPrompt?: {
+    folderName: string;
+    autoStart?: boolean;
+  };
 }
 
 export type MemoryCategory = 'preference' | 'personal' | 'system' | 'task' | 'general' | 'project' | 'episodic';

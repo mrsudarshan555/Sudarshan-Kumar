@@ -19,6 +19,18 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
+// Universal CORS configuration for APK (WebViews, file://, capacitor, localhost) and browser environments
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Range');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(express.json());
 
 // Initialize Gemini client server-side with required User-Agent header
@@ -573,18 +585,91 @@ function detectLang(text: string): 'hi' | 'en' {
 // Global Circuit Breaker for Gemini TTS Quota / Rate-Limit
 let ttsQuotaExhaustedUntil: number = 0;
 
+// Converts 16-bit PCM little-endian audio to standard playable RIFF WAV (44-byte header)
+function pcmToWavBase64(pcmBase64: string, sampleRate: number = 24000): string {
+  try {
+    const pcmBuffer = Buffer.from(pcmBase64, 'base64');
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+    const blockAlign = numChannels * (bitsPerSample / 8);
+    const dataSize = pcmBuffer.length;
+    const header = Buffer.alloc(44);
+
+    // RIFF chunk descriptor
+    header.write('RIFF', 0);
+    header.writeUInt32LE(36 + dataSize, 4);
+    header.write('WAVE', 8);
+
+    // "fmt " sub-chunk
+    header.write('fmt ', 12);
+    header.writeUInt32LE(16, 16); // Subchunk1Size (16 for PCM)
+    header.writeUInt16LE(1, 20); // AudioFormat (1 = PCM)
+    header.writeUInt16LE(numChannels, 22);
+    header.writeUInt32LE(sampleRate, 24);
+    header.writeUInt32LE(byteRate, 28);
+    header.writeUInt16LE(blockAlign, 32);
+    header.writeUInt16LE(bitsPerSample, 34);
+
+    // "data" sub-chunk
+    header.write('data', 36);
+    header.writeUInt32LE(dataSize, 40);
+
+    const wavBuffer = Buffer.concat([header, pcmBuffer]);
+    return wavBuffer.toString('base64');
+  } catch (e) {
+    console.warn('[Voice Engine] PCM to WAV conversion warning:', e);
+    return '';
+  }
+}
+
+// Maps arbitrary persona names or legacy strings to supported Gemini 3.1 Flash TTS voices
+// Supported Gemini TTS voices: 'Kore', 'Zephyr', 'Puck', 'Charon', 'Fenrir'
+function normalizeTtsVoiceName(voiceName?: string, assistant?: string): string {
+  const v = (voiceName || '').trim();
+  const lower = v.toLowerCase();
+
+  if (lower === 'kore' || lower === 'aoede' || lower === 'maya' || lower === 'mayra' || lower === 'female' || lower === 'warm') {
+    return 'Kore'; // Warm, natural female voice (perfect for Mayra)
+  }
+  if (lower === 'zephyr' || lower === 'bright') {
+    return 'Zephyr'; // Expressive, bright female voice
+  }
+  if (lower === 'puck') {
+    return 'Puck'; // Engaging, friendly natural voice
+  }
+  if (lower === 'charon' || lower === 'stonicx' || lower === 'friday' || lower === 'male' || lower === 'baritone') {
+    return 'Charon'; // Deep, authoritative baritone male voice (default for StonicX)
+  }
+  if (lower === 'fenrir') {
+    return 'Fenrir'; // Assertive, energetic male voice
+  }
+
+  // Fallback defaults based on assistant role
+  return assistant === 'stonicx' ? 'Charon' : 'Kore';
+}
+
 /**
- * Generates natural, human-like voice response using Gemini Audio TTS
- * Uses 'Charon' (Deep Authoritative Male) for STONICX and 'Aoede' for MAYRA.
- * Gracefully handles 429 quota limitations with a circuit-breaker without failing or logging error dumps.
+ * Generates natural, human-like voice response using Gemini Audio TTS (gemini-3.1-flash-tts-preview)
+ * Returns both raw PCM (for Web Audio API streaming) and standard RIFF WAV (for HTML5 <audio> / Android APK WebViews).
  */
-async function generateGeminiVoiceAudio(text: string, language?: string, voiceName: string = 'Aoede'): Promise<{ audioBase64: string; mimeType: string } | null> {
-  if (!process.env.GEMINI_API_KEY || !text || text.trim().length === 0) {
+async function generateGeminiVoiceAudio(
+  text: string, 
+  language?: string, 
+  voiceName?: string, 
+  assistant: string = 'mayra',
+  customApiKey?: string
+): Promise<{ audioBase64: string; wavBase64: string; audioUrl: string; mimeType: string; targetVoice: string } | null> {
+  const effectiveKey = (customApiKey && typeof customApiKey === 'string' && customApiKey.trim().length > 10) 
+    ? customApiKey.trim() 
+    : process.env.GEMINI_API_KEY;
+
+  if (!effectiveKey || !text || text.trim().length === 0) {
     return null;
   }
 
-  // If we recently encountered a 429 / RESOURCE_EXHAUSTED quota limit, skip calling the preview TTS API
-  if (Date.now() < ttsQuotaExhaustedUntil) {
+  // If using default key and we recently encountered a 429 quota limit, skip calling preview TTS
+  if (!customApiKey && Date.now() < ttsQuotaExhaustedUntil) {
     return null;
   }
 
@@ -596,11 +681,16 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
 
   if (!cleanText) return null;
 
+  const targetVoice = normalizeTtsVoiceName(voiceName, assistant);
+
   try {
-    const targetVoice = voiceName || 'Aoede';
-    const callPromise = ai.models.generateContent({
+    const genAiClient = (customApiKey && customApiKey !== process.env.GEMINI_API_KEY)
+      ? new GoogleGenAI({ apiKey: effectiveKey })
+      : ai;
+
+    const callPromise = genAiClient.models.generateContent({
       model: 'gemini-3.1-flash-tts-preview',
-      contents: cleanText,
+      contents: [{ parts: [{ text: cleanText }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -614,7 +704,7 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
     });
 
     const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 10000)
+      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 25000)
     );
 
     const response = await Promise.race([callPromise, timeoutPromise]) as any;
@@ -623,9 +713,14 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
     if (parts) {
       for (const part of parts) {
         if (part.inlineData?.data) {
+          const rawPcm = part.inlineData.data;
+          const wavBase64 = pcmToWavBase64(rawPcm, 24000);
           return {
-            audioBase64: part.inlineData.data,
-            mimeType: part.inlineData.mimeType || 'audio/l16; rate=24000; channels=1'
+            audioBase64: rawPcm,
+            wavBase64: wavBase64 || rawPcm,
+            audioUrl: wavBase64 ? `data:audio/wav;base64,${wavBase64}` : '',
+            mimeType: 'audio/wav',
+            targetVoice
           };
         }
       }
@@ -636,11 +731,13 @@ async function generateGeminiVoiceAudio(text: string, language?: string, voiceNa
     const isQuotaOrRateLimit = errMsg.includes('quota') || errMsg.includes('429') || errMsg.includes('resource_exhausted') || errStatus === 'RESOURCE_EXHAUSTED' || errStatus === 429;
 
     if (isQuotaOrRateLimit) {
-      // Pause TTS calls for 10 seconds and gracefully fall back to local voice synthesis without spamming logs
-      ttsQuotaExhaustedUntil = Date.now() + 10000;
-      console.log('[Gemini Voice Engine] Gemini TTS preview quota reached. Circuit-breaker active for 10s (using high-fidelity client voice synthesis).');
+      if (!customApiKey) {
+        // Pause default key TTS calls for 30 seconds and gracefully fall back without spamming logs
+        ttsQuotaExhaustedUntil = Date.now() + 30000;
+        console.log('[Gemini Voice Engine] Free tier TTS quota limit reached. Circuit-breaker active for 30s.');
+      }
     } else {
-      console.log(`[Gemini Voice Engine] Gemini direct TTS notice (${err?.message || 'notice'}): fallback to client speech synthesis.`);
+      console.log(`[Gemini Voice Engine] Gemini direct TTS notice (${err?.message || 'notice'})`);
     }
     return null;
   }
@@ -1001,6 +1098,61 @@ app.get('/note', (req, res) => {
   }
 });
 
+// 6b. Drive Vault Files Aggregator for Google Drive Sync
+app.get('/api/drive/vault-files', (req, res) => {
+  try {
+    const files: Array<{ name: string; relativePath: string; content: string; mimeType: string; size: number; category: string }> = [];
+    const searchDirs = [
+      { dir: path.join(process.cwd(), 'sample-notes'), category: 'Vault Note' },
+      { dir: path.join(process.cwd(), 'public', 'barehands', 'sample-notes'), category: 'Living Profile' },
+      { dir: path.join(process.cwd(), 'memories'), category: 'Context Memory' }
+    ];
+
+    const visitedPaths = new Set<string>();
+
+    const scanDirectory = (currentDir: string, category: string, baseRelative: string = '') => {
+      if (!fs.existsSync(currentDir)) return;
+      const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+      for (const ent of entries) {
+        if (ent.name.startsWith('.')) continue;
+        const fullPath = path.join(currentDir, ent.name);
+        const rel = baseRelative ? `${baseRelative}/${ent.name}` : ent.name;
+
+        if (ent.isDirectory()) {
+          scanDirectory(fullPath, category, rel);
+        } else if (ent.isFile() && (ent.name.endsWith('.md') || ent.name.endsWith('.json') || ent.name.endsWith('.txt'))) {
+          // Avoid duplicates across sample-notes locations
+          if (visitedPaths.has(ent.name)) continue;
+          visitedPaths.add(ent.name);
+
+          try {
+            const content = fs.readFileSync(fullPath, 'utf8');
+            files.push({
+              name: ent.name,
+              relativePath: rel,
+              content,
+              mimeType: ent.name.endsWith('.json') ? 'application/json' : 'text/markdown',
+              size: Buffer.byteLength(content, 'utf8'),
+              category
+            });
+          } catch (readErr) {
+            console.warn(`[DriveVault] Failed to read ${fullPath}:`, readErr);
+          }
+        }
+      }
+    };
+
+    for (const { dir, category } of searchDirs) {
+      scanDirectory(dir, category);
+    }
+
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ success: true, count: files.length, files });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Failed to read vault files', files: [] });
+  }
+});
+
 // 7. Props airlock
 app.get('/props', (req, res) => {
   try {
@@ -1120,20 +1272,21 @@ app.use(['/tex', '/tex/*'], (req, res) => {
 // Dedicated Voice Synthesis Endpoint: Returns natural human-like voice audio from Gemini TTS
 app.post('/api/voice/speak', async (req, res) => {
   try {
-    const { text, language, voiceName, assistant = 'mayra' } = req.body;
+    const { text, language, voiceName, assistant = 'mayra', apiKey } = req.body;
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    const effectiveVoice = voiceName || (assistant === 'stonicx' ? 'Charon' : 'Aoede');
-    const audioResult = await generateGeminiVoiceAudio(text, language, effectiveVoice);
+    const audioResult = await generateGeminiVoiceAudio(text, language, voiceName, assistant, apiKey);
     if (audioResult) {
       return res.json({
         success: true,
         audioBase64: audioResult.audioBase64,
+        wavBase64: audioResult.wavBase64,
+        audioUrl: audioResult.audioUrl,
         mimeType: audioResult.mimeType,
         sampleRate: 24000,
-        voiceName: effectiveVoice
+        voiceName: audioResult.targetVoice
       });
     }
 
@@ -1141,11 +1294,13 @@ app.post('/api/voice/speak', async (req, res) => {
     return res.json({
       success: false,
       audioBase64: null,
+      wavBase64: null,
+      audioUrl: null,
       message: 'Direct voice audio not available'
     });
   } catch (err: any) {
     console.error('Error in /api/voice/speak:', err);
-    return res.json({ success: false, audioBase64: null });
+    return res.json({ success: false, audioBase64: null, wavBase64: null, audioUrl: null });
   }
 });
 

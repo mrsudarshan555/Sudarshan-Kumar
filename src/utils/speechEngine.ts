@@ -424,6 +424,98 @@ export function playCustomActivationSound(): boolean {
   }
 }
 
+let currentHtml5Audio: HTMLAudioElement | null = null;
+
+// Convert 16-bit PCM base64 string to a standard playable Blob URL (.wav)
+export function pcmToWavDataUrl(base64Pcm: string, sampleRate: number = 24000): string {
+  try {
+    const binary = atob(base64Pcm);
+    const dataSize = binary.length;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+    const blockAlign = numChannels * (bitsPerSample / 8);
+
+    // RIFF chunk
+    view.setUint8(0, 0x52); view.setUint8(1, 0x49); view.setUint8(2, 0x46); view.setUint8(3, 0x46); // 'RIFF'
+    view.setUint32(4, 36 + dataSize, true);
+    view.setUint8(8, 0x57); view.setUint8(9, 0x41); view.setUint8(10, 0x56); view.setUint8(11, 0x45); // 'WAVE'
+
+    // fmt subchunk
+    view.setUint8(12, 0x66); view.setUint8(13, 0x6D); view.setUint8(14, 0x74); view.setUint8(15, 0x20); // 'fmt '
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM format
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+
+    // data subchunk
+    view.setUint8(36, 0x64); view.setUint8(37, 0x61); view.setUint8(38, 0x74); view.setUint8(39, 0x61); // 'data'
+    view.setUint32(40, dataSize, true);
+
+    const bytes = new Uint8Array(buffer, 44);
+    for (let i = 0; i < dataSize; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([buffer], { type: 'audio/wav' });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Universal HTML5 Audio player for mobile APK WebViews, Safari, and direct WAV URLs
+ */
+export function playWavAudioUrl(url: string, onStart?: () => void, onEnd?: () => void): boolean {
+  if (typeof window === 'undefined' || !url) return false;
+  try {
+    stopCurrentSpeech();
+    const audio = new Audio(url);
+    currentHtml5Audio = audio;
+
+    let started = false;
+    const handleStart = () => {
+      if (!started) {
+        started = true;
+        if (onStart) onStart();
+      }
+    };
+
+    audio.onplay = handleStart;
+    audio.onplaying = handleStart;
+    audio.onended = () => {
+      if (currentHtml5Audio === audio) {
+        currentHtml5Audio = null;
+      }
+      if (onEnd) onEnd();
+    };
+    audio.onerror = (err) => {
+      console.warn('[Voice Engine] HTML5 Audio element playback error:', err);
+      if (currentHtml5Audio === audio) {
+        currentHtml5Audio = null;
+      }
+      if (onEnd) onEnd();
+    };
+
+    const promise = audio.play();
+    if (promise !== undefined) {
+      promise.catch((err) => {
+        console.warn('[Voice Engine] HTML5 Audio play promise notice:', err);
+      });
+    }
+    return true;
+  } catch (err) {
+    console.warn('[Voice Engine] Failed to play WAV audio url:', err);
+    return false;
+  }
+}
+
 /**
  * Prewarms AudioContext on user gesture without throwing or rapid loops
  */
@@ -439,8 +531,21 @@ export function prewarmAudioEngine(): void {
   }
 }
 
+// Global user interaction listener to unlock Web Audio in mobile APK / browser
+if (typeof window !== 'undefined') {
+  const unlockAudioListener = () => {
+    prewarmAudioEngine();
+    window.removeEventListener('click', unlockAudioListener);
+    window.removeEventListener('touchstart', unlockAudioListener);
+    window.removeEventListener('touchend', unlockAudioListener);
+  };
+  window.addEventListener('click', unlockAudioListener, { passive: true });
+  window.addEventListener('touchstart', unlockAudioListener, { passive: true });
+  window.addEventListener('touchend', unlockAudioListener, { passive: true });
+}
+
 /**
- * Cleanly stops any active speech playback source
+ * Cleanly stops any active speech playback source (Web Audio + HTML5 Audio + SpeechSynthesis)
  */
 export function stopCurrentSpeech(): void {
   if (currentSourceNode) {
@@ -452,6 +557,57 @@ export function stopCurrentSpeech(): void {
     }
     currentSourceNode = null;
   }
+  if (currentHtml5Audio) {
+    try {
+      currentHtml5Audio.pause();
+      currentHtml5Audio.currentTime = 0;
+      currentHtml5Audio.src = '';
+    } catch (e) {
+      // Ignore
+    }
+    currentHtml5Audio = null;
+  }
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      // Ignore
+    }
+  }
+}
+
+/**
+ * Plays audio payload across platforms: tries Web Audio API 24kHz PCM first,
+ * and seamlessly falls back to HTML5 Audio element for APK WebViews.
+ */
+export function playAudioPayload(
+  payload: { audioBase64?: string | null; wavBase64?: string | null; audioUrl?: string | null },
+  onStart?: () => void,
+  onEnd?: () => void
+): boolean {
+  if (!payload) return false;
+
+  // 1. Try Web Audio API with raw 24kHz PCM
+  if (payload.audioBase64) {
+    const success = playRawPcm24kAudio(payload.audioBase64, onStart, onEnd);
+    if (success) return true;
+  }
+
+  // 2. Try HTML5 Audio with WAV URL or WAV base64
+  const targetUrl = payload.audioUrl || (payload.wavBase64 ? `data:audio/wav;base64,${payload.wavBase64}` : '');
+  if (targetUrl) {
+    return playWavAudioUrl(targetUrl, onStart, onEnd);
+  }
+
+  // 3. Convert raw PCM to Blob URL
+  if (payload.audioBase64) {
+    const blobUrl = pcmToWavDataUrl(payload.audioBase64, 24000);
+    if (blobUrl) {
+      return playWavAudioUrl(blobUrl, onStart, onEnd);
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -700,6 +856,40 @@ export function splitIntoSpeechChunks(text: string, maxChunkLength: number = 180
   return chunks.length > 0 ? chunks : [clean];
 }
 
+function getStoredApiKey(): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const rawConfig = localStorage.getItem('mayra_personal_config');
+    if (rawConfig) {
+      const parsed = JSON.parse(rawConfig);
+      if (parsed.geminiApiKey && typeof parsed.geminiApiKey === 'string' && parsed.geminiApiKey.trim().length > 10) {
+        return parsed.geminiApiKey.trim();
+      }
+    }
+    const directKey = localStorage.getItem('gemini_api_key');
+    if (directKey && directKey.trim().length > 10) {
+      return directKey.trim();
+    }
+  } catch (e) {
+    // Ignore storage read errors
+  }
+  return undefined;
+}
+
+// Module-level reference to prevent GC from terminating speech prematurely on Android WebViews
+let activeUtterance: SpeechSynthesisUtterance | null = null;
+let cachedSpeechVoices: SpeechSynthesisVoice[] = [];
+
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  const updateVoices = () => {
+    try {
+      cachedSpeechVoices = window.speechSynthesis.getVoices();
+    } catch (e) {}
+  };
+  updateVoices();
+  window.speechSynthesis.onvoiceschanged = updateVoices;
+}
+
 export function fallbackSpeechSynthesis(
   text: string, 
   lang: MayraLanguage = 'hi', 
@@ -719,22 +909,54 @@ export function fallbackSpeechSynthesis(
     }
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.15; // Pleasant female assistant pitch
+    utterance.rate = 0.95; // Slightly slower, more natural cadence
+    utterance.pitch = 1.08; // Warm, friendly tone
 
-    const voices = window.speechSynthesis.getVoices();
-    const targetVoice = voices.find(v => 
-      (lang === 'hi' && (v.lang.includes('hi') || v.name.toLowerCase().includes('hindi'))) ||
-      (lang === 'en' && (v.lang.includes('en-IN') || v.lang.includes('en_IN') || v.name.toLowerCase().includes('india')))
-    ) || voices.find(v => v.lang.startsWith(lang === 'hi' ? 'hi' : 'en')) || voices[0];
+    let voices = cachedSpeechVoices.length > 0 ? cachedSpeechVoices : window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      // Re-query voices synchronously
+      voices = window.speechSynthesis.getVoices();
+    }
+
+    // Prioritize natural, online, google, or neural voices over robotic defaults
+    const isTargetLang = (v: SpeechSynthesisVoice) => {
+      if (lang === 'hi') {
+        return v.lang.includes('hi') || v.name.toLowerCase().includes('hindi');
+      }
+      return v.lang.includes('en-IN') || v.lang.includes('en_IN') || v.name.toLowerCase().includes('india') || v.lang.startsWith('en');
+    };
+
+    const targetVoice = voices.find(v => isTargetLang(v) && (v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('neural') || v.name.toLowerCase().includes('online')))
+      || voices.find(v => isTargetLang(v) && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('samantha')))
+      || voices.find(v => isTargetLang(v))
+      || voices[0];
 
     if (targetVoice) {
       utterance.voice = targetVoice;
     }
 
-    if (onStart) utterance.onstart = () => onStart();
-    utterance.onend = () => { if (onEnd) onEnd(); };
-    utterance.onerror = () => { if (onEnd) onEnd(); };
+    activeUtterance = utterance;
+
+    const cleanup = () => {
+      if (activeUtterance === utterance) {
+        activeUtterance = null;
+      }
+    };
+
+    utterance.onstart = () => {
+      if (onStart) onStart();
+    };
+
+    utterance.onend = () => {
+      cleanup();
+      if (onEnd) onEnd();
+    };
+
+    utterance.onerror = (e) => {
+      cleanup();
+      console.warn('[SpeechSynthesis] Utterance notice:', e);
+      if (onEnd) onEnd();
+    };
 
     window.speechSynthesis.speak(utterance);
   } catch (e) {
@@ -743,7 +965,8 @@ export function fallbackSpeechSynthesis(
 }
 
 /**
- * Speaks text using Direct Gemini Aoede Voice API (24kHz PCM) with Long-Speech Continuous Streaming
+ * Speaks text using Direct Gemini Natural Voice API (24kHz Neural Audio)
+ * Seamlessly supports Desktop, Mobile, and Android APK WebViews with Web Audio + HTML5 Audio fallback.
  */
 export async function speakText(
   text: string, 
@@ -759,17 +982,21 @@ export async function speakText(
     return;
   }
 
-  const effectiveVoice = customVoiceName || 'Aoede';
+  // Map legacy 'Aoede' or missing voices to 'Kore' (Gemini natural female voice)
+  let effectiveVoice = (customVoiceName || 'Kore').trim();
+  if (effectiveVoice.toLowerCase() === 'aoede' || effectiveVoice.toLowerCase() === 'maya') {
+    effectiveVoice = 'Kore';
+  }
 
   // 1. If audio base64 is already provided in the response payload, play directly
   if (audioBase64Payload) {
     audioResponseCache.set(`${effectiveVoice}:${lang}:${cleanText}`, audioBase64Payload);
-    const success = playRawPcm24kAudio(audioBase64Payload, onStart, onEnd);
+    const success = playAudioPayload({ audioBase64: audioBase64Payload }, onStart, onEnd);
     if (success) return;
   }
 
   // 2. For multi-sentence long speech, handle continuous chained playback
-  const chunks = splitIntoSpeechChunks(cleanText, 200);
+  const chunks = splitIntoSpeechChunks(cleanText, 250);
   if (chunks.length > 1) {
     let hasTriggeredStart = false;
     let chunkIndex = 0;
@@ -789,8 +1016,8 @@ export async function speakText(
       const chunkCacheKey = `${effectiveVoice}:${lang}:${currentChunkText}`;
       if (audioResponseCache.has(chunkCacheKey)) {
         const cached = audioResponseCache.get(chunkCacheKey)!;
-        playRawPcm24kAudio(
-          cached,
+        playAudioPayload(
+          { audioBase64: cached },
           () => {
             if (isFirst) {
               hasTriggeredStart = true;
@@ -810,22 +1037,30 @@ export async function speakText(
 
       try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 8000);
+        const timer = setTimeout(() => controller.abort(), 20000);
 
         const res = await fetch(apiUrl('/api/voice/speak'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: currentChunkText, language: lang, voiceName: effectiveVoice, assistant: 'mayra' }),
+          body: JSON.stringify({ 
+            text: currentChunkText, 
+            language: lang, 
+            voiceName: effectiveVoice, 
+            assistant: 'mayra',
+            apiKey: getStoredApiKey()
+          }),
           signal: controller.signal
         });
         clearTimeout(timer);
 
         if (res.ok) {
           const data = await res.json();
-          if (data.audioBase64) {
-            audioResponseCache.set(chunkCacheKey, data.audioBase64);
-            playRawPcm24kAudio(
-              data.audioBase64,
+          if (data.audioBase64 || data.audioUrl || data.wavBase64) {
+            if (data.audioBase64) {
+              audioResponseCache.set(chunkCacheKey, data.audioBase64);
+            }
+            const played = playAudioPayload(
+              { audioBase64: data.audioBase64, wavBase64: data.wavBase64, audioUrl: data.audioUrl },
               () => {
                 if (isFirst) {
                   hasTriggeredStart = true;
@@ -840,10 +1075,12 @@ export async function speakText(
                 }
               }
             );
-            return;
+            if (played) return;
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[Voice Engine] Voice fetch chunk notice:', e);
+      }
 
       // If network fetch for chunk failed, fallback to native device TTS for this chunk
       fallbackSpeechSynthesis(currentChunkText, lang, onStart, () => {
@@ -860,33 +1097,45 @@ export async function speakText(
   const cacheKey = `${effectiveVoice}:${lang}:${cleanText}`;
   if (audioResponseCache.has(cacheKey)) {
     const cachedAudio = audioResponseCache.get(cacheKey)!;
-    const played = playRawPcm24kAudio(cachedAudio, onStart, onEnd);
+    const played = playAudioPayload({ audioBase64: cachedAudio }, onStart, onEnd);
     if (played) return;
   }
 
   // 4. Attempt direct natural Gemini Voice from backend (single chunk)
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const timer = setTimeout(() => controller.abort(), 20000);
 
     const res = await fetch(apiUrl('/api/voice/speak'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, language: lang, voiceName: effectiveVoice, assistant: 'mayra' }),
+      body: JSON.stringify({ 
+        text: cleanText, 
+        language: lang, 
+        voiceName: effectiveVoice, 
+        assistant: 'mayra',
+        apiKey: getStoredApiKey()
+      }),
       signal: controller.signal
     });
     clearTimeout(timer);
 
     if (res.ok) {
       const data = await res.json();
-      if (data.audioBase64) {
-        audioResponseCache.set(cacheKey, data.audioBase64);
-        const played = playRawPcm24kAudio(data.audioBase64, onStart, onEnd);
+      if (data.audioBase64 || data.audioUrl || data.wavBase64) {
+        if (data.audioBase64) {
+          audioResponseCache.set(cacheKey, data.audioBase64);
+        }
+        const played = playAudioPayload(
+          { audioBase64: data.audioBase64, wavBase64: data.wavBase64, audioUrl: data.audioUrl },
+          onStart,
+          onEnd
+        );
         if (played) return;
       }
     }
   } catch (err) {
-    // Network or timeout notice
+    console.warn('[Voice Engine] Voice synthesis notice:', err);
   }
 
   // If direct natural voice audio from backend is unreachable, fallback to on-device SpeechSynthesis

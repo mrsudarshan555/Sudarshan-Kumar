@@ -9,8 +9,9 @@
  */
 
 import { AudioDuckingManager } from './audioDuckingManager';
-import { playPcmAudio, stopCurrentSpeech } from '../../utils/speechEngine';
+import { playPcmAudio, stopCurrentSpeech, playAudioPayload } from '../../utils/speechEngine';
 import { OfflineVoiceMatcher } from './offlineVoiceMatcher';
+import { apiUrl } from '../../config/api';
 
 export interface MouthSpeakOptions {
   voice?: string;
@@ -72,13 +73,14 @@ export class Mouth {
     } catch (e) {}
 
     const persona = options.persona || (activeMode === 'stonicx' ? 'STONICX' : 'MAYRA');
-    const voiceName = options.voice || (persona === 'STONICX' ? 'Charon' : 'Aoede');
+    const rawVoice = options.voice || (persona === 'STONICX' ? 'Charon' : 'Kore');
+    const voiceName = rawVoice.toLowerCase() === 'aoede' ? 'Kore' : rawVoice;
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine !== false : true;
 
     const handleSpeechEnd = () => {
       this.isSpeaking = false;
       ducking.restore({ rampUpTimeSec: 0.30 });
-      fetch('/api/voice/state', {
+      fetch(apiUrl('/api/voice/state'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ state: 'idle', level: 0 })
@@ -88,13 +90,13 @@ export class Mouth {
       }
     };
 
-    // 1. Primary: Server-side Gemini Live TTS (Charon for STONICX, Aoede for MAYRA) when online
+    // 1. Primary: Server-side Gemini Live TTS (Charon for STONICX, Kore for MAYRA) when online
     if (isOnline) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
+        const timeout = setTimeout(() => controller.abort(), 20000);
 
-        const res = await fetch('/api/voice/speak', {
+        const res = await fetch(apiUrl('/api/voice/speak'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -109,9 +111,9 @@ export class Mouth {
 
         if (res.ok) {
           const data = await res.json();
-          if (data.audioBase64) {
-            const played = playPcmAudio(
-              data.audioBase64,
+          if (data.audioBase64 || data.audioUrl || data.wavBase64) {
+            const played = playAudioPayload(
+              { audioBase64: data.audioBase64, wavBase64: data.wavBase64, audioUrl: data.audioUrl },
               () => {},
               handleSpeechEnd
             );
@@ -119,7 +121,7 @@ export class Mouth {
           }
         }
       } catch (e) {
-        console.warn(`[Mouth Engine] Direct TTS service unreachable for ${persona}: staying silent without browser voice fallback.`);
+        console.warn(`[Mouth Engine] Direct TTS service unreachable for ${persona}:`, e);
       }
     }
 
@@ -133,7 +135,7 @@ export class Mouth {
     stopCurrentSpeech();
     OfflineVoiceMatcher.stop();
     AudioDuckingManager.getInstance().restore({ rampUpTimeSec: 0.20 });
-    fetch('/api/voice/state', {
+    fetch(apiUrl('/api/voice/state'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ state: 'idle', level: 0 })

@@ -415,7 +415,7 @@ export default function App() {
   const isStonicxMode = assistantConfig.activeMode === 'stonicx';
 
   return (
-    <div className={`fixed inset-0 w-screen h-[100dvh] min-h-screen overflow-hidden font-sans select-none flex flex-col transition-colors duration-200 ${
+    <div className={`fixed inset-0 w-screen h-full overflow-hidden font-sans select-none flex flex-col transition-colors duration-200 ${
       isStonicxMode ? 'bg-[#04060A] text-slate-100' : (appearanceConfig.darkMode ? 'bg-[#070913] text-slate-200' : 'bg-slate-50 text-slate-800')
     }`}>
       <AnimatePresence mode="wait">

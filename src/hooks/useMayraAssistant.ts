@@ -354,7 +354,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     }
 
     try {
-      const activeVoice = assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Aoede';
+      const activeVoice = assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Kore';
       const wsUrl = getWebSocketUrl(`/api/live-ws?voiceName=${encodeURIComponent(activeVoice)}`);
       console.log('[LIVE_WS_STATE] CONNECTING ->', wsUrl);
       const ws = new WebSocket(wsUrl);
@@ -568,6 +568,50 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     activeModelMsgIdRef.current = null;
 
     const lower = (trimmed || '').toLowerCase();
+
+    // 0.0a GOOGLE DRIVE BACKUP INTENT ("मेरी सभी फाइल को तुम मेरे ड्राइव में सेव कर दो Mayra नाम से")
+    const isDriveBackupIntent = 
+      (lower.includes('ड्राइव') || lower.includes('drive')) && 
+      (
+        lower.includes('सेव') || lower.includes('save') || 
+        lower.includes('बैकअप') || lower.includes('backup') || 
+        lower.includes('अपलोड') || lower.includes('upload') || 
+        lower.includes('फाइल') || lower.includes('file') || 
+        lower.includes('डाल') || lower.includes('store')
+      );
+
+    if (!activeImage && isDriveBackupIntent) {
+      let targetFolderName = 'Mayra';
+      if (lower.includes('mayra') || lower.includes('मायरा')) {
+        targetFolderName = 'Mayra';
+      } else {
+        const folderMatch = trimmed.match(/([a-zA-Z0-9_\-\u0900-\u097F]+)\s*(?:नाम\s*से|name|folder)/i);
+        if (folderMatch && folderMatch[1] && !['ड्राइव', 'drive', 'फाइल', 'file', 'files', 'सब', 'सभी'].includes(folderMatch[1].toLowerCase())) {
+          targetFolderName = folderMatch[1];
+        }
+      }
+
+      const assistantMsg: ChatMessage = {
+        id: `msg-m-drive-${Date.now()}`,
+        sender: 'mayra',
+        text: `जी हाँ! मैं आपकी सभी फाइलों (Living Profile, Notes, Projects, Daily Timeline, Memories और Full Backup Snapshot) को आपके Google Drive में '${targetFolderName}' नाम के फ़ोल्डर में सुरक्षित रूप से सेव करने के लिए तैयार हूँ।\n\nनीचे दिए गए कार्ड से अपने Google Drive खाते की पुष्टि करें और "सेव करें" पर टैप करें:`,
+        timestamp: Date.now(),
+        driveBackupPrompt: {
+          folderName: targetFolderName,
+          autoStart: true
+        }
+      };
+
+      setMessages((prev) => [...prev, assistantMsg]);
+      setStatus('READY');
+      speakText(
+        `जी हाँ, मैंने आपके Google Drive में ${targetFolderName} नाम के फ़ोल्डर में सभी फ़ाइलें सेव करने के लिए बैकअप कार्ड तैयार कर दिया है।`,
+        detected,
+        handleSpeechStart,
+        handleSpeechEnd
+      );
+      return;
+    }
 
     // 0.0 INTERACTIVE QUIZ TRIGGER WITH MISSING DETAILS PROMPT FLOW (GOOGLE AI MODE STYLE)
     if (!activeImage && trimmed) {
@@ -1298,7 +1342,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
             userName: personalConfig.preferredName || personalConfig.fullName,
             language: detected,
             assistant: 'mayra',
-            voiceName: assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Aoede',
+            voiceName: assistantConfig.mayraVoice || assistantConfig.voiceProfile || 'Kore',
             apiKey: personalConfig.geminiApiKey,
             returnAudio: true,
             stream: true

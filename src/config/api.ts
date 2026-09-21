@@ -2,10 +2,29 @@ const REMOTE_BACKEND_URL = 'https://ais-pre-gd2s6u2gwklbs7eaxfbldv-686105212526.
 
 export function isCapacitorOrNative(): boolean {
   if (typeof window === 'undefined') return false;
+  
+  // Explicit native bridges
   const isCap = !!(window as any).Capacitor;
-  const isCapProtocol = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:';
-  const isAndroidLocal = window.location.hostname === 'localhost' && window.location.port === '';
-  return isCap || isCapProtocol || isAndroidLocal;
+  const isCordova = !!(window as any).cordova;
+  const isAndroidBridge = !!(window as any).Android || !!(window as any).AndroidBridge;
+  
+  // Protocol checks for packaged APKs / WebViews
+  const proto = window.location.protocol;
+  const isCustomProtocol = proto === 'capacitor:' || proto === 'ionic:' || proto === 'file:' || proto === 'app:' || proto === 'content:';
+  
+  // Origin checks (in file:// or custom WebView origins often 'null' or empty)
+  const isNullOrigin = window.location.origin === 'null' || window.location.origin === 'file://' || !window.location.origin;
+  
+  // Hostname check: if not running on Cloud Run (*.run.app) and not the local dev port (localhost:3000)
+  const host = window.location.host;
+  const isCloudRun = window.location.hostname.endsWith('run.app');
+  const isLocalDevServer = window.location.hostname === 'localhost' && window.location.port === '3000';
+  
+  // Android WebView UserAgent indicators (e.g. '; wv', 'Version/4.0')
+  const ua = navigator.userAgent || '';
+  const isAndroidWebView = /Android.*(wv|\.0\.0\.0)/.test(ua) || (ua.includes('Android') && !isCloudRun && !isLocalDevServer);
+
+  return isCap || isCordova || isAndroidBridge || isCustomProtocol || isNullOrigin || isAndroidWebView || (!isCloudRun && !isLocalDevServer);
 }
 
 export function getApiBaseUrl(): string {

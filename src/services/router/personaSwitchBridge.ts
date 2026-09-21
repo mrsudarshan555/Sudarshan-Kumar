@@ -17,8 +17,9 @@ import {
   EVENT_CONTEXT_SYNCHRONIZED 
 } from './routerStateBus';
 import { MemoryVaultService } from '../memory/memoryVaultService';
-import { playPcmAudio, stopCurrentSpeech, speakText, sanitizeTextForSpeech } from '../../utils/speechEngine';
+import { playPcmAudio, stopCurrentSpeech, speakText, sanitizeTextForSpeech, playAudioPayload } from '../../utils/speechEngine';
 import { OfflineVoiceMatcher } from '../audio/offlineVoiceMatcher';
+import { apiUrl } from '../../config/api';
 import { loadStonicxTopicNotes, saveStonicxTopicNotes } from '../../utils/stonicxMemoryStore';
 import { StonicxTopicNote } from '../../types/stonicxMemory';
 import { ChatMessage, MemoryItem } from '../../types';
@@ -263,7 +264,7 @@ export class PersonaSwitchBridge {
         window.speechSynthesis.cancel();
       }
 
-      fetch('/api/voice/speak', {
+      fetch(apiUrl('/api/voice/speak'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -276,9 +277,9 @@ export class PersonaSwitchBridge {
         .then(async (res) => {
           if (res.ok) {
             const data = await res.json();
-            if (data.audioBase64) {
-              const played = playPcmAudio(
-                data.audioBase64,
+            if (data.audioBase64 || data.audioUrl || data.wavBase64) {
+              const played = playAudioPayload(
+                { audioBase64: data.audioBase64, wavBase64: data.wavBase64, audioUrl: data.audioUrl },
                 () => {},
                 () => resolve()
               );

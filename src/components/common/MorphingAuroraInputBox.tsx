@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Mic, ArrowUp, X, Paperclip } from 'lucide-react';
+import { Plus, Mic, ArrowUp, X, Paperclip, RotateCcw, RotateCw } from 'lucide-react';
 import { AssistantStatus } from '../../types';
 import { AudioWaveformIcon } from './AudioWaveformIcon';
 
@@ -51,11 +51,80 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [internalIsFocused, setInternalIsFocused] = useState<boolean>(false);
   const [suggestionIdx, setSuggestionIdx] = useState<number>(0);
+  const [lineCount, setLineCount] = useState<number>(1);
+
+  // Dedicated Undo & Redo History Stack
+  const historyRef = useRef<{ past: string[]; future: string[]; lastSavedText: string }>({
+    past: [],
+    future: [],
+    lastSavedText: ''
+  });
 
   const micPressTimerRef = useRef<any>(null);
   const isMicHoldingRef = useRef<boolean>(false);
   const micPressStartTimeRef = useRef<number>(0);
 
+  const isFocused = externalIsFocused !== undefined ? externalIsFocused : internalIsFocused;
+
+  const handleFocusChange = (focused: boolean) => {
+    setInternalIsFocused(focused);
+    onFocusChange?.(focused);
+  };
+
+  // Rotate smart suggestions only while the user has focused into the input box
+  useEffect(() => {
+    if (!isFocused) return;
+    const interval = setInterval(() => {
+      setSuggestionIdx((prev) => (prev + 1) % SUGGESTIONS.length);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, [isFocused]);
+
+  // Track text changes into Undo History Stack
+  const handleTextChange = (newVal: string) => {
+    const current = historyRef.current;
+    if (newVal !== inputText) {
+      // Save snapshot if word boundary or significant edit
+      const lengthDiff = Math.abs(newVal.length - current.lastSavedText.length);
+      const isWordBoundary = newVal.endsWith(' ') || newVal.endsWith('\n') || newVal.endsWith('.');
+      
+      if (lengthDiff > 5 || isWordBoundary || current.past.length === 0) {
+        current.past.push(inputText);
+        if (current.past.length > 50) current.past.shift();
+        current.future = []; // Clear redo on new input
+        current.lastSavedText = newVal;
+      }
+    }
+    setInputText(newVal);
+  };
+
+  // Undo implementation
+  const handleUndo = useCallback(() => {
+    const current = historyRef.current;
+    if (current.past.length > 0) {
+      const prevText = current.past.pop()!;
+      current.future.push(inputText);
+      current.lastSavedText = prevText;
+      setInputText(prevText);
+    } else if (inputText.length > 0) {
+      current.future.push(inputText);
+      current.lastSavedText = '';
+      setInputText('');
+    }
+  }, [inputText, setInputText]);
+
+  // Redo implementation
+  const handleRedo = useCallback(() => {
+    const current = historyRef.current;
+    if (current.future.length > 0) {
+      const nextText = current.future.pop()!;
+      current.past.push(inputText);
+      current.lastSavedText = nextText;
+      setInputText(nextText);
+    }
+  }, [inputText, setInputText]);
+
+  // Push-to-talk pointer handlers
   const handleMicPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     micPressStartTimeRef.current = Date.now();
@@ -102,56 +171,69 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
     onTriggerVoice();
   };
 
-  const isFocused = externalIsFocused !== undefined ? externalIsFocused : internalIsFocused;
-
-  const handleFocusChange = (focused: boolean) => {
-    setInternalIsFocused(focused);
-    onFocusChange?.(focused);
-  };
-
-  // Rotate smart suggestions only while the user has focused/tapped into the input box
-  useEffect(() => {
-    if (!isFocused) return;
-    const interval = setInterval(() => {
-      setSuggestionIdx((prev) => (prev + 1) % SUGGESTIONS.length);
-    }, 3200);
-    return () => clearInterval(interval);
-  }, [isFocused]);
-
-  // Resolve dynamic placeholder with strict visual consistency
-  const activePlaceholder = (() => {
-    if (status === 'THINKING') {
-      return 'thinking...';
-    }
-    if (isFocused) {
-      return SUGGESTIONS[suggestionIdx];
-    }
-    return placeholder || "What's your mind today";
-  })();
-
-  const hasText = inputText.trim().length > 0 || Boolean(attachedFile);
-  // Expand when text is long or has newlines or attachment
-  const isMultiLine = inputText.length > 32 || inputText.includes('\n') || (attachedFile !== null);
-
-  // Auto-resize textarea height smoothly
+  // Smooth gradual height calculation (line-by-line: 1 line -> 2 lines -> 3 lines -> max 4 lines)
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    textarea.style.height = 'auto';
-    const newHeight = isMultiLine
-      ? Math.min(Math.max(textarea.scrollHeight, 50), 130)
-      : 24;
-    textarea.style.height = `${newHeight}px`;
-  }, [inputText, isMultiLine]);
 
+    // Reset height temporarily to accurately measure scrollHeight
+    textarea.style.height = '24px';
+    const scrollH = textarea.scrollHeight;
+
+    // Line height is approximately 20-22px
+    // Single line: <= 28px
+    // 2 lines: ~44-48px
+    // 3 lines: ~64-70px
+    // 4 lines: ~84-92px
+    const singleLineH = 24;
+    const maxLineH = 88; // max 3-4 lines, scrolls internally beyond this
+
+    if (scrollH <= 30) {
+      textarea.style.height = `${singleLineH}px`;
+      textarea.style.overflowY = 'hidden';
+      setLineCount(1);
+    } else {
+      const calculatedHeight = Math.min(scrollH, maxLineH);
+      textarea.style.height = `${calculatedHeight}px`;
+      textarea.style.overflowY = scrollH > maxLineH ? 'auto' : 'hidden';
+      const lines = Math.min(Math.round(calculatedHeight / 22), 4);
+      setLineCount(Math.max(lines, 2));
+    }
+  }, [inputText]);
+
+  // Keyboard shortcut listener: Enter to submit, Shift+Enter for newline, Ctrl+Z / Cmd+Z for undo, Ctrl+Y / Cmd+Shift+Z for redo
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Standard Undo / Redo shortcuts
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      handleRedo();
+      return;
+    }
+
+    // Submit on Enter without shift
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (hasText) {
+      if (inputText.trim().length > 0 || Boolean(attachedFile)) {
         onSubmit();
       }
     }
   };
+
+  // Dynamic placeholder
+  const activePlaceholder = (() => {
+    if (status === 'THINKING') return 'thinking...';
+    if (isFocused) return SUGGESTIONS[suggestionIdx];
+    return placeholder || "What's your mind today";
+  })();
+
+  const hasText = inputText.trim().length > 0 || Boolean(attachedFile);
+  const isExpanded = lineCount > 1 || Boolean(attachedFile);
 
   return (
     <div className="w-full flex flex-col items-center select-none relative px-0.5">
@@ -173,10 +255,10 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
         )}
       </AnimatePresence>
 
-      {/* 2. OUTER CONTAINER WITH 4 FLOATING DUAL-COLOR AURORAS (Half Blue-Violet, Half Hot-Magenta) */}
+      {/* 2. OUTER CONTAINER WITH FLOATING AURORA GLOWS */}
       <div className="relative w-full max-w-lg flex flex-col items-center">
         
-        {/* Floating Aurora Plume 1: Top-Right Hot Magenta Bloom */}
+        {/* Floating Aurora Plumes */}
         <div 
           className="absolute -top-6 -right-6 w-40 h-32 rounded-full pointer-events-none blur-2xl opacity-75 animate-pulse"
           style={{
@@ -184,8 +266,6 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
             animationDuration: '3.5s'
           }}
         />
-
-        {/* Floating Aurora Plume 2: Bottom-Left Electric Violet-Blue Bloom */}
         <div 
           className="absolute -bottom-8 -left-8 w-44 h-36 rounded-full pointer-events-none blur-2xl opacity-70"
           style={{
@@ -194,25 +274,10 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
           }}
         />
 
-        {/* Floating Aurora Plume 3: Center-Bottom Flowing Violet Drift */}
-        <div 
-          className="absolute -bottom-4 left-1/4 w-48 h-20 rounded-full pointer-events-none blur-3xl opacity-60"
-          style={{
-            background: 'radial-gradient(ellipse, rgba(168,85,247,0.6) 0%, rgba(217,70,239,0.3) 60%, transparent 85%)'
-          }}
-        />
-
-        {/* 3. DUAL-TONE BORDER GRADIENT WRAPPER (Fixed Rounded Squircle: 22px-24px) */}
-        <motion.div
-          layout
-          transition={{
-            type: 'spring',
-            stiffness: 380,
-            damping: 30,
-            mass: 0.7
-          }}
-          className={`w-full relative p-[1.5px] shadow-[0_12px_45px_rgba(0,0,0,0.8),0_0_35px_rgba(217,70,239,0.3)] transition-all duration-300 ${
-            isMultiLine ? 'rounded-[24px]' : 'rounded-full'
+        {/* 3. DUAL-TONE GRADIENT BORDER WITH SMOOTH BORDER RADIUS TRANSITION */}
+        <div
+          className={`w-full relative p-[1.5px] shadow-[0_12px_45px_rgba(0,0,0,0.8),0_0_35px_rgba(217,70,239,0.3)] transition-all duration-200 ${
+            isExpanded ? 'rounded-[24px]' : 'rounded-full'
           }`}
           style={{
             background: isFocused
@@ -220,13 +285,13 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
               : 'linear-gradient(135deg, rgba(99,102,241,0.6) 0%, rgba(147,51,234,0.45) 45%, rgba(217,70,239,0.7) 75%, rgba(236,72,153,0.8) 100%)'
           }}
         >
-          {/* Inner Frosted Glass Card with Half-and-Half Ambient Color Flow */}
+          {/* Inner Frosted Glass Card - Never unmounts, preserves input state & keyboard */}
           <div
             className={`w-full transition-all duration-200 relative overflow-hidden backdrop-blur-2xl ${
-              isMultiLine ? 'rounded-[23px] p-3.5' : 'rounded-full px-4 py-2.5'
+              isExpanded ? 'rounded-[23px] px-3.5 py-3' : 'rounded-full px-3.5 py-2'
             }`}
             style={{
-              background: 'linear-gradient(135deg, rgba(13, 8, 30, 0.88) 0%, rgba(20, 9, 42, 0.85) 45%, rgba(38, 10, 60, 0.82) 75%, rgba(48, 12, 68, 0.85) 100%)'
+              background: 'linear-gradient(135deg, rgba(13, 8, 30, 0.9) 0%, rgba(20, 9, 42, 0.88) 45%, rgba(38, 10, 60, 0.85) 75%, rgba(48, 12, 68, 0.88) 100%)'
             }}
           >
             {/* Subtle Inner Glass Specular Sheen */}
@@ -254,158 +319,87 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
               </motion.div>
             )}
 
-            {/* 4. MULTILINE EXPANDED CARD LAYOUT */}
-            {isMultiLine ? (
-              <div className="flex flex-col gap-2">
-                {/* Textarea */}
+            {/* Unified Input Row: Persistent Textarea with Smooth Gradual Line Growth */}
+            <div className={`flex items-end gap-2 w-full ${isExpanded ? 'items-end' : 'items-center'}`}>
+              
+              {/* Left Action: Plus / Attachment Button */}
+              <motion.button
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.88 }}
+                type="button"
+                onClick={onOpenAttachment}
+                className="p-1 text-purple-200/80 hover:text-white hover:bg-white/10 rounded-full transition-colors shrink-0 mb-0.5 cursor-pointer"
+                title="Add attachment / photo / doc"
+              >
+                <Plus className="w-4 h-4 stroke-[2]" />
+              </motion.button>
+
+              {/* Center: Persistent Single Textarea (Never unmounts -> Keyboard never flickers) */}
+              <div className="flex-1 relative flex items-center min-w-0">
                 <textarea
                   ref={textareaRef}
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
+                  onChange={(e) => handleTextChange(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onFocus={() => handleFocusChange(true)}
                   onBlur={() => handleFocusChange(false)}
                   placeholder={activePlaceholder}
-                  rows={2}
-                  className="w-full bg-transparent border-none outline-none resize-none text-[13px] sm:text-sm text-white placeholder-purple-200/40 font-sans leading-relaxed min-h-[50px] max-h-[130px] scrollbar-thin scrollbar-thumb-fuchsia-500/20"
-                />
-
-                {/* Bottom Bar: Plus on Left, (↑) Send Button on Right */}
-                <div className="flex items-center justify-between pt-1">
-                  {/* Plus Icon at bottom-left corner */}
-                  <motion.button
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.88 }}
-                    type="button"
-                    onClick={onOpenAttachment}
-                    className="p-1 text-purple-200/80 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
-                    title="Add attachment / photo / doc"
-                  >
-                    <Plus className="w-4 h-4 stroke-[2]" />
-                  </motion.button>
-
-                  {/* Circular Up-Arrow Button at bottom-right corner */}
-                  <div className="flex items-center gap-1.5">
-                      <AnimatePresence mode="wait">
-                      {hasText ? (
-                        <motion.button
-                          key="multiline-send"
-                          initial={{ scale: 0.7, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.7, opacity: 0 }}
-                          whileHover={{ scale: 1.08 }}
-                          whileTap={{ scale: 0.92 }}
-                          type="button"
-                          onClick={onSubmit}
-                          className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 via-fuchsia-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white flex items-center justify-center shadow-[0_0_18px_rgba(217,70,239,0.7)] border border-white/50 cursor-pointer"
-                          title="Send message"
-                        >
-                          <ArrowUp className="w-4 h-4 stroke-[2.5]" />
-                        </motion.button>
-                      ) : (
-                        <motion.button
-                          key="multiline-mic"
-                          initial={{ scale: 0.7, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.7, opacity: 0 }}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.92 }}
-                          type="button"
-                          onClick={onTriggerVoice}
-                          className={`p-1.5 rounded-full transition-all cursor-pointer ${
-                            status === 'LISTENING'
-                              ? 'bg-fuchsia-500 text-white shadow-[0_0_15px_rgba(217,70,239,0.9)] animate-pulse'
-                              : 'text-purple-200/80 hover:text-white hover:bg-white/10'
-                          }`}
-                          title="Voice input"
-                        >
-                          <Mic className="w-4 h-4 stroke-[2]" />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* 5. SINGLE-LINE SQUIRCLE BAR LAYOUT */
-              <div className="flex items-center gap-2">
-                {/* Left Plus Icon */}
-                <motion.button
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.88 }}
-                  type="button"
-                  onClick={onOpenAttachment}
-                  className="p-1 text-purple-200/80 hover:text-white hover:bg-white/10 rounded-full transition-colors shrink-0 cursor-pointer"
-                  title="Add attachment"
-                >
-                  <Plus className="w-4 h-4 stroke-[2]" />
-                </motion.button>
-
-                {/* Center Input */}
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && hasText) {
-                      e.preventDefault();
-                      onSubmit();
-                    }
+                  rows={1}
+                  className="w-full bg-transparent border-none outline-none resize-none text-[13px] sm:text-sm text-white placeholder-purple-200/40 font-sans leading-[22px] py-0.5 min-h-[24px] max-h-[88px] scrollbar-thin scrollbar-thumb-purple-500/30"
+                  style={{
+                    height: '24px',
+                    transition: 'height 0.12s ease-out'
                   }}
-                  onFocus={() => handleFocusChange(true)}
-                  onBlur={() => handleFocusChange(false)}
-                  placeholder={activePlaceholder}
-                  className="flex-1 bg-transparent border-none outline-none text-[13px] sm:text-sm text-white placeholder-purple-200/40 font-sans min-w-0"
                 />
-
-                {/* Right: Mic or (↑) Send Button */}
-                <div className="shrink-0 flex items-center">
-                  <AnimatePresence mode="wait">
-                    {hasText ? (
-                      <motion.button
-                        key="single-send"
-                        initial={{ scale: 0.7, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.7, opacity: 0 }}
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.92 }}
-                        type="button"
-                        onClick={onSubmit}
-                        className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 via-fuchsia-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white flex items-center justify-center shadow-[0_0_15px_rgba(217,70,239,0.7)] border border-white/50 cursor-pointer"
-                        title="Send message"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        key="single-mic"
-                        initial={{ scale: 0.7, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.7, opacity: 0 }}
-                        whileHover={{ scale: 1.12 }}
-                        whileTap={{ scale: 0.92 }}
-                        type="button"
-                        onClick={handleMicClick}
-                        onPointerDown={handleMicPointerDown}
-                        onPointerUp={handleMicPointerUp}
-                        onPointerCancel={handleMicPointerCancel}
-                        onPointerLeave={handleMicPointerCancel}
-                        className={`p-1 rounded-full transition-all cursor-pointer flex items-center justify-center select-none touch-none ${
-                          status === 'LISTENING'
-                            ? 'bg-fuchsia-500/20 text-white shadow-[0_0_15px_rgba(217,70,239,0.8)] border border-fuchsia-400/50'
-                            : 'text-purple-200 hover:text-white hover:bg-white/10'
-                        }`}
-                        title="Hold to talk (PTT) / Tap for Hands-Free"
-                      >
-                        <AudioWaveformIcon status={status || 'READY'} barCount={4} className="w-5 h-5 text-purple-200" />
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
-                </div>
               </div>
-            )}
+
+              {/* Right Action: Send Button or Voice / PTT Orb */}
+              <div className="shrink-0 flex items-center gap-1 mb-0.5">
+                <AnimatePresence mode="wait">
+                  {hasText ? (
+                    <motion.button
+                      key="send-btn"
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.7, opacity: 0 }}
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.92 }}
+                      type="button"
+                      onClick={onSubmit}
+                      className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 via-fuchsia-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white flex items-center justify-center shadow-[0_0_18px_rgba(217,70,239,0.7)] border border-white/50 cursor-pointer"
+                      title="Send message (Enter)"
+                    >
+                      <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      key="mic-btn"
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.7, opacity: 0 }}
+                      whileHover={{ scale: 1.12 }}
+                      whileTap={{ scale: 0.92 }}
+                      type="button"
+                      onClick={handleMicClick}
+                      onPointerDown={handleMicPointerDown}
+                      onPointerUp={handleMicPointerUp}
+                      onPointerCancel={handleMicPointerCancel}
+                      onPointerLeave={handleMicPointerCancel}
+                      className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center justify-center select-none touch-none ${
+                        status === 'LISTENING'
+                          ? 'bg-fuchsia-500/20 text-white shadow-[0_0_15px_rgba(217,70,239,0.8)] border border-fuchsia-400/50 animate-pulse'
+                          : 'text-purple-200 hover:text-white hover:bg-white/10'
+                      }`}
+                      title="Hold to talk (PTT) / Tap for Hands-Free"
+                    >
+                      <AudioWaveformIcon status={status || 'READY'} barCount={4} className="w-4 h-4 text-purple-200" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

@@ -159,22 +159,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const resetIdleTimer = useCallback(() => {
     if (idleTimerRef.current) {
       clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
     }
-    if (isProactivePromptActive) {
-      setIsProactivePromptActive(false);
-    }
+    setIsProactivePromptActive(prev => (prev ? false : prev));
 
     if (proactiveEnabled && status === 'READY') {
       idleTimerRef.current = setTimeout(() => {
         setIsProactivePromptActive(true);
       }, 15000);
     }
-  }, [proactiveEnabled, status, isProactivePromptActive]);
+  }, [proactiveEnabled, status]);
 
   useEffect(() => {
     resetIdleTimer();
     return () => {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
     };
   }, [resetIdleTimer, inputText]);
 
@@ -402,7 +404,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       const visualHeight = window.visualViewport.height;
       const windowHeight = window.innerHeight;
       const offset = Math.max(0, windowHeight - visualHeight - (window.visualViewport.offsetTop || 0));
-      setKeyboardOffset(offset);
+      setKeyboardOffset(prev => (Math.abs(prev - offset) > 1 ? offset : prev));
     };
 
     window.visualViewport.addEventListener('resize', handleVisualResize);

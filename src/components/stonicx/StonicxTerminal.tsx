@@ -278,9 +278,9 @@ export const StonicxTerminal: React.FC<StonicxTerminalProps> = ({
           {quickCommands.map((cmd) => (
             <button
               key={cmd}
+              type="button"
               onClick={() => {
                 setInputText(cmd);
-                onSubmitPrompt(cmd);
               }}
               className="px-2.5 py-1 bg-[#051430] hover:bg-[#0A204C] border border-cyan-500/20 text-[10px] text-cyan-300/80 hover:text-cyan-200 rounded-lg whitespace-nowrap transition-colors"
             >
