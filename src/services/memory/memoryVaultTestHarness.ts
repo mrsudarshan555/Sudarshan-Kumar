@@ -217,8 +217,226 @@ export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestRep
       (newModelFact.status === 'active') &&
       (newModelFact.supersedesId === oldModelFact.id);
 
-    const t6Passed = langContradictionResolved && modelContradictionResolved;
+    const t6Passed = langContradictionResolved && modelContradictionResolved;/**
+ * Automated Verification & Integration Test Suite for Unified Memory Vault
+ * 
+ * Directly executes and validates:
+ * - Phase 16: 17-Day Persistence Integration Test
+ * - Phase 17: Strict Relevant-Only Context & Project Isolation (10+ unrelated memories)
+ * - Phase 18: Actual Model Request Path Payload Inspection
+ * - Phase 19: Post-Turn Persistence via Turn Listener
+ * - Phase 20: Duplicate Prevention & Contradiction Resolution
+ * - Phase 21: Cold Start with Real Service Destruction & Fresh Instance Reinitialization
+ * - Phase 22: Full Production Code Paths (Zero Mocks, Zero Hardcoded Answers)
+ * 
+ * Console Trigger: window.__MAYRA_TEST_MEMORY_VAULT__()
+ */
 
+import { MemoryVaultManager, VaultFact } from './memoryVaultManager';
+import { MemorySyncBridge } from './memorySyncBridge';
+import { MemoryQueryEngine } from './memoryQueryEngine';
+
+export interface MemoryVaultTestReport {
+  scenario: string;
+  passed: boolean;
+  details: string;
+  durationMs: number;
+}
+
+export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestReport[]> {
+  console.log('🧪 [MAYRA Memory Vault Harness] Starting Comprehensive Surgical Verification Tests...');
+  const reports: MemoryVaultTestReport[] = [];
+
+  // Reset and initialize fresh state
+  MemoryVaultManager.resetInstance();
+  MemorySyncBridge.resetInstance();
+  MemoryQueryEngine.resetInstance();
+
+  const vault = MemoryVaultManager.getInstance();
+  const syncBridge = MemorySyncBridge.getInstance();
+  const queryEngine = MemoryQueryEngine.getInstance();
+
+  await vault.initializeVault();
+
+  // TEST 1: Cross-Brain Bi-directional Markdown Sync (MEMORY.md)
+  const t1Start = performance.now();
+  try {
+    const testFact = 'Neural AST compiler pipeline optimized for Vite WebAssembly target';
+    await vault.appendMemoryFact('Technical', testFact, 'STONICX', 'stonicx');
+
+    const memoryContent = vault.getDocument('MEMORY.md');
+    const t1Passed = memoryContent.includes(testFact) && memoryContent.includes('[STONICX]');
+
+    reports.push({
+      scenario: '1. Cross-Brain Bi-directional Markdown Sync (MEMORY.md)',
+      passed: t1Passed,
+      details: t1Passed
+        ? `Fact correctly appended and indexed in MEMORY.md with [STONICX] attribution`
+        : `Fact missing or improperly formatted in MEMORY.md`,
+      durationMs: Math.round(performance.now() - t1Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '1. Cross-Brain Bi-directional Markdown Sync (MEMORY.md)',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t1Start)
+    });
+  }
+
+  // TEST 2: Multi-Signal Relevance Retrieval with Provenance
+  const t2Start = performance.now();
+  try {
+    const queryResult = queryEngine.queryVault('neural ast compiler webassembly', 'MAYRA');
+    const hasProvenance = queryResult.provenanceList && queryResult.provenanceList.length > 0;
+    const t2Passed = queryResult.found && queryResult.matchedContent.some((c) => c.includes('Neural AST compiler')) && hasProvenance;
+
+    reports.push({
+      scenario: '2. Multi-Signal Relevance Retrieval with Provenance',
+      passed: t2Passed,
+      details: t2Passed
+        ? `Query resolved note with score ${queryResult.relevanceScore} and provenance: "${queryResult.provenanceList?.[0]}"`
+        : `Query resolution failed or missing provenance`,
+      durationMs: Math.round(performance.now() - t2Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '2. Multi-Signal Relevance Retrieval with Provenance',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t2Start)
+    });
+  }
+
+  // TEST 3: Cold-Start Persistence & Destruction/Reinitialization (Phase 21)
+  const t3Start = performance.now();
+  try {
+    const coldStartFactText = 'Cold start persistence canary fact 88392';
+    await vault.upsertMemoryFact('technical', coldStartFactText, 'SYSTEM');
+
+    // 1. Destroy singleton and wipe in-memory caches
+    MemoryVaultManager.resetInstance();
+    MemorySyncBridge.resetInstance();
+    MemoryQueryEngine.resetInstance();
+
+    // 2. Create fresh instance and re-initialize from storage
+    const restartStart = performance.now();
+    const freshVault = MemoryVaultManager.getInstance();
+    await freshVault.initializeVault();
+    const restartElapsed = performance.now() - restartStart;
+
+    const restoredMemory = freshVault.getDocument('MEMORY.md');
+    const restoredFacts = freshVault.getActiveFacts();
+    const factFound = restoredFacts.some(f => f.fact.includes('88392'));
+
+    const t3Passed = restartElapsed < 120 && factFound && restoredMemory.includes('88392');
+
+    reports.push({
+      scenario: '3. Cold-Start Real Service Destruction & Fresh Instance Reinitialization (Phase 21)',
+      passed: t3Passed,
+      details: t3Passed
+        ? `Destroyed singleton, cleared in-memory cache, and restored fresh vault in ${Math.round(restartElapsed)}ms with 100% data fidelity`
+        : `Cold start failed: elapsed=${Math.round(restartElapsed)}ms, factFound=${factFound}`,
+      durationMs: Math.round(performance.now() - t3Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '3. Cold-Start Real Service Destruction & Fresh Instance Reinitialization (Phase 21)',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t3Start)
+    });
+  }
+
+  // TEST 4: Root VAULT-INDEX.md Map & Dynamic Tag Lookup Table
+  const t4Start = performance.now();
+  try {
+    const currentVault = MemoryVaultManager.getInstance();
+    const vaultIndexDoc = currentVault.getDocument('VAULT-INDEX.md');
+    const indexEntries = currentVault.getIndexEntries();
+
+    const hasTableStructure = vaultIndexDoc.includes('| Tag | Category | Source | Summary | Target |');
+    const hasDirectoryMap = vaultIndexDoc.includes('Living User Profile') && vaultIndexDoc.includes('Active Projects');
+    const hasTechnicalTag = vaultIndexDoc.includes('#technical') || indexEntries.some((e) => e.tag.includes('technical'));
+
+    const t4Passed = hasTableStructure && hasDirectoryMap && hasTechnicalTag;
+    reports.push({
+      scenario: '4. Root VAULT-INDEX.md Map & Dynamic Tag Lookup Table',
+      passed: t4Passed,
+      details: t4Passed
+        ? `VAULT-INDEX.md root directory map and semantic tag table intact (${indexEntries.length} indexed tags)`
+        : `VAULT-INDEX.md format corrupted or missing map`,
+      durationMs: Math.round(performance.now() - t4Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '4. Root VAULT-INDEX.md Map & Dynamic Tag Lookup Table',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t4Start)
+    });
+  }
+
+  // TEST 5: Duplicate Prevention Engine (Normalized Similarity & Zero Count Inflation) (Phase 7 & 20)
+  const t5Start = performance.now();
+  try {
+    const currentVault = MemoryVaultManager.getInstance();
+    const initialCount = currentVault.getActiveFacts().length;
+
+    // Exact duplicate
+    const fact1 = await currentVault.upsertMemoryFact('preference', 'User prefers Hindi', 'MAYRA');
+    const countAfterFirst = currentVault.getActiveFacts().length;
+
+    // Near-duplicate (different phrasing, same semantic property and value)
+    const fact2 = await currentVault.upsertMemoryFact('preference', 'I prefer Hindi', 'MAYRA');
+    const countAfterSecond = currentVault.getActiveFacts().length;
+
+    const noCountInflation = (countAfterSecond === countAfterFirst);
+    const reusedSameFact = (fact1.id === fact2.id);
+
+    const t5Passed = noCountInflation && reusedSameFact;
+    reports.push({
+      scenario: '5. Duplicate Prevention Engine (Zero Count Inflation) (Phase 7 & 20)',
+      passed: t5Passed,
+      details: t5Passed
+        ? `Near-duplicate ("User prefers Hindi" vs "I prefer Hindi") identified; fact count remained constant at ${countAfterSecond}`
+        : `Duplicate prevention failed: initial=${initialCount}, afterFirst=${countAfterFirst}, afterSecond=${countAfterSecond}`,
+      durationMs: Math.round(performance.now() - t5Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '5. Duplicate Prevention Engine (Zero Count Inflation) (Phase 7 & 20)',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t5Start)
+    });
+  }
+
+  // TEST 6: Contradiction Resolution & Superseding Links (Language & Project State) (Phase 8 & 20)
+  const t6Start = performance.now();
+  try {
+    const currentVault = MemoryVaultManager.getInstance();
+
+    // Part A: Language contradiction (Hindi -> English)
+    const oldLangFact = await currentVault.upsertMemoryFact('preference', 'User prefers Hindi', 'MAYRA');
+    const newLangFact = await currentVault.upsertMemoryFact('preference', 'User now prefers English', 'MAYRA');
+
+    const allFacts = currentVault.getAllFacts();
+    const updatedOldLang = allFacts.find(f => f.id === oldLangFact.id);
+    const langContradictionResolved = (updatedOldLang?.status === 'superseded') &&
+      (newLangFact.status === 'active') &&
+      (newLangFact.supersedesId === oldLangFact.id);
+
+    // Part B: Project Model contradiction (Model A -> Model B)
+    const oldModelFact = await currentVault.upsertMemoryFact('project', 'MAYRA project uses model TEST_MODEL_A', 'MAYRA', ['#model'], 'mayra');
+    const newModelFact = await currentVault.upsertMemoryFact('project', 'MAYRA project uses model TEST_MODEL_B', 'MAYRA', ['#model'], 'mayra');
+
+    const updatedOldModel = allFacts.find(f => f.id === oldModelFact.id);
+    const modelContradictionResolved = (updatedOldModel?.status === 'superseded') &&
+      (newModelFact.status === 'active') &&
+      (newModelFact.supersedesId === oldModelFact.id);
+
+    const t6Passed = langContradictionResolved && modelContradictionResolved;
     reports.push({
       scenario: '6. Contradiction Resolution & Superseding Links (Phase 8 & 20)',
       passed: t6Passed,
@@ -437,8 +655,7 @@ export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestRep
   try {
     const currentVault = MemoryVaultManager.getInstance();
     const restoredCount = await currentVault.rebuildIndexFromMarkdown();
-    const memoryMd = currentVault.getDocument('MEMORY.md');
-    const activeFacts = currentVault.getActiveFacts();
+    const memoryMd = currentVault.getDocument('MEMORY.md');    const activeFacts = currentVault.getActiveFacts();
 
     const allInMarkdown = activeFacts.every(f => memoryMd.includes(f.fact));
     const t11Passed = restoredCount > 0 && allInMarkdown;
@@ -657,8 +874,7 @@ export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestRep
     const nativeRetrievalWorks = retrievedPrompt.includes('--- [NATIVE SQLITE INJECTION] ---');
 
     // 4. Test WebView Reload / New Conversation hydration from native storage
-    MemoryVaultManager.resetInstance();
-    const reloadedVault = MemoryVaultManager.getInstance();
+    MemoryVaultManager.resetInstance();    const reloadedVault = MemoryVaultManager.getInstance();
     await reloadedVault.initializeVault();
 
     const reloadedHasNativeFact = reloadedVault.getActiveFacts().some(f => f.fact.includes('Hindi'));
@@ -683,6 +899,56 @@ export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestRep
       passed: false,
       details: `Exception: ${e.message}`,
       durationMs: Math.round(performance.now() - t16Start)
+    });
+  }
+
+  // TEST 17: Job Learning Persistence + Lesson Retrieval After Cold Restart
+  const t17Start = performance.now();
+  try {
+    const currentVault = MemoryVaultManager.getInstance();
+    const jobId = 'job-code-audit';
+    const lesson = 'When the user teaches a correction for this recurring task, preserve that correction in the Job lessons and apply it on the next matching run.';
+
+    const learned = await currentVault.foldLessonIntoJob(jobId, lesson);
+    const beforeRestart = currentVault.getJob(jobId);
+    const beforeHasLesson = Boolean(beforeRestart?.lessons.some(l => l.includes('preserve that correction in the Job lessons')));
+
+    // Destroy services and rehydrate from durable storage.
+    MemoryVaultManager.resetInstance();
+    MemorySyncBridge.resetInstance();
+    MemoryQueryEngine.resetInstance();
+
+    const freshVault = MemoryVaultManager.getInstance();
+    await freshVault.initializeVault();
+    const freshBridge = MemorySyncBridge.getInstance();
+
+    const restoredJob = freshVault.getJob(jobId);
+    const restoredHasLesson = Boolean(restoredJob?.lessons.some(l => l.includes('preserve that correction in the Job lessons')));
+
+    // Query using different wording so the test proves semantic Job retrieval,
+    // not a hard-coded "audit"/"code review" trigger.
+    const learnedQuery = 'Please review the code and remember the correction I taught for this recurring work.';
+    const matchedJob = freshVault.getRelevantActiveJobs(learnedQuery, 1)[0];
+    const jobMatched = matchedJob?.jobId === jobId;
+    const promptAfterLearning = freshBridge.generateSystemContextPrompt('MAYRA', learnedQuery);
+    const lessonInjected = promptAfterLearning.includes('preserve that correction in the Job lessons');
+
+    const t17Passed = learned && beforeHasLesson && restoredHasLesson && jobMatched && lessonInjected;
+
+    reports.push({
+      scenario: '17. Job Skill Learning Persistence + Semantic Retrieval After Cold Restart',
+      passed: t17Passed,
+      details: t17Passed
+        ? 'Correction was folded into the recurring Job, survived service destruction/reinitialization, matched a differently worded task, and was injected into the next Job context.'
+        : `Job learning failed: learned=${learned}, before=${beforeHasLesson}, restored=${restoredHasLesson}, matched=${jobMatched}, injected=${lessonInjected}`,
+      durationMs: Math.round(performance.now() - t17Start)
+    });
+  } catch (e: any) {
+    reports.push({
+      scenario: '17. Job Skill Learning Persistence + Semantic Retrieval After Cold Restart',
+      passed: false,
+      details: `Exception: ${e.message}`,
+      durationMs: Math.round(performance.now() - t17Start)
     });
   }
 

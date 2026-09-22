@@ -263,12 +263,10 @@ export class MemorySyncBridge {
       ? priorities.slice(0, 2)
       : [];
 
-    // Relevant jobs (only if query matches a recurring job trigger)
-    const jobs = this.vault.getAllJobs();
-    const relevantJob = cleanQuery.includes('health') || cleanQuery.includes('diagnostic')
-      ? jobs.find(j => j.jobId === 'job-system-health')
-      : cleanQuery.includes('audit') || cleanQuery.includes('code review')
-      ? jobs.find(j => j.jobId === 'job-code-audit')
+    // Relevant jobs are retrieved by the same on-demand ranking path as memory facts.
+    // Newly taught Jobs and their lessons become discoverable without hard-coded trigger words.
+    const relevantJob = userQuery
+      ? this.vault.getRelevantActiveJobs(userQuery, 1)[0]
       : undefined;
 
     // Build compact high-signal block (< 300 words)
