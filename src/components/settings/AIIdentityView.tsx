@@ -208,7 +208,7 @@ export const AIIdentityView: React.FC<AIIdentityViewProps> = ({
           </div>
 
           <button
-            onClick={() => alert('AI Context Memory cache cleared!')}
+            onClick={() => { window.localStorage.removeItem('mayra_memory_vault_v2'); window.localStorage.removeItem('mayra_memory_vault_backup'); }}
             className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5 text-gray-400" />
