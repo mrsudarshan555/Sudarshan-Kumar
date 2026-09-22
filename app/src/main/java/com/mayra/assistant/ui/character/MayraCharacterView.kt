@@ -321,12 +321,6 @@ fun MayraCharacterView(
                                     let targetPitchX = 0;
                                     let targetZoom = 1.0;
 
-                                    window.updateTransform = function(rotY, pitchX, zoom) {
-                                        targetRotY = (rotY * Math.PI) / 180;
-                                        targetPitchX = (pitchX * Math.PI) / 180;
-                                        targetZoom = zoom;
-                                    };
-
                                     window.updateState = function(state) {
                                         if (state === 'listening') {
                                             dirLight.color.setHex(0x22d3ee);
