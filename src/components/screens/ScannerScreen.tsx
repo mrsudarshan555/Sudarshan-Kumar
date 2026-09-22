@@ -276,14 +276,7 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
     }
 
     setIsScanning(false);
-    // Graceful offline fallback
-    if (scanMode === 'ocr') {
-      setScannedResult("Extracted Text: 'MAYRA AI Assistant — Neural Vision Engine'");
-    } else if (scanMode === 'object') {
-      setScannedResult("Identified: Live Camera Stream, Optical Sensor & Digital Workspace");
-    } else {
-      setScannedResult("Scene: Real-time Camera Feed within MAYRA AI Assistant");
-    }
+    setScannedResult('Vision analysis failed. Please check your network/API configuration and try again.');
   };
 
   // Shutter action: In Web Preview, capture a frame from the live video into a canvas
