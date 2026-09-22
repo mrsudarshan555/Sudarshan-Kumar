@@ -21,6 +21,7 @@ import {
 import { MayraSystemBridge } from '../services/native/MayraSystemIntegrationBridge';
 import { MemoryVaultService } from '../services/memory/memoryVaultService';
 import { MemorySyncBridge } from '../services/memory/memorySyncBridge';
+import { MayraNativeBridgeClient } from '../services/bridge/MayraNativeBridgeClient';
 import { MemoryQueryEngine } from '../services/memory/memoryQueryEngine';
 import { ContinuousConversationEngine } from '../services/voice/continuousConversationEngine';
 import { MayraAgentEngine } from '../services/agent/agentEngine';
@@ -1629,8 +1630,18 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         wsRef.current = null;
       }
       setStatus('READY');
+      if (MayraNativeBridgeClient.isAvailableSync()) {
+        MayraNativeBridgeClient.resumeOfflineWakeWord();
+      }
       console.log('[MAYRA Pipeline] CONTINUOUS_VOICE: OFF -> READY');
     } else {
+      // The background Android wake-word service already owns the microphone.
+      // Release its capture before interactive WebView voice starts to avoid two
+      // simultaneous microphone pipelines causing audio failure/app instability.
+      if (MayraNativeBridgeClient.isAvailableSync()) {
+        MayraNativeBridgeClient.pauseOfflineWakeWord();
+      }
+
       // Play custom activation sound strictly ONCE on explicit physical user mic click
       playCustomActivationSound();
       // Interrupt any current speech before listening
@@ -1672,6 +1683,10 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       stopCurrentSpeech();
     }
 
+    if (MayraNativeBridgeClient.isAvailableSync()) {
+      MayraNativeBridgeClient.pauseOfflineWakeWord();
+    }
+
     isPttActiveRef.current = true;
     setIsPttActive(true);
     setStatus('LISTENING');
@@ -1697,6 +1712,10 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     console.log('[MAYRA Pipeline] PTT_STOP initiated. Submitting turn.');
     isPttActiveRef.current = false;
     setIsPttActive(false);
+
+    if (!isListeningModeRef.current && MayraNativeBridgeClient.isAvailableSync()) {
+      MayraNativeBridgeClient.resumeOfflineWakeWord();
+    }
 
     // Stop PCM audio stream if not in continuous hands-free mode
     if (!isListeningModeRef.current) {
