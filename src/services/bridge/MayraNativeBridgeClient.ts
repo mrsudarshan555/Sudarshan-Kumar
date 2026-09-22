@@ -79,6 +79,50 @@ class MayraNativeBridgeClientClass {
     this.activeErrorCallback = null;
   }
 
+  /** Synchronous bridge check for playback fallbacks. */
+  isAvailableSync(): boolean {
+    return typeof window !== 'undefined' && !!window.MayraNativeLLM;
+  }
+
+  /** Speak using Android's native TextToSpeech engine; never Web Speech. */
+  speakNativeTts(
+    text: string,
+    language: 'en' | 'hi',
+    onStart?: () => void,
+    onEnd?: () => void
+  ): boolean {
+    if (!this.isAvailableSync() || !window.MayraNativeLLM?.speakNativeTts) {
+      return false;
+    }
+    (window as any).__mayra_native_tts_on_start = () => onStart?.();
+    (window as any).__mayra_native_tts_on_end = () => {
+      onEnd?.();
+      delete (window as any).__mayra_native_tts_on_start;
+      delete (window as any).__mayra_native_tts_on_end;
+    };
+    try {
+      const started = !!window.MayraNativeLLM.speakNativeTts(text, language);
+      if (!started) {
+        delete (window as any).__mayra_native_tts_on_start;
+        delete (window as any).__mayra_native_tts_on_end;
+      }
+      return started;
+    } catch {
+      return false;
+    }
+  }
+
+  stopNativeTts(): boolean {
+    try {
+      const stopped = !!window.MayraNativeLLM?.stopNativeTts?.();
+      delete (window as any).__mayra_native_tts_on_start;
+      delete (window as any).__mayra_native_tts_on_end;
+      return stopped;
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Check if the native Android ARM64 bridge is available.
    */
