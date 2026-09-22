@@ -826,33 +826,70 @@ export function sanitizeTextForSpeech(text: string): string {
 /**
  * Splits long text into natural conversational sentence chunks for continuous streaming speech
  */
-export function splitIntoSpeechChunks(text: string, maxChunkLength: number = 180): string[] {
+export function splitIntoSpeechChunks(text: string, maxChunkLength: number = 220): string[] {
   const clean = sanitizeTextForSpeech(text);
   if (!clean) return [];
   if (clean.length <= maxChunkLength) return [clean];
 
-  const sentences = clean.split(/(?<=[.?!।\n])\s+/);
+  // Prefer complete sentences, then natural clause boundaries. Never emit tiny fragments.
+  const sentences = clean.split(/(?<=[.?!।])\s+/);
   const chunks: string[] = [];
   let currentChunk = '';
+
+  const appendPiece = (piece: string) => {
+    const trimmed = piece.trim();
+    if (!trimmed) return;
+    if (!currentChunk) {
+      currentChunk = trimmed;
+      return;
+    }
+    const combined = currentChunk + ' ' + trimmed;
+    if (combined.length <= maxChunkLength) {
+      currentChunk = combined;
+    } else {
+      if (currentChunk.length >= 45) {
+        chunks.push(currentChunk);
+        currentChunk = trimmed;
+      } else {
+        // Keep short conversational clauses together instead of producing choppy audio.
+        currentChunk = combined;
+      }
+    }
+  };
 
   for (const sentence of sentences) {
     const trimmed = sentence.trim();
     if (!trimmed) continue;
 
-    if (!currentChunk) {
-      currentChunk = trimmed;
-    } else if ((currentChunk + ' ' + trimmed).length <= maxChunkLength) {
-      currentChunk += ' ' + trimmed;
-    } else {
-      chunks.push(currentChunk);
-      currentChunk = trimmed;
+    if (trimmed.length <= maxChunkLength) {
+      appendPiece(trimmed);
+      continue;
+    }
+
+    // Long sentence: split only at natural punctuation/clause boundaries first.
+    const clauses = trimmed.split(/(?<=[,;:])\s+/);
+    for (const clause of clauses) {
+      if (clause.length <= maxChunkLength) {
+        appendPiece(clause);
+      } else {
+        // Last resort for unusually long technical text: word-safe wrapping.
+        const words = clause.split(/\s+/);
+        let part = '';
+        for (const word of words) {
+          const next = part ? part + ' ' + word : word;
+          if (next.length > maxChunkLength && part) {
+            appendPiece(part);
+            part = word;
+          } else {
+            part = next;
+          }
+        }
+        appendPiece(part);
+      }
     }
   }
 
-  if (currentChunk) {
-    chunks.push(currentChunk);
-  }
-
+  if (currentChunk) chunks.push(currentChunk);
   return chunks.length > 0 ? chunks : [clean];
 }
 
