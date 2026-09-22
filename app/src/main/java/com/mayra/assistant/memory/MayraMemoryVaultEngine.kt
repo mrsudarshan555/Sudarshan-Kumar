@@ -420,28 +420,35 @@ class MayraMemoryVaultEngine private constructor(private val context: Context) {
 
         // 1. Living Profile Snippet (Relevant facts only)
         val profile = db.getProfileSections()
-        val whoIAm = profile["Who I Am"] ?: "Alex (Primary Operator)"
-        val preferences = profile["Preferences"] ?: "Direct, concise, no flattery."
+        val whoIAm = profile["Who I Am"]?.takeIf { it.isNotBlank() } ?: "Primary MAYRA user"
+        val preferences = profile["Preferences"]?.takeIf { it.isNotBlank() } ?: "Use the current conversation preferences."
 
         // 2. Open Active Priorities (Relevant to query or top active items)
         val allOpenPriorities = db.getActivePriorities(includeDone = false)
         val openPriorities = allOpenPriorities
-            .filter { qLower.contains(it.projectSlug.lowercase()) || it.task.lowercase().split(" ").any { w -> w.length > 3 && qLower.contains(w) } }
-            .ifEmpty { allOpenPriorities.take(3) }
+            .map { item ->
+                val haystack = "${item.projectSlug} ${item.task}".lowercase()
+                val score = queryWords.count { haystack.contains(it) } +
+                    if (qLower.contains(item.projectSlug.lowercase())) 3 else 0
+                item to score
+            }
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
             .take(3)
-            .map { "[${it.projectSlug}] ${it.task}" }
+            .ifEmpty { allOpenPriorities.take(3) }
+            .map { "[${it.first.projectSlug}] ${it.first.task}" }
 
         // 3. Structured Job Matching (Scan all available jobs by trigger tokens)
         val allJobs = db.getAllJobs()
         var matchedJob: VaultJobItem? = null
         var highestJobScore = 0.0
-        val queryWords = qLower.split("[^a-z0-9]+".toRegex()).filter { it.length > 2 }
+        val queryWords = qLower.split("[^\\p{L}\\p{N}]+".toRegex()).filter { it.length > 1 }.distinct().take(20)
 
         for (job in allJobs) {
             var score = 0.0
-            val jobHaystack = "${job.name} ${job.projectSlug} ${job.procedure}".lowercase()
+            val jobHaystack = "${job.name} ${job.projectSlug} ${job.procedure} ${job.qualityBar} ${job.lessons}".lowercase()
             for (w in queryWords) {
-                if (jobHaystack.contains(w)) score += 2.0
+                if (jobHaystack.contains(w)) score += if (job.name.lowercase().contains(w)) 4.0 else 2.0
             }
             if (score > highestJobScore && score >= 2.0) {
                 highestJobScore = score
