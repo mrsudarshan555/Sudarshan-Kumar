@@ -207,7 +207,7 @@ export const GlassAuthModal: React.FC<GlassAuthModalProps> = ({
               <div className="flex justify-end pr-1">
                 <button
                   type="button"
-                  onClick={() => alert('Password reset link sent to your registered email.')}
+                  onClick={() => setErrorMsg('Password reset is not configured yet. Please use the account login flow or contact the app administrator.')}
                   className="text-[11px] text-purple-300/80 hover:text-white transition-colors font-sans cursor-pointer"
                 >
                   Forget Password ?
