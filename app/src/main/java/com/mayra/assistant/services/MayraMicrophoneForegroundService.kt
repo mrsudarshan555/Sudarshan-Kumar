@@ -739,6 +739,29 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
         isWakeWordActive = true
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Keep the foreground wake-word service alive if the app task is swiped
+        // away. Android/OEM policy can still stop it, so START_STICKY remains the
+        // primary recovery mechanism.
+        if (isServiceRunning && !isPaused) {
+            try {
+                val restartIntent = Intent(applicationContext, MayraMicrophoneForegroundService::class.java).apply {
+                    action = ACTION_START_LISTENING
+                    putExtra(EXTRA_IS_CONTINUOUS, true)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    applicationContext.startForegroundService(restartIntent)
+                } else {
+                    applicationContext.startService(restartIntent)
+                }
+                Log.i(TAG, "Wake-word service restart requested after task removal")
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not request wake-word service restart: " + e.message)
+            }
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         stopListening()
         super.onDestroy()
