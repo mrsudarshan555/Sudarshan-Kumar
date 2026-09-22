@@ -408,7 +408,13 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
                     putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                     putExtra("android.speech.extra.PREFER_OFFLINE", true)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+                    // Keep wake-word matching bilingual; the parser accepts Hindi/Hinglish variants too.
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-IN")
+                    putStringArrayListExtra(
+                        RecognizerIntent.EXTRA_SUPPORTED_LANGUAGES,
+                        arrayListOf("en-IN", "hi-IN", "en-US")
+                    )
                     putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
                     putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1000L)
                 }
