@@ -1,9 +1,13 @@
 package com.mayra.assistant.engine
 
 import android.content.Context
+import android.os.Bundle
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import com.mayra.assistant.services.MayraMicrophoneForegroundService
+import java.util.Locale
 import kotlinx.coroutines.*
 import org.json.JSONObject
 
@@ -16,6 +20,9 @@ class MayraWebInterface(
 ) {
     private val bridge = MayraNativeLLMBridge.getInstance(context)
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var nativeTts: TextToSpeech? = null
+    private var nativeTtsReady = false
+    private var pendingNativeTts: Pair<String, String>? = null
 
     init {
         // Register instead of assigning one global callback.
@@ -204,6 +211,74 @@ class MayraWebInterface(
     @JavascriptInterface
     fun cancelGeneration(): Boolean {
         return bridge.cancelGeneration()
+    }
+
+    private fun ensureNativeTts() {
+        if (nativeTts != null) return
+        nativeTts = TextToSpeech(context.applicationContext) { status ->
+            nativeTtsReady = status == TextToSpeech.SUCCESS
+            if (nativeTtsReady) {
+                pendingNativeTts?.let { pending ->
+                    pendingNativeTts = null
+                    speakNativeTtsInternal(pending.first, pending.second)
+                }
+            }
+        }
+    }
+
+    private fun speakNativeTtsInternal(text: String, language: String): Boolean {
+        val tts = nativeTts ?: return false
+        val locale = if (language.equals("hi", ignoreCase = true)) Locale("hi", "IN") else Locale("en", "IN")
+        val availability = tts.setLanguage(locale)
+        if (availability == TextToSpeech.LANG_MISSING_DATA || availability == TextToSpeech.LANG_NOT_SUPPORTED) {
+            tts.language = Locale("en", "IN")
+        }
+        tts.setSpeechRate(1.0f)
+        tts.setPitch(1.0f)
+        tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {
+                webView?.post {
+                    webView.evaluateJavascript("if(window.__mayra_native_tts_on_start){window.__mayra_native_tts_on_start();}", null)
+                }
+            }
+            override fun onDone(utteranceId: String?) {
+                webView?.post {
+                    webView.evaluateJavascript("if(window.__mayra_native_tts_on_end){window.__mayra_native_tts_on_end();}", null)
+                }
+            }
+            override fun onError(utteranceId: String?) {
+                webView?.post {
+                    webView.evaluateJavascript("if(window.__mayra_native_tts_on_end){window.__mayra_native_tts_on_end();}", null)
+                }
+            }
+        })
+        val utteranceId = "mayra_native_tts_" + System.currentTimeMillis()
+        return tts.speak(text, TextToSpeech.QUEUE_FLUSH, Bundle(), utteranceId) == TextToSpeech.SUCCESS
+    }
+
+    @JavascriptInterface
+    fun speakNativeTts(text: String, language: String): Boolean {
+        if (text.isBlank()) return false
+        ensureNativeTts()
+        if (!nativeTtsReady) {
+            pendingNativeTts = text to language
+            return true
+        }
+        return speakNativeTtsInternal(text, language)
+    }
+
+    @JavascriptInterface
+    fun stopNativeTts(): Boolean {
+        return try {
+            pendingNativeTts = null
+            nativeTts?.stop()
+            webView?.post {
+                webView.evaluateJavascript("if(window.__mayra_native_tts_on_end){window.__mayra_native_tts_on_end();}", null)
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     @JavascriptInterface
