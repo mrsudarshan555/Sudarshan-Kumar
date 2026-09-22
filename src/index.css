@@ -109,3 +109,11 @@
   transform: scale(0.96);
   opacity: 0.9;
 }
+
+/* MAYRA static UI mode: user-requested removal of visual motion.
+   Audio, microphone capture, and task logic are unaffected. */
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
