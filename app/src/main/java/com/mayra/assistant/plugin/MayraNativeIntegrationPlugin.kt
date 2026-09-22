@@ -266,6 +266,35 @@ class MayraNativeIntegrationPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun placeCall(call: PluginCall) {
+        val phoneNumber = call.getString("phoneNumber")?.trim().orEmpty()
+        val cleanNumber = phoneNumber.replace("[^0-9+*#]".toRegex(), "")
+        if (cleanNumber.isBlank()) {
+            call.reject("A valid phone number is required")
+            return
+        }
+
+        try {
+            val uri = Uri.parse("tel:$cleanNumber")
+            val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? android.telecom.TelecomManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && telecomManager != null &&
+                context.checkSelfPermission(android.Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                telecomManager.placeCall(uri, android.os.Bundle())
+                call.resolve(JSObject().put("success", true).put("mode", "native_call"))
+                return
+            }
+
+            val intent = Intent(Intent.ACTION_DIAL, uri).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            call.resolve(JSObject().put("success", true).put("mode", "dialer"))
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to place phone call", e)
+            call.reject("Could not start phone call: " + e.message)
+        }
+    }
+    @PluginMethod
     fun answerCall(call: PluginCall) {
         val success = telecomHandler.answerCall()
         if (success) {
