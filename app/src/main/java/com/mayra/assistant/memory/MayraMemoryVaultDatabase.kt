@@ -30,7 +30,7 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
 ) {
     companion object {
         const val DATABASE_NAME = "mayra_memory_vault.db"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 2
 
         @Volatile
         private var instance: MayraMemoryVaultDatabase? = null
@@ -160,6 +160,8 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_cat ON vault_memories(category);")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_status ON vault_memories(status);")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_project ON vault_memories(project_slug);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_updated ON vault_memories(updated_at);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_tags ON vault_memories(tags);")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -183,6 +185,8 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_cat ON vault_memories(category);")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_status ON vault_memories(status);")
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_project ON vault_memories(project_slug);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_updated ON vault_memories(updated_at);")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_memories_tags ON vault_memories(tags);")
     }
 
     // ==========================================
@@ -753,20 +757,37 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
     fun searchMemories(query: String, limit: Int = 5, projectSlug: String? = null): List<VaultMemoryItem> {
         val db = readableDatabase
         val cleanQuery = query.lowercase().trim()
-        val queryTokens = cleanQuery.split("[^a-z0-9]+".toRegex()).filter { it.length > 1 }
+        if (cleanQuery.isBlank()) return emptyList()
+
+        val stopWords = setOf(
+            "the","and","for","with","that","this","what","when","where","which","how",
+            "did","does","from","about","have","has","had","was","were","are","you",
+            "mein","mera","meri","mere","hai","tha","thi","the","ko","ka","ki","ke",
+            "se","me","par","aur","jo","ye","wo","kya","kab","kaise","hum","hamne"
+        )
+        val queryTokens = cleanQuery
+            .split("[^\\p{L}\\p{N}]+".toRegex())
+            .map { it.trim() }
+            .filter { it.length >= 2 && it !in stopWords }
+            .distinct()
+            .take(16)
 
         val cursor = db.rawQuery(
             """
-            SELECT id, category, fact, source, created_at, updated_at, status, confidence, project_slug, tags, supersedes_id
+            SELECT id, category, fact, source, created_at, updated_at, status,
+                   confidence, project_slug, tags, supersedes_id
             FROM vault_memories
             WHERE status = 'active'
+              AND (? IS NULL OR project_slug = ?)
             ORDER BY updated_at DESC
-            LIMIT 100
+            LIMIT 300
             """.trimIndent(),
-            null
+            arrayOf(projectSlug, projectSlug)
         )
 
+        val now = System.currentTimeMillis()
         val list = mutableListOf<Pair<VaultMemoryItem, Double>>()
+
         cursor.use {
             while (it.moveToNext()) {
                 val item = VaultMemoryItem(
@@ -783,26 +804,39 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
                     supersedesId = it.getString(10)
                 )
 
-                val factLower = item.fact.lowercase()
+                val haystack = "${item.fact} ${item.category} ${item.projectSlug} ${item.tags}".lowercase()
                 var score = 0.0
-                if (factLower.contains(cleanQuery)) {
-                    score += 10.0
-                }
+
+                if (haystack.contains(cleanQuery)) score += 12.0
+
+                var matchedTokens = 0
                 for (token in queryTokens) {
-                    if (factLower.contains(token) || item.tags.lowercase().contains(token)) {
-                        score += 2.0
+                    if (haystack.contains(token)) {
+                        score += if (item.fact.lowercase().contains(token)) 3.0 else 1.5
+                        matchedTokens++
                     }
                 }
-                if (projectSlug != null && item.projectSlug.equals(projectSlug, ignoreCase = true)) {
-                    score += 5.0
+
+                if (queryTokens.isNotEmpty()) {
+                    score += (matchedTokens.toDouble() / queryTokens.size) * 6.0
                 }
-                if (score > 0.0) {
+
+                score += item.confidence.coerceIn(0.0, 1.0)
+
+                val ageDays = ((now - item.updatedAt).coerceAtLeast(0L) / 86_400_000.0)
+                score += 1.5 / (1.0 + ageDays / 30.0)
+
+                if (score > 0.0 && (matchedTokens > 0 || haystack.contains(cleanQuery))) {
                     list.add(item to score)
                 }
             }
         }
 
-        return list.sortedByDescending { it.second }.take(limit).map { it.first }
+        return list
+            .sortedWith(compareByDescending<Pair<VaultMemoryItem, Double>> { it.second }
+                .thenByDescending { it.first.updatedAt })
+            .take(limit)
+            .map { it.first }
     }
 
     fun getAllActiveMemories(): List<VaultMemoryItem> {
