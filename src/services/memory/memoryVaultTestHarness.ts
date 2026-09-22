@@ -244,28 +244,41 @@ export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestRep
     const canaryMemory = 'MAYRA_TEST_MEMORY_73921: The MAYRA project currently uses TEST_MODEL_73921.';
     await currentVault.upsertMemoryFact('project', canaryMemory, 'MAYRA', ['#model'], 'mayra');
 
-    // Step 2: Conversation ends, persistence completes
-    await currentVault.executeCheckpointPersistence('Day 1 Model Assignment', 'Recorded active model TEST_MODEL_73921');
+    // Step 2: Persist a dated Day-1 archive entry.
+    const day1 = new Date(Date.now() - 17 * 24 * 60 * 60 * 1000);
+    const day1Key = day1.toISOString().slice(0, 10);
+    await currentVault.recordDailyArchive(
+      day1Key,
+      ['17-day persistence canary: TEST_MODEL_73921'],
+      'MAYRA'
+    );
+    await currentVault.executeCheckpointPersistence(
+      'Day 1 Model Assignment',
+      'Recorded active model TEST_MODEL_73921'
+    );
 
-    // Step 3: Application is destroyed and reinitialized
+    // Step 3: Application is destroyed and reinitialized (cold start).
     MemoryVaultManager.resetInstance();
     MemorySyncBridge.resetInstance();
     MemoryQueryEngine.resetInstance();
 
-    // Step 4: Simulate date is 17 days later and chat history is empty
+    // Step 4: Reinitialize as a fresh Day-17 session with no chat history.
     const freshVault = MemoryVaultManager.getInstance();
     await freshVault.initializeVault();
     const freshBridge = MemorySyncBridge.getInstance();
 
-    // Step 5: Start new conversation with query
+    // Step 5: Verify both the old dated archive and long-term memory survive.
+    const restoredArchive = freshVault.getDailyArchive();
+    const restoredDay1Entries = restoredArchive.get(day1Key) || [];
     const day17Query = 'What model does the MAYRA project currently use?';
     const contextPrompt = freshBridge.generateSystemContextPrompt('MAYRA', day17Query);
 
     const containsCanary = contextPrompt.includes('TEST_MODEL_73921');
+    const oldArchiveSurvived = restoredDay1Entries.some(entry => entry.includes('TEST_MODEL_73921'));
     const wordCount = contextPrompt.trim().split(/\s+/).length;
     const isBounded = wordCount < 300;
 
-    const t7Passed = containsCanary && isBounded;
+    const t7Passed = containsCanary && oldArchiveSurvived && isBounded;
 
     reports.push({
       scenario: '7. 17-Day Lifecycle Persistence Integration Test (Phase 16)',
