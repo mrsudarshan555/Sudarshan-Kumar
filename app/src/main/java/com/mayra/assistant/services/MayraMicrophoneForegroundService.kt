@@ -125,6 +125,20 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
             context.startService(intent)
         }
 
+        fun pause(context: Context) {
+            val intent = Intent(context, MayraMicrophoneForegroundService::class.java).apply {
+                action = ACTION_PAUSE_LISTENING
+            }
+            context.startService(intent)
+        }
+
+        fun resume(context: Context) {
+            val intent = Intent(context, MayraMicrophoneForegroundService::class.java).apply {
+                action = ACTION_RESUME_LISTENING
+            }
+            context.startService(intent)
+        }
+
         fun parseWakeAndCommand(text: String): Pair<String, String>? {
             val clean = text.trim()
             if (clean.isBlank()) return null
@@ -198,11 +212,17 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
             ACTION_PAUSE_LISTENING -> {
                 isPaused = true
                 pauseOfflineRecognizer()
+                stopAudioCaptureOnly()
+                isWakeWordActive = false
                 return START_STICKY
             }
             ACTION_RESUME_LISTENING -> {
                 isPaused = false
-                resumeOfflineRecognizer()
+                if (isServiceRunning) {
+                    startListening()
+                    initOfflineSpeechRecognizer()
+                    isWakeWordActive = true
+                }
                 return START_STICKY
             }
             ACTION_START_LISTENING, null -> {
@@ -515,6 +535,34 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
                 break
             }
         }
+    }
+
+    /**
+     * Releases only the microphone capture used by the background wake-word loop.
+     * The foreground service itself remains alive so interactive WebView voice can
+     * temporarily own the microphone without two capture pipelines fighting.
+     */
+    private fun stopAudioCaptureOnly() {
+        isRecording = false
+        try {
+            recordingThread?.interrupt()
+            recordingThread = null
+        } catch (_: Exception) {}
+
+        try { echoCanceler?.release() } catch (_: Exception) {}
+        try { automaticGainControl?.release() } catch (_: Exception) {}
+        try { noiseSuppressor?.release() } catch (_: Exception) {}
+        echoCanceler = null
+        automaticGainControl = null
+        noiseSuppressor = null
+
+        try {
+            audioRecord?.stop()
+        } catch (_: Exception) {}
+        try {
+            audioRecord?.release()
+        } catch (_: Exception) {}
+        audioRecord = null
     }
 
     private fun startListening() {
