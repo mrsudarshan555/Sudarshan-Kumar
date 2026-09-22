@@ -323,8 +323,8 @@ class MayraSystemIntegrationBridgeClass {
     }
 
     return {
-      success: true,
-      message: `[Simulated] Initiated phone call to ${phoneNumber}`
+      success: false,
+      message: 'Native phone-call integration is unavailable in this environment'
     };
   }
 
