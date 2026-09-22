@@ -233,12 +233,9 @@ export const APICloudSettingsView: React.FC<APICloudSettingsViewProps> = ({
           <p className="text-[11px] text-gray-400">
             Real-time web search and live grounding queries for factual answers.
           </p>
-          <button
-            onClick={() => setIsSaved(false)}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#181922] hover:bg-[#20222f] border border-white/10 text-xs font-bold text-gray-200 transition-colors cursor-pointer"
-          >
-            Configure Deep Research Settings
-          </button>
+          <div className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 border border-amber-400/20 text-[11px] text-amber-200">
+            Deep Research provider connection is not configured in this build yet.
+          </div>
         </div>
       </div>
 
