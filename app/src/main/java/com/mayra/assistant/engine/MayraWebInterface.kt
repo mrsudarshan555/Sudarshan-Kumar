@@ -18,8 +18,8 @@ class MayraWebInterface(
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     init {
-        // Wire foreground offline wake-word detection callback to WebView JS layer
-        MayraMicrophoneForegroundService.onWakeWordDetectedListener = { phrase, command ->
+        // Register instead of assigning one global callback.
+        MayraMicrophoneForegroundService.registerWakeWordListener { phrase, command ->
             dispatchJsWakeWord(phrase, command)
         }
     }
