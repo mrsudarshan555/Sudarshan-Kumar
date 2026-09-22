@@ -65,7 +65,7 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
             private set
 
         // Global callback for Native Android -> Overlay / Web Bridge
-        var onWakeWordDetectedListener: ((phrase: String, command: String, isOnline: Boolean) -> Unit)? = null
+        var onWakeWordDetectedListener: ((phrase: String, command: String) -> Unit)? = null
 
         /**
          * Multi-lingual Wake Patterns for "Hey Mayra" (English, Hindi & Hinglish)
@@ -137,6 +137,16 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
 
     private var recordingThread: Thread? = null
     private var audioRecord: AudioRecord? = null
+
+    // Acoustic clap-to-wake detector. Requires two distinct sharp peaks so normal
+    // speech/background noise is much less likely to trigger MAYRA.
+    private var lastClapPeakTimestamp = 0L
+    private var clapCooldownUntil = 0L
+    private var wasAboveClapThreshold = false
+    private val clapThresholdRms = 5000.0
+    private val clapMinGapMs = 90L
+    private val clapMaxGapMs = 700L
+    private val clapCooldownMs = 2500L
 
     // Local On-Device Text-To-Speech
     private var textToSpeech: TextToSpeech? = null
@@ -254,7 +264,7 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
 
         // 3. Notify global listener / UI
         mainHandler.post {
-            onWakeWordDetectedListener?.invoke(phrase, command, hasInternet)
+            onWakeWordDetectedListener?.invoke(phrase, command)
         }
 
         // 4. Check if command is an online query while offline
@@ -480,7 +490,7 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
             val channelConfig = AudioFormat.CHANNEL_IN_MONO
             val audioFormat = AudioFormat.ENCODING_PCM_16BIT
             val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
-            val bufferSize = (minBufferSize * 2).coerceAtLeast(4096)
+            val bufferSize = (minBufferSize * 2).coerceAtLeast(2048)
 
             audioRecord = AudioRecord(
                 MediaRecorder.AudioSource.VOICE_RECOGNITION,
@@ -527,9 +537,45 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
         }
     }
 
+    private fun detectDoubleClap(rms: Double) {
+        if (isPaused) return
+
+        val now = System.currentTimeMillis()
+        val aboveThreshold = rms >= clapThresholdRms
+
+        // Only count a clap when the signal crosses the threshold upward.
+        if (aboveThreshold && !wasAboveClapThreshold) {
+            if (now >= clapCooldownUntil) {
+                val gap = now - lastClapPeakTimestamp
+
+                if (lastClapPeakTimestamp > 0L && gap in clapMinGapMs..clapMaxGapMs) {
+                    clapCooldownUntil = now + clapCooldownMs
+                    lastClapPeakTimestamp = 0L
+
+                    Log.i(TAG, "[WakeWord] 👏 Double-clap detected — waking MAYRA")
+                    handleWakeWordDetected("clap", "")
+                } else {
+                    lastClapPeakTimestamp = now
+                }
+            }
+        }
+
+        // Require the next clap to be a new acoustic peak, not one sustained sound.
+        wasAboveClapThreshold = aboveThreshold
+
+        // Expire a single clap after the maximum pairing window.
+        if (lastClapPeakTimestamp > 0L &&
+            now - lastClapPeakTimestamp > clapMaxGapMs) {
+            lastClapPeakTimestamp = 0L
+        }
+    }
+
     private fun stopListening() {
         isRecording = false
         isWakeWordActive = false
+        lastClapPeakTimestamp = 0L
+        clapCooldownUntil = 0L
+        wasAboveClapThreshold = false
 
         mainHandler.post {
             try {
