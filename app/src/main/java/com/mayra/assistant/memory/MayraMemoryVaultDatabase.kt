@@ -350,36 +350,49 @@ class MayraMemoryVaultDatabase(context: Context) : SQLiteOpenHelper(
 
     fun searchNotes(query: String): List<VaultNoteItem> {
         val db = readableDatabase
-        val pattern = "%$query%"
-        val cursor: Cursor = db.rawQuery(
+        val cleanQuery = query.lowercase().trim()
+        if (cleanQuery.isBlank()) return emptyList()
+
+        val stopWords = setOf(
+            "the","and","for","with","that","this","what","when","where","which","how",
+            "did","does","from","about","have","has","had","was","were","are","you",
+            "mein","mera","meri","mere","hai","tha","thi","the","ko","ka","ki","ke",
+            "se","me","par","aur","jo","ye","wo","kya","kab","kaise","hum","hamne"
+        )
+        val tokens = cleanQuery.split("[^\\p{L}\\p{N}]+".toRegex())
+            .filter { it.length >= 2 && it !in stopWords }.distinct().take(16)
+
+        val cursor = db.rawQuery(
             """
             SELECT file_path, title, folder, content_markdown, type, project_slug, status, created_at, updated_at
             FROM vault_notes
-            WHERE title LIKE ? OR content_markdown LIKE ? OR project_slug LIKE ?
             ORDER BY updated_at DESC
-            LIMIT 20
-            """.trimIndent(),
-            arrayOf(pattern, pattern, pattern)
+            LIMIT 500
+            """.trimIndent(), null
         )
-        val list = mutableListOf<VaultNoteItem>()
+        val ranked = mutableListOf<Pair<VaultNoteItem, Double>>()
         cursor.use {
             while (it.moveToNext()) {
-                list.add(
-                    VaultNoteItem(
-                        filePath = it.getString(0),
-                        title = it.getString(1),
-                        folder = it.getString(2),
-                        contentMarkdown = it.getString(3),
-                        type = it.getString(4),
-                        projectSlug = it.getString(5),
-                        status = it.getString(6),
-                        createdAt = it.getLong(7),
-                        updatedAt = it.getLong(8)
-                    )
+                val item = VaultNoteItem(
+                    filePath = it.getString(0), title = it.getString(1), folder = it.getString(2),
+                    contentMarkdown = it.getString(3), type = it.getString(4),
+                    projectSlug = it.getString(5), status = it.getString(6),
+                    createdAt = it.getLong(7), updatedAt = it.getLong(8)
                 )
+                val haystack = "${item.title} ${item.contentMarkdown} ${item.projectSlug} ${item.type}".lowercase()
+                var score = if (haystack.contains(cleanQuery)) 12.0 else 0.0
+                var matches = 0
+                for (token in tokens) {
+                    if (haystack.contains(token)) {
+                        score += if (item.contentMarkdown.lowercase().contains(token)) 2.5 else 1.0
+                        matches++
+                    }
+                }
+                if (tokens.isNotEmpty()) score += (matches.toDouble() / tokens.size) * 5.0
+                if (score > 0.0 && (matches > 0 || haystack.contains(cleanQuery))) ranked.add(item to score)
             }
         }
-        return list
+        return ranked.sortedByDescending { it.second }.take(20).map { it.first }
     }
 
     // ==========================================
