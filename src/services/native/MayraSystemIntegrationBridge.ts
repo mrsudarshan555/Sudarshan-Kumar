@@ -449,9 +449,9 @@ class MayraSystemIntegrationBridgeClass {
     }
 
     return {
-      success: true,
-      isNative: this.isNative(),
-      message: `Device Eco Mode (Power Saver) ${enabled ? 'Activated' : 'Deactivated'}`
+      success: false,
+      isNative: false,
+      message: 'Native battery-saver control is unavailable; open Android battery settings instead.'
     };
   }
 
@@ -499,10 +499,10 @@ class MayraSystemIntegrationBridgeClass {
     }
 
     return {
-      success: true,
-      isNative: this.isNative(),
-      requiresIntent: !this.isNative(),
-      message: `System Dark Mode ${enabled ? 'Enabled' : 'Disabled'}`
+      success: false,
+      isNative: false,
+      requiresIntent: true,
+      message: 'Native system dark-mode control is unavailable in this environment.'
     };
   }
 
@@ -526,9 +526,9 @@ class MayraSystemIntegrationBridgeClass {
     }
 
     return {
-      success: true,
-      isNative: this.isNative(),
-      message: `Phone Flashlight / Torch ${enabled ? 'turned ON' : 'turned OFF'}`
+      success: false,
+      isNative: false,
+      message: 'Native flashlight control is unavailable in this environment.'
     };
   }
 
@@ -546,7 +546,7 @@ class MayraSystemIntegrationBridgeClass {
     if (typeof window !== 'undefined') {
       localStorage.setItem('mayra_device_wifi', String(enabled));
     }
-    return { success: true, message: `Phone Wi-Fi ${enabled ? 'Enabled' : 'Disabled'}` };
+    return { success: false, message: 'Native Wi-Fi toggle is unavailable; Android restricts direct toggling on modern versions.' };
   }
 
   async setExternalBluetooth(enabled: boolean): Promise<{ success: boolean; message: string }> {
@@ -554,7 +554,7 @@ class MayraSystemIntegrationBridgeClass {
     if (plugin?.setBluetoothEnabled) {
       try {
         await plugin.setBluetoothEnabled({ enabled });
-        return { success: true, message: `Bluetooth ${enabled ? 'Enabled' : 'Disabled'}` };
+        return { success: false, message: 'Native Bluetooth toggle is unavailable in this environment.' };
       } catch (e) {}
     }
     if (typeof window !== 'undefined') {
@@ -577,7 +577,7 @@ class MayraSystemIntegrationBridgeClass {
     if (typeof window !== 'undefined') {
       localStorage.setItem('mayra_device_dnd', String(enabled));
     }
-    return { success: true, message: `Do Not Disturb (Silent Mode) ${enabled ? 'Activated' : 'Deactivated'}` };
+    return { success: false, message: 'Native Do Not Disturb control is unavailable in this environment.' };
   }
 
   /**
