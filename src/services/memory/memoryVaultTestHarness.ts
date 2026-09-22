@@ -284,8 +284,8 @@ export async function runMayraMemoryVaultTestSuite(): Promise<MemoryVaultTestRep
       scenario: '7. 17-Day Lifecycle Persistence Integration Test (Phase 16)',
       passed: t7Passed,
       details: t7Passed
-        ? `Day 17 recall successful: Re-hydrated fresh vault restored 'TEST_MODEL_73921'. Context bounded to ${wordCount} words (<300).`
-        : `Day 17 persistence failed: containsCanary=${containsCanary}, wordCount=${wordCount}`,
+        ? `17-day cold-start recall passed: dated Day-1 archive survived and TEST_MODEL_73921 was retrieved into a bounded Day-17 context (${wordCount} words).`
+        : `17-day persistence failed: memory=${containsCanary}, oldArchive=${oldArchiveSurvived}, wordCount=${wordCount}`,
       durationMs: Math.round(performance.now() - t7Start)
     });
   } catch (e: any) {
