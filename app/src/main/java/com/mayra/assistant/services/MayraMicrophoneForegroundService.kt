@@ -34,6 +34,7 @@ import androidx.core.app.NotificationCompat
 import com.mayra.assistant.MainActivity
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * MAYRA 100% Offline Background Wake-Word & Voice Listening Service
@@ -67,8 +68,24 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
         var isWakeWordActive = false
             private set
 
-        // Global callback for Native Android -> Overlay / Web Bridge
-        var onWakeWordDetectedListener: ((phrase: String, command: String) -> Unit)? = null
+        // Multicast callbacks: WebView bridge and Capacitor plugin both receive each wake event.
+        private val wakeWordListeners =
+            CopyOnWriteArrayList<(phrase: String, command: String) -> Unit>()
+
+        fun registerWakeWordListener(listener: (phrase: String, command: String) -> Unit) {
+            if (!wakeWordListeners.contains(listener)) wakeWordListeners.add(listener)
+        }
+
+        fun unregisterWakeWordListener(listener: (phrase: String, command: String) -> Unit) {
+            wakeWordListeners.remove(listener)
+        }
+
+        private fun dispatchWakeWord(phrase: String, command: String) {
+            wakeWordListeners.forEach { listener ->
+                try { listener(phrase, command) }
+                catch (e: Exception) { Log.w(TAG, "Wake listener failed: " + e.message) }
+            }
+        }
 
         /**
          * Multi-lingual Wake Patterns for "Hey Mayra" (English, Hindi & Hinglish)
@@ -147,14 +164,15 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
     // Far-field voice front-end: short PCM windows keep wake latency low while
     // Android audio effects improve speech pickup in real rooms.
     private val wakeSampleRate = 16000
-    private val wakeFrameSamples = 512
+    private val wakeFrameSamples = 1024
 
     // Acoustic clap-to-wake detector. Requires two distinct sharp peaks so normal
     // speech/background noise is much less likely to trigger MAYRA.
     private var lastClapPeakTimestamp = 0L
     private var clapCooldownUntil = 0L
     private var wasAboveClapThreshold = false
-    private val clapThresholdRms = 5000.0
+    private val baseClapThresholdRms = 5000.0
+    private var clapNoiseFloorRms = 900.0
     private val clapMinGapMs = 90L
     private val clapMaxGapMs = 700L
     private val clapCooldownMs = 2500L
@@ -275,7 +293,7 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
 
         // 3. Notify global listener / UI
         mainHandler.post {
-            onWakeWordDetectedListener?.invoke(phrase, command)
+            dispatchWakeWord(phrase, command)
         }
 
         // 4. Check if command is an online query while offline
@@ -577,7 +595,11 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
         if (isPaused) return
 
         val now = System.currentTimeMillis()
-        val aboveThreshold = rms >= clapThresholdRms
+        val adaptiveThreshold = maxOf(baseClapThresholdRms, clapNoiseFloorRms * 3.2)
+        val aboveThreshold = rms >= adaptiveThreshold
+        if (!aboveThreshold) {
+            clapNoiseFloorRms = (clapNoiseFloorRms * 0.96) + (rms * 0.04)
+        }
 
         // Only count a clap when the signal crosses the threshold upward.
         if (aboveThreshold && !wasAboveClapThreshold) {
@@ -612,6 +634,7 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
         lastClapPeakTimestamp = 0L
         clapCooldownUntil = 0L
         wasAboveClapThreshold = false
+        clapNoiseFloorRms = 900.0
 
         mainHandler.post {
             try {
