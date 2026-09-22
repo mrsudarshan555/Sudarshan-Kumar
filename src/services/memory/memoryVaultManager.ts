@@ -217,226 +217,8 @@ export class MemoryVaultManager {
     this.structuredFacts = [];
     this.jobs = [];
     this.priorities = [];
-    this.dailyNoteArchive.clear();/**
- * Unified Markdown Memory Vault Manager (ai-memory-vault-main Architecture)
- * 
- * Provides a single canonical external memory system for MAYRA and STONICX:
- * - Persistent storage with IndexedDB, LocalStorage, and Node persistent cache fallback
- * - Canonical Markdown files: MEMORY.md, DAILY-NOTE.md, VAULT-INDEX.md
- * - Living User Profile, Active Projects Matrix, Jobs & Recurring Procedures
- * - Robust deduplication (similarity >= 0.88 or normalized subject-value equality)
- * - Contradiction resolution (superseding links)
- * - Deterministic on-demand relevance retrieval (< 300 words)
- * - Sub-100ms startup guarantee
- */
-
-export interface VaultFact {
-  id: string;
-  category: string;
-  fact: string;
-  source: 'MAYRA' | 'STONICX' | 'SYSTEM' | string;
-  status: 'active' | 'superseded' | 'archived';
-  supersedesId?: string;
-  timestamp: string;
-  updatedAt: string;
-  confidence: number;
-  tags: string[];
-  projectSlug?: string;
-  relevanceScore?: number;
-  provenance?: string;
-}
-
-export interface VaultIndexEntry {
-  tag: string;
-  category: 'preference' | 'technical' | 'project' | 'routine' | 'profile' | 'identity' | 'checkpoint';
-  source: 'MAYRA' | 'STONICX' | 'SYSTEM' | string;
-  summary: string;
-  timestamp: string;
-  referenceDoc: 'MEMORY.md' | 'DAILY-NOTE.md' | 'VAULT-INDEX.md';
-}
-
-export interface MarkdownVaultDocument {
-  name: string;
-  content: string;
-  lastModified: string;
-}
-
-export interface VaultJob {
-  jobId: string;
-  name: string;
-  projectSlug: string;
-  procedure: string;
-  qualityBar: string;
-  lessons: string[];
-  status: 'active' | 'idle' | 'retired';
-  bootChain?: string[];
-}
-
-export interface VaultPriority {
-  id: string;
-  task: string;
-  projectSlug: string;
-  isDone: boolean;
-  createdAt: string;
-  completedAt?: string;
-}
-
-export interface VaultProject {
-  slug: string;
-  name: string;
-  status: 'active' | 'planning' | 'completed';
-  decisions: string[];
-  notes: string[];
-}
-
-const STORAGE_PREFIX = 'MAYRA_STONICX_VAULT_';
-const DB_NAME = 'MayraStonicxUnifiedVault';
-const DB_VERSION = 1;
-const STORE_NAME = 'markdown_vault';
-
-// Cross-environment persistent storage store (survives singleton destruction in Node.js and browser)
-const globalStore: Record<string, string> =
-  (typeof globalThis !== 'undefined' && (globalThis as any).__MAYRA_VAULT_PERSISTENT_STORE__)
-    ? (globalThis as any).__MAYRA_VAULT_PERSISTENT_STORE__
-    : {};
-
-if (typeof globalThis !== 'undefined') {
-  (globalThis as any).__MAYRA_VAULT_PERSISTENT_STORE__ = globalStore;
-}
-
-function getStoreItem(key: string): string | null {
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const val = localStorage.getItem(key);
-      if (val !== null) return val;
-    } catch {
-      // Fallback
-    }
-  }
-  return globalStore[key] || null;
-}
-
-function setStoreItem(key: string, value: string): void {
-  if (typeof localStorage !== 'undefined') {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      // Fallback
-    }
-  }
-  globalStore[key] = value;
-}
-
-function removeStoreItem(key: string): void {
-  if (typeof localStorage !== 'undefined') {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // Fallback
-    }
-  }
-  delete globalStore[key];
-}
-
-export const DEFAULT_MEMORY_MD = `# MAYRA & STONICX UNIFIED MEMORY VAULT (MEMORY.md)
-*Persistent external memory, living user profile, projects, jobs, and long-term knowledge.*
-
-## 1. Living User Profile
-### Who I Am
-- User: Commander / Primary Operator
-- Shared System: MAYRA (Empathetic Holographic Voice Assistant) & STONICX (Hyper-Technical AI Neural Engine)
-
-### Preferences
-- Workspace Theme: Cybernetic / Twilight Blue
-- Execution Mode: Dual-Brain Unified Delegation
-
-## 2. Active Projects Matrix
-### MAYRA Operating System
-- Status: active
-- Focus: Android AI Assistant, CameraX vision intelligence, on-demand memory vault
-
-## 3. Jobs & Recurring Procedures
-### System Maintenance
-- Trigger: Routine sync or diagnostic query
-- Quality Bar: Sub-100ms cold start, no duplicate facts, bounded context (<300 words)
-
-## 4. Long-Term Facts & Knowledge
-- Architecture: Single canonical memory vault with Markdown source of truth
-`;
-
-export const DEFAULT_DAILY_NOTE_MD = `# DAILY TIMELINE (DAILY-NOTE.md)
-*Session logs, active task snippets, and rolling conversation history.*
-
-# Index
-- [[#Session 1 — Initialization]]
-
-## Session 1 — Initialization
-### What Got Done
-- Initialized unified memory vault with IndexedDB and LocalStorage backing.
-### What's Still In Progress
-- Continuous conversational sync and on-demand relevance retrieval.
-### Decisions Made
-- Single logical canonical vault with zero duplicate rows.
-### Notes Touched
-- MEMORY.md, VAULT-INDEX.md
-`;
-
-export const DEFAULT_VAULT_INDEX_MD = `# VAULT INDEX & ROOT MAP (VAULT-INDEX.md)
-*Root orientation map pointing to persistent memory subsystems.*
-
-## Vault Directory Map
-- [[MEMORY.md#1. Living User Profile|Living User Profile]]: Durable operator preferences and identity
-- [[MEMORY.md#2. Active Projects Matrix|Active Projects]]: Project status, decisions, priorities
-- [[MEMORY.md#3. Jobs & Recurring Procedures|Jobs & Procedures]]: Recurring task instructions & quality bars
-- [[DAILY-NOTE.md|Daily Notes]]: Session logs, decisions, and rolling history
-
-## Fast Tag Lookup Table
-| Tag | Category | Source | Summary | Target |
-| :--- | :--- | :--- | :--- | :--- |
-| #bootstrap | routine | SYSTEM | Vault initialized | DAILY-NOTE.md |
-| #persona | identity | SYSTEM | Dual-brain MAYRA ↔ STONICX setup | MEMORY.md |
-| #technical | technical | STONICX | System runtime & compiler specifications | MEMORY.md |
-`;
-
-export class MemoryVaultManager {
-  private static instance: MemoryVaultManager | null = null;
-  private memoryCache: Map<string, string> = new Map();
-  private indexEntries: VaultIndexEntry[] = [];
-  private structuredFacts: VaultFact[] = [];
-  private jobs: VaultJob[] = [];
-  private priorities: VaultPriority[] = [];
-  private dailyNoteArchive: Map<string, string[]> = new Map();
-  private isInitialized: boolean = false;
-  private db: IDBDatabase | null = null;
-
-  private constructor() {
-    this.initDefaultJobs();
-  }
-
-  public static getInstance(): MemoryVaultManager {
-    if (!this.instance) {
-      this.instance = new MemoryVaultManager();
-    }
-    return this.instance;
-  }
-
-  public static resetInstance(): void {
-    if (this.instance) {
-      this.instance.clearCaches();
-      this.instance = null;
-    }
-  }
-
-  /**
-   * Clears in-memory caches without deleting disk/persistent store.
-   */
-  public clearCaches(): void {
-    this.memoryCache.clear();
-    this.indexEntries = [];
-    this.structuredFacts = [];
-    this.jobs = [];
-    this.priorities = [];
-    this.dailyNoteArchive.clear();    this.isInitialized = false;
+    this.dailyNoteArchive.clear();
+    this.isInitialized = false;
   }
 
   /**
@@ -655,7 +437,8 @@ export class MemoryVaultManager {
       if (filename === 'MEMORY.md') return DEFAULT_MEMORY_MD;
       if (filename === 'DAILY-NOTE.md') return DEFAULT_DAILY_NOTE_MD;
       if (filename === 'VAULT-INDEX.md') return DEFAULT_VAULT_INDEX_MD;
-      return '';    }
+      return '';
+    }
     return this.memoryCache.get(filename) || '';
   }
 
@@ -874,7 +657,8 @@ export class MemoryVaultManager {
       category,
       fact: normalizedFact,
       source,
-      status: 'active',      supersedesId,
+      status: 'active',
+      supersedesId,
       timestamp: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       confidence: 1.0,
@@ -1164,3 +948,284 @@ export class MemoryVaultManager {
         console.warn('[MemoryVault] Native toggleActivePriority notice:', e);
       }
     }
+
+    return true;
+  }
+
+  /**
+   * Checkpoint Persistence — captures meaningful session changes to disk & markdown
+   */
+  public async executeCheckpointPersistence(
+    topic: string,
+    outcome: string,
+    notePath: string = 'DAILY-NOTE.md',
+    noteAddition?: string
+  ): Promise<boolean> {
+    const timeStr = new Date().toLocaleTimeString();
+    const sessionEntry = `\n## Session [${timeStr}] — ${topic}\n### What Got Done\n- ${outcome}\n` +
+      (noteAddition ? `### Details\n- ${noteAddition}\n` : '');
+
+    const currentDaily = this.getDocument('DAILY-NOTE.md');
+    await this.setDocument('DAILY-NOTE.md', currentDaily + sessionEntry);
+
+    await this.addIndexEntry({
+      tag: '#checkpoint',
+      category: 'checkpoint',
+      source: 'SYSTEM',
+      summary: `Checkpoint: ${topic} -> ${outcome.slice(0, 50)}`,
+      timestamp: new Date().toISOString(),
+      referenceDoc: 'DAILY-NOTE.md'
+    });
+
+    // Dual-sync checkpoint to Android Native Room DB + Daily Notes filesystem
+    if (typeof window !== 'undefined' && (window as any).MayraNativeLLM?.executeMemoryCheckpoint) {
+      try {
+        (window as any).MayraNativeLLM.executeMemoryCheckpoint(
+          topic,
+          outcome,
+          notePath,
+          noteAddition || ''
+        );
+      } catch (e) {
+        console.warn('[MemoryVault] Native executeMemoryCheckpoint notice:', e);
+      }
+    }
+
+    console.log(`[MemoryVault] Checkpoint persisted successfully: "${topic}"`);
+    return true;
+  }
+
+  /**
+   * Rebuilds in-memory index from Markdown files (Bi-directional consistency)
+   */
+  public async rebuildIndexFromMarkdown(): Promise<number> {
+    const memoryMd = this.getDocument('MEMORY.md');
+    const lines = memoryMd.split('\n');
+
+    let currentSection = 'general';
+    let restoredCount = 0;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('## 1.')) currentSection = 'profile';
+      else if (trimmed.startsWith('## 2.')) currentSection = 'project';
+      else if (trimmed.startsWith('## 3.')) currentSection = 'job';
+      else if (trimmed.startsWith('## 4.')) currentSection = 'technical';
+      else if (trimmed.startsWith('-')) {
+        const match = trimmed.match(/^-\s*(?:\[([^\]]+)\]\s*)?(.+)$/);
+        if (match) {
+          const source = match[1] || 'SYSTEM';
+          const factText = match[2];
+          if (factText && !factText.startsWith('User: Commander') && !factText.startsWith('Shared System:')) {
+            await this.upsertMemoryFact(currentSection, factText, source);
+            restoredCount++;
+          }
+        }
+      }
+    }
+
+    console.log(`[MemoryVault] Rebuilt vault index from Markdown: ${restoredCount} facts indexed.`);
+    return restoredCount;
+  }
+
+  /**
+   * Regenerates MEMORY.md cleanly from active structured facts, profile, jobs, and priorities.
+   */
+  private async regenerateMemoryMarkdown(): Promise<void> {
+    const activeFacts = this.structuredFacts.filter(f => f.status === 'active');
+    const identityFacts = activeFacts.filter(f => f.category === 'profile' || f.category === 'identity');
+    const preferenceFacts = activeFacts.filter(f => f.category === 'preference');
+    const technicalFacts = activeFacts.filter(f => f.category === 'technical');
+    const projectFacts = activeFacts.filter(f => f.category === 'project');
+    const otherFacts = activeFacts.filter(
+      f => !identityFacts.includes(f) && !preferenceFacts.includes(f) && !technicalFacts.includes(f) && !projectFacts.includes(f)
+    );
+
+    let md = `# MAYRA & STONICX UNIFIED MEMORY VAULT (MEMORY.md)\n*Persistent external memory, living user profile, projects, jobs, and long-term knowledge.*\n\n`;
+
+    md += `## 1. Living User Profile\n### Who I Am\n`;
+    if (identityFacts.length === 0) {
+      md += `- User: Commander / Primary Operator\n- Shared System: MAYRA & STONICX Dual-Brain Matrix\n`;
+    } else {
+      identityFacts.forEach(f => {
+        md += `- [${f.source}] ${f.fact}\n`;
+      });
+    }
+
+    md += `\n### Preferences\n`;
+    if (preferenceFacts.length === 0) {
+      md += `- Workspace Theme: Cybernetic / Twilight Blue\n- Execution Mode: Dual-Brain Unified Delegation\n`;
+    } else {
+      preferenceFacts.forEach(f => {
+        md += `- [${f.source}] ${f.fact}\n`;
+      });
+    }
+
+    md += `\n## 2. Active Projects Matrix\n`;
+    md += `### MAYRA Operating System\n- Status: active\n- Focus: Android AI Assistant, CameraX vision intelligence, on-demand memory vault\n`;
+    if (projectFacts.length > 0) {
+      projectFacts.forEach(f => {
+        md += `- [${f.source}] [${(f.projectSlug || 'mayra').toUpperCase()}] ${f.fact}\n`;
+      });
+    }
+
+    if (this.priorities.length > 0) {
+      md += `\n### Current Task Priorities\n`;
+      this.priorities.forEach(p => {
+        md += `- [${p.isDone ? 'x' : ' '}] [${p.projectSlug.toUpperCase()}] ${p.task}\n`;
+      });
+    }
+
+    md += `\n## 3. Jobs & Recurring Procedures\n`;
+    this.jobs.forEach(j => {
+      md += `### ${j.name} (${j.projectSlug.toUpperCase()})\n`;
+      md += `- Procedure: ${j.procedure}\n`;
+      md += `- Quality Bar: ${j.qualityBar}\n`;
+      if (j.lessons.length > 0) {
+        md += `- Lessons:\n`;
+        j.lessons.forEach(l => md += `  - ${l}\n`);
+      }
+    });
+
+    md += `\n## 4. Long-Term Facts & Knowledge\n`;
+    md += `- Architecture: Single canonical memory vault with Markdown source of truth\n`;
+    technicalFacts.forEach(f => {
+      md += `- [${f.source}] ${f.fact}\n`;
+    });
+    otherFacts.forEach(f => {
+      md += `- [${f.source}] ${f.fact}\n`;
+    });
+
+    await this.setDocument('MEMORY.md', md);
+  }
+
+  public async recordDailyArchive(dateStr: string, entries: string[], source: string = 'MAYRA'): Promise<void> {
+    if (!this.dailyNoteArchive.has(dateStr)) {
+      this.dailyNoteArchive.set(dateStr, []);
+    }
+    const list = this.dailyNoteArchive.get(dateStr)!;
+    entries.forEach(e => list.push(`[${source}] ${e}`));
+
+    const obj = Object.fromEntries(this.dailyNoteArchive);
+    setStoreItem(`${STORAGE_PREFIX}DAILY_ARCHIVE`, JSON.stringify(obj));
+
+    await this.appendDailyLog(`[Date: ${dateStr}] ${entries.join(' | ')}`, source);
+  }
+
+  /**
+   * Multi-signal deterministic relevance retrieval with provenance.
+   * Strict isolation: If a query targets a specific project (e.g. "MAYRA"), unrelated project facts are suppressed!
+   */
+  public getRelevantActiveFacts(query: string, limit: number = 4): VaultFact[] {
+    const active = this.structuredFacts.filter(f => f.status === 'active');
+    if (!query || !query.trim()) return active.slice(0, limit);
+
+    const cleanQuery = query.toLowerCase().trim();
+    const queryTokens = this.normalizeSemanticTokens(cleanQuery);
+    const isProjectQuery = cleanQuery.includes('project') || cleanQuery.includes('model') || cleanQuery.includes('build');
+    const isProfileQuery = cleanQuery.includes('name') || cleanQuery.includes('who') || cleanQuery.includes('language') || cleanQuery.includes('prefer');
+
+    // Extract project slug if explicitly asked about a project
+    let targetedSlug: string | null = null;
+    if (cleanQuery.includes('mayra')) targetedSlug = 'mayra';
+    else if (cleanQuery.includes('stonicx')) targetedSlug = 'stonicx';
+    else if (cleanQuery.includes('alpha')) targetedSlug = 'alpha';
+    else if (cleanQuery.includes('beta')) targetedSlug = 'beta';
+
+    const scored = active.map(f => {
+      let score = 0;
+      const lowerFact = f.fact.toLowerCase();
+      const factTokens = this.normalizeSemanticTokens(f.fact);
+      const factSubject = this.extractSubjectKey(f.fact);
+
+      // 1. Exact phrase match (+30)
+      if (lowerFact.includes(cleanQuery) || cleanQuery.includes(lowerFact)) {
+        score += 30;
+      }
+
+      // 2. Token overlap (+6 per matching token)
+      const fTokenSet = new Set(factTokens);
+      for (const qt of queryTokens) {
+        if (fTokenSet.has(qt)) score += 6;
+        else if (lowerFact.includes(qt)) score += 4;
+      }
+
+      // 3. Project slug match / penalty
+      if (targetedSlug) {
+        if (f.projectSlug === targetedSlug || lowerFact.includes(targetedSlug)) {
+          score += 20;
+        } else if (f.projectSlug && f.projectSlug !== 'general' && f.projectSlug !== targetedSlug) {
+          // Suppress unrelated project facts when a specific project is queried
+          score -= 50;
+        }
+      }
+
+      // 4. Category alignment
+      if (isProjectQuery && f.category === 'project') score += 10;
+      if (isProfileQuery && (f.category === 'profile' || f.category === 'identity' || f.category === 'preference')) score += 10;
+
+      // 5. Subject key alignment
+      const querySubject = this.extractSubjectKey(cleanQuery);
+      if (querySubject && factSubject && querySubject === factSubject) {
+        score += 25;
+      }
+
+      // 6. Tags match
+      if (f.tags) {
+        for (const t of f.tags) {
+          const cleanTag = t.replace('#', '').toLowerCase();
+          if (cleanQuery.includes(cleanTag)) score += 8;
+        }
+      }
+
+      const provenance = `${f.id} [${f.category}:${f.projectSlug || 'general'}] from MEMORY.md (score: ${score})`;
+
+      return {
+        ...f,
+        relevanceScore: score,
+        provenance
+      };
+    });
+
+    scored.sort((a, b) => b.relevanceScore - a.relevanceScore);
+    return scored.filter(s => s.relevanceScore > 0).slice(0, limit);
+  }
+
+  public getRelevantFacts(query: string, limit: number = 3): string[] {
+    return this.getRelevantActiveFacts(query, limit).map(f => f.fact);
+  }
+
+  public getActiveFacts(): VaultFact[] {
+    return this.structuredFacts.filter(f => f.status === 'active');
+  }
+
+  public getAllFacts(): VaultFact[] {
+    return this.structuredFacts;
+  }
+
+  public getDailyArchive(): Map<string, string[]> {
+    return this.dailyNoteArchive;
+  }
+
+  /**
+   * Adds an index lookup entry and updates VAULT-INDEX.md table
+   */
+  public async addIndexEntry(entry: VaultIndexEntry): Promise<void> {
+    this.indexEntries.push(entry);
+    setStoreItem(`${STORAGE_PREFIX}INDEX_ENTRIES`, JSON.stringify(this.indexEntries));
+
+    const currentTable = this.getDocument('VAULT-INDEX.md');
+    const tableRow = `\n| ${entry.tag} | ${entry.category} | ${entry.source} | ${entry.summary.replace(/\|/g, '-')} | ${entry.referenceDoc} |`;
+    await this.setDocument('VAULT-INDEX.md', currentTable + tableRow);
+  }
+
+  public getIndexEntries(): VaultIndexEntry[] {
+    return this.indexEntries;
+  }
+
+  public getTotalNotesCount(): number {
+    const memoryLines = (this.getDocument('MEMORY.md').match(/\n-/g) || []).length;
+    const dailyLines = (this.getDocument('DAILY-NOTE.md').match(/\n-/g) || []).length;
+    return memoryLines + dailyLines + this.indexEntries.length;
+  }
+}
