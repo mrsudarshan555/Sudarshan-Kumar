@@ -1,4 +1,5 @@
 import { OfflineVoiceMatcher } from '../services/audio/offlineVoiceMatcher';
+import { MayraNativeBridgeClient } from '../services/bridge/MayraNativeBridgeClient';
 import { apiUrl } from '../config/api';
 
 /**
@@ -928,77 +929,26 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 }
 
 export function fallbackSpeechSynthesis(
-  text: string, 
-  lang: MayraLanguage = 'hi', 
-  onStart?: () => void, 
+  text: string,
+  lang: MayraLanguage = 'hi',
+  onStart?: () => void,
   onEnd?: () => void
 ): void {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    if (onEnd) onEnd();
+  const clean = sanitizeTextForSpeech(text);
+  if (!clean) {
+    onEnd?.();
     return;
   }
-  try {
-    window.speechSynthesis.cancel();
-    const clean = text.replace(/[*#_~`]/g, '').trim();
-    if (!clean) {
-      if (onEnd) onEnd();
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
-    utterance.rate = 0.95; // Slightly slower, more natural cadence
-    utterance.pitch = 1.08; // Warm, friendly tone
 
-    let voices = cachedSpeechVoices.length > 0 ? cachedSpeechVoices : window.speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      // Re-query voices synchronously
-      voices = window.speechSynthesis.getVoices();
-    }
-
-    // Prioritize natural, online, google, or neural voices over robotic defaults
-    const isTargetLang = (v: SpeechSynthesisVoice) => {
-      if (lang === 'hi') {
-        return v.lang.includes('hi') || v.name.toLowerCase().includes('hindi');
-      }
-      return v.lang.includes('en-IN') || v.lang.includes('en_IN') || v.name.toLowerCase().includes('india') || v.lang.startsWith('en');
-    };
-
-    const targetVoice = voices.find(v => isTargetLang(v) && (v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('neural') || v.name.toLowerCase().includes('online')))
-      || voices.find(v => isTargetLang(v) && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('samantha')))
-      || voices.find(v => isTargetLang(v))
-      || voices[0];
-
-    if (targetVoice) {
-      utterance.voice = targetVoice;
-    }
-
-    activeUtterance = utterance;
-
-    const cleanup = () => {
-      if (activeUtterance === utterance) {
-        activeUtterance = null;
-      }
-    };
-
-    utterance.onstart = () => {
-      if (onStart) onStart();
-    };
-
-    utterance.onend = () => {
-      cleanup();
-      if (onEnd) onEnd();
-    };
-
-    utterance.onerror = (e) => {
-      cleanup();
-      console.warn('[SpeechSynthesis] Utterance notice:', e);
-      if (onEnd) onEnd();
-    };
-
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    if (onEnd) onEnd();
+  // Android APK path: use native system TTS only. Browser speechSynthesis is
+  // intentionally disabled so MAYRA never sounds like a generic browser voice.
+  if (MayraNativeBridgeClient.isAvailableSync()) {
+    const started = MayraNativeBridgeClient.speakNativeTts(clean, lang, onStart, onEnd);
+    if (started) return;
   }
+
+  console.warn('[Voice Engine] Native Android TTS bridge unavailable; browser voice fallback is disabled.');
+  onEnd?.();
 }
 
 /**
