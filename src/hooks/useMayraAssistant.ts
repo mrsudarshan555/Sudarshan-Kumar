@@ -37,6 +37,8 @@ import { ScreenObserverEngine } from '../services/screen/ScreenObserverEngine';
 import { MayraEmpathyEngine } from '../services/character/mayraEmpathyEngine';
 import { UnifiedSettingsManager } from '../services/settings/UnifiedSettingsManager';
 import { AppearanceConfig } from '../types';
+import { hybridAiRouter, ActiveAiMode } from '../services/offline/hybridAiRouter';
+import { offlineMayraProvider } from '../services/offline/offlineMayraProvider';
 
 export interface UseMayraAssistantProps {
   personalConfig: UserPersonalConfig;
@@ -56,10 +58,23 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   const [currentLanguage, setCurrentLanguage] = useState<MayraLanguage>(() => getSavedLanguage());
   const [activeAgentTask, setActiveAgentTask] = useState<AgentTaskContext | null>(null);
   const [activeProactiveAlert, setActiveProactiveAlert] = useState<ProactiveAlert | null>(null);
+  const [aiMode, setAiMode] = useState<ActiveAiMode>(() => hybridAiRouter.getRecommendedMode());
+  const [isNetworkAvailable, setIsNetworkAvailable] = useState<boolean>(() => hybridAiRouter.getNetworkStatus());
+  const [isOfflineModelReady, setIsOfflineModelReady] = useState<boolean>(() => hybridAiRouter.getOfflineReadiness().isReady);
   
   const isListeningModeRef = useRef<boolean>(false);
   isListeningModeRef.current = isListeningMode;
   const isPttActiveRef = useRef<boolean>(false);
+
+  // Keep the UI/runtime aware of the real hybrid routing state.
+  useEffect(() => {
+    const unsubscribe = hybridAiRouter.subscribe((state) => {
+      setAiMode(state.currentMode);
+      setIsNetworkAvailable(state.isNetworkAvailable);
+      setIsOfflineModelReady(state.isModelReady);
+    });
+    return unsubscribe;
+  }, []);
 
   const wsRef = useRef<WebSocket | null>(null);
   const activeModelMsgIdRef = useRef<string | null>(null);
@@ -1267,6 +1282,47 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       }
     }
 
+    // Hybrid AI routing: when the device is actually offline, use the verified
+    // on-device model instead of attempting Gemini/network transport. Images stay
+    // on the existing online Vision path because this offline LLM path is text-only.
+    if (!activeImage && hybridAiRouter.getRecommendedMode() === 'offline_local') {
+      try {
+        console.log('[MAYRA HYBRID] Network unavailable -> routing to verified offline model');
+        const offlineResult = await offlineMayraProvider.generateStreamingResponse(trimmed, {
+          systemPrompt: 'You are MAYRA, a friendly and concise offline AI companion. Respond naturally in the user\'s language. Do not claim to have internet access or capabilities that are unavailable offline.',
+          onToken: (_token, accumulated) => {
+            const id = activeModelMsgIdRef.current || `msg-m-offline-${Date.now()}`;
+            activeModelMsgIdRef.current = id;
+            setMessages((prev) => {
+              const exists = prev.some((m) => m.id === id);
+              if (!exists) return [...prev, { id, sender: 'mayra', text: accumulated, timestamp: Date.now() }];
+              return prev.map((m) => m.id === id ? { ...m, text: accumulated } : m);
+            });
+          }
+        });
+
+        const reply = offlineResult.text.trim();
+        if (reply) {
+          if (!activeModelMsgIdRef.current) {
+            setMessages((prev) => [...prev, { id: `msg-m-offline-${Date.now()}`, sender: 'mayra', text: reply, timestamp: Date.now() }]);
+          }
+          MemorySyncBridge.getInstance().syncConversationTurn('MAYRA', trimmed, reply).catch(() => {});
+          // Existing speech engine decides the available local/online voice path.
+          speakText(reply, detected, handleSpeechStart, handleSpeechEnd);
+        }
+        setStatus('READY');
+      } catch (offlineError) {
+        console.warn('[MAYRA HYBRID] Offline model route failed:', offlineError);
+        const message = detected === 'hi'
+          ? 'अभी इंटरनेट उपलब्ध नहीं है और offline model भी तैयार नहीं है। Settings में Offline AI Model install कर लो।'
+          : 'Internet is unavailable and the offline model is not ready. Install an Offline AI Model from Settings.';
+        setMessages((prev) => [...prev, { id: `msg-m-offline-error-${Date.now()}`, sender: 'mayra', text: message, timestamp: Date.now() }]);
+        speakText(message, detected, handleSpeechStart, handleSpeechEnd);
+        setStatus('READY');
+      }
+      return;
+    }
+
     // Connect or reuse existing persistent WebSocket
     const ws = getOrConnectLiveWs();
     console.log(`[LIVE_WS_STATE] ReadyState: ${ws?.readyState}`);
@@ -1768,6 +1824,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     rejectAgentAction,
     cancelAgentTask,
     activeProactiveAlert,
-    dismissProactiveAlert: () => setActiveProactiveAlert(null)
+    dismissProactiveAlert: () => setActiveProactiveAlert(null),
+    aiMode,
+    isNetworkAvailable,
+    isOfflineModelReady
   };
 }
