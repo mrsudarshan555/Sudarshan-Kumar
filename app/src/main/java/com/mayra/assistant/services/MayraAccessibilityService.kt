@@ -152,6 +152,72 @@ class MayraAccessibilityService : AccessibilityService() {
     }
 
     /**
+     * Completes a WhatsApp direct-chat intent by pressing Send after the
+     * WhatsApp UI has rendered. This is intentionally bounded and only runs
+     * while the active window belongs to WhatsApp, so it cannot tap an
+     * unrelated app's button.
+     */
+    fun scheduleWhatsAppAutoSend(initialDelayMs: Long = 1200L) {
+        val delays = longArrayOf(initialDelayMs, 900L, 1200L)
+        var attempt = 0
+
+        fun trySend() {
+            val root = rootInActiveWindow
+            val activePackage = root?.packageName?.toString()
+            if (root == null || activePackage != "com.whatsapp") {
+                if (attempt < delays.lastIndex) {
+                    val delay = delays[++attempt]
+                    mainHandler.postDelayed({ trySend() }, delay)
+                } else {
+                    Log.w(TAG, "WhatsApp auto-send aborted: WhatsApp is not the active window.")
+                }
+                return
+            }
+
+            val sendNode = root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send")
+                ?.firstOrNull()
+                ?: findNodeByContentDescription(root, "Send")
+                ?: findNodeByContentDescription(root, "Send message")
+                ?: findNodeByContentDescription(root, "भेजें")
+
+            var clickable: AccessibilityNodeInfo? = sendNode
+            while (clickable != null && !clickable.isClickable) {
+                clickable = clickable.parent
+            }
+
+            if (clickable?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true) {
+                Log.i(TAG, "WhatsApp auto-send completed successfully.")
+                return
+            }
+
+            if (attempt < delays.lastIndex) {
+                val delay = delays[++attempt]
+                mainHandler.postDelayed({ trySend() }, delay)
+            } else {
+                Log.w(TAG, "WhatsApp auto-send failed: Send control was not found.")
+            }
+        }
+
+        mainHandler.postDelayed({ trySend() }, initialDelayMs.coerceAtLeast(300L))
+    }
+
+    private fun findNodeByContentDescription(root: AccessibilityNodeInfo, text: String): AccessibilityNodeInfo? {
+        val queue = ArrayDeque<AccessibilityNodeInfo>()
+        queue.add(root)
+        while (queue.isNotEmpty()) {
+            val node = queue.removeFirst()
+            val description = node.contentDescription?.toString() ?: ""
+            if (description.equals(text, ignoreCase = true) || description.contains(text, ignoreCase = true)) {
+                return node
+            }
+            for (i in 0 until node.childCount) {
+                node.getChild(i)?.let { queue.add(it) }
+            }
+        }
+        return null
+    }
+
+    /**
      * Fallback to launch any installed app by name or package
      */
     fun launchAppByNameOrPackage(context: Context, query: String): Boolean {
