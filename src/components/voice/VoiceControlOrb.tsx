@@ -209,14 +209,13 @@ export const VoiceControlOrb: React.FC<VoiceControlOrbProps> = ({
       });
     }
 
-    let animationFrameId: number;
-    let angleY = 0;
-    let angleX = 0.3;
-    let time = 0;
+    // Static MAYRA orb: keep the visual identity, remove all continuous animation.
+    const time = 0;
+    const angleY = 0;
+    const angleX = 0.3;
     const frequencyData = new Uint8Array(32);
 
-    const render = () => {
-      time += 0.022;
+    const renderStatic = () => {
       ctx.clearRect(0, 0, size, size);
 
       const centerX = size / 2;
@@ -227,49 +226,9 @@ export const VoiceControlOrb: React.FC<VoiceControlOrbProps> = ({
       const isListening = isListeningMode || status === 'LISTENING';
       const isThinking = status === 'THINKING';
 
-      // 1. Audio Activity Sampling from Analyser
-      let audioVolume = 0;
-      const analyser = getSpeechAudioAnalyser();
+      const audioVolume = isSpeaking ? 0.42 : isListening ? 0.22 : isThinking ? 0.30 : 0.08;
+      const sphereRadius = baseRadius * (1 + audioVolume * 0.35);
 
-      if (analyser && (isSpeaking || isListening) && visualizerEnabled) {
-        try {
-          analyser.getByteFrequencyData(frequencyData);
-          let sum = 0;
-          const count = Math.min(16, frequencyData.length);
-          for (let i = 0; i < count; i++) {
-            sum += frequencyData[i];
-          }
-          audioVolume = (sum / count) / 255;
-        } catch {
-          audioVolume = 0;
-        }
-      }
-
-      // Continuous dynamic curve for idle & active states
-      if (audioVolume <= 0.02) {
-        if (isSpeaking) {
-          audioVolume = 0.38 + 0.42 * Math.abs(Math.sin(time * 3.6));
-        } else if (isListening) {
-          audioVolume = 0.18 + 0.22 * Math.abs(Math.sin(time * 2.4));
-        } else if (isThinking) {
-          audioVolume = 0.26 + 0.32 * Math.abs(Math.sin(time * 4.2));
-        } else {
-          // Subtle continuous idle breathing and rotation even when idle
-          audioVolume = 0.07 + 0.07 * Math.sin(time * 1.6);
-        }
-      }
-
-      // 2. Continuous 3D Rotation Speeds (Active in idle state as well)
-      const rotSpeedY = isThinking ? 0.048 : isSpeaking ? 0.034 : isListening ? 0.025 : 0.014;
-      const rotSpeedX = isThinking ? 0.022 : isSpeaking ? 0.015 : 0.009;
-
-      angleY += rotSpeedY;
-      angleX += rotSpeedX;
-
-      // 3. Radius Pulsation
-      const sphereRadius = baseRadius * (1 + audioVolume * 0.35 + Math.sin(time * 2.2) * 0.04);
-
-      // 4. Central Multi-Color Blended Radiant Glow
       const primaryColor = palette[0] || { r: 34, g: 211, b: 238 };
       const secondaryColor = palette[1] || { r: 168, g: 85, b: 247 };
       const tertiaryColor = palette[2] || { r: 244, g: 114, b: 182 };
@@ -278,95 +237,63 @@ export const VoiceControlOrb: React.FC<VoiceControlOrbProps> = ({
         centerX, centerY, 0,
         centerX, centerY, sphereRadius * 1.45
       );
-
       const auraIntensity = isSpeaking ? 1.0 : isListening ? 0.85 : isThinking ? 0.95 : 0.68;
-
       auraGradient.addColorStop(0.0, `rgba(255, 255, 255, ${0.45 * auraIntensity})`);
       auraGradient.addColorStop(0.28, `rgba(${primaryColor.r}, ${primaryColor.g}, ${primaryColor.b}, ${0.36 * auraIntensity})`);
       auraGradient.addColorStop(0.55, `rgba(${secondaryColor.r}, ${secondaryColor.g}, ${secondaryColor.b}, ${0.28 * auraIntensity})`);
       auraGradient.addColorStop(0.78, `rgba(${tertiaryColor.r}, ${tertiaryColor.g}, ${tertiaryColor.b}, ${0.16 * auraIntensity})`);
       auraGradient.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
-
       ctx.fillStyle = auraGradient;
       ctx.beginPath();
       ctx.arc(centerX, centerY, sphereRadius * 1.45, 0, Math.PI * 2);
       ctx.fill();
 
-      // 5. 3D Spherical Transform & Depth Calculation
       const cosY = Math.cos(angleY);
       const sinY = Math.sin(angleY);
       const cosX = Math.cos(angleX);
       const sinX = Math.sin(angleX);
 
       const transformedList = particles.map((p) => {
-        const r = sphereRadius * (1 + p.radiusOffset + Math.sin(time * p.speed + p.phase) * (0.05 + audioVolume * 0.12));
-
+        const r = sphereRadius * (1 + p.radiusOffset);
         const px = p.x0 * r;
         const py = p.y0 * r;
         const pz = p.z0 * r;
-
-        // Rotate Y
         const x1 = px * cosY - pz * sinY;
         const z1 = px * sinY + pz * cosY;
-
-        // Rotate X
         const y2 = py * cosX - z1 * sinX;
         const z2 = py * sinX + z1 * cosX;
-
-        // Perspective projection
         const focal = size * 1.85;
         const denom = focal + z2;
         const scale = denom > 0.1 ? focal / denom : 0.01;
-        const screenX = centerX + x1 * scale;
-        const screenY = centerY + y2 * scale;
-
-        const normalizedZ = (z2 / (sphereRadius * 1.2) + 1) * 0.5;
-        const alpha = Math.max(0.18, Math.min(1.0, normalizedZ));
-
         return {
           p,
-          screenX,
-          screenY,
+          screenX: centerX + x1 * scale,
+          screenY: centerY + y2 * scale,
           z: z2,
           scale: Math.max(0.01, scale),
-          alpha
+          alpha: Math.max(0.18, Math.min(1.0, (z2 / (sphereRadius * 1.2) + 1) * 0.5))
         };
       });
 
-      // Sort back-to-front
       transformedList.sort((a, b) => a.z - b.z);
-
-      // 6. Draw Multi-Color Luminous Particles
-      for (let i = 0; i < transformedList.length; i++) {
-        const item = transformedList[i];
+      for (const item of transformedList) {
         const p = item.p;
         const color = palette[p.colorIdx % palette.length];
         const particleSize = Math.max(0.75, p.baseSize * item.scale * (1 + audioVolume * 0.35));
-        const alpha = item.alpha;
-
-        // Draw soft glow aura around foreground particles
         if (item.z > -sphereRadius * 0.2) {
-          ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha * 0.3})`;
+          ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${item.alpha * 0.3})`;
           ctx.beginPath();
           ctx.arc(item.screenX, item.screenY, Math.max(0.5, particleSize * 2.2), 0, Math.PI * 2);
           ctx.fill();
         }
-
-        // Core bright particle dot
-        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${Math.min(1, alpha * 1.15)})`;
+        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${Math.min(1, item.alpha * 1.15)})`;
         ctx.beginPath();
         ctx.arc(item.screenX, item.screenY, Math.max(0.5, particleSize), 0, Math.PI * 2);
         ctx.fill();
       }
-
-      animationFrameId = requestAnimationFrame(render);
     };
 
-    animationFrameId = requestAnimationFrame(render);
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
+    renderStatic();
   }, [status, isListeningMode, size, appearanceConfig]);
 
   return (
