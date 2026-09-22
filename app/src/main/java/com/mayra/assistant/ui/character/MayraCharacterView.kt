@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -67,17 +66,6 @@ fun MayraCharacterView(
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     val context = LocalContext.current
 
-    // Breathing Animation
-    val infiniteTransition = rememberInfiniteTransition(label = "CharacterBreathing")
-    val breathScale by infiniteTransition.animateFloat(
-        initialValue = 0.98f,
-        targetValue = 1.02f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "BreathScale"
-    )
 
     // Sync transform changes to WebGL canvas
     LaunchedEffect(transform.rotationY, transform.pitchX, transform.zoom) {
@@ -351,22 +339,25 @@ fun MayraCharacterView(
                                         }
                                     };
 
-                                    let clock = new THREE.Clock();
-                                    function animate() {
-                                        requestAnimationFrame(animate);
-                                        const elapsedTime = clock.getElapsedTime();
-
-                                        // Smooth lerp transform
-                                        characterGroup.rotation.y += (targetRotY - characterGroup.rotation.y) * 0.15;
-                                        characterGroup.rotation.x += (targetPitchX - characterGroup.rotation.x) * 0.15;
-                                        
-                                        // Subtle idle floating & breathing
-                                        characterGroup.position.y = -0.2 + Math.sin(elapsedTime * 2.0) * 0.03;
-                                        ringMesh.rotation.z += 0.02;
-
+                                    function renderStatic() {
+                                        // Static character mode: no idle floating, breathing, ring rotation,
+                                        // or requestAnimationFrame loop. User-requested motion-free UI.
+                                        characterGroup.rotation.y = targetRotY;
+                                        characterGroup.rotation.x = targetPitchX;
+                                        characterGroup.position.y = -0.2;
+                                        ringMesh.rotation.z = 0;
                                         renderer.render(scene, camera);
                                     }
-                                    animate();
+                                    renderStatic();
+
+                                    window.updateTransform = function(rotY, pitchX, zoom) {
+                                        targetRotY = (rotY * Math.PI) / 180;
+                                        targetPitchX = (pitchX * Math.PI) / 180;
+                                        targetZoom = zoom;
+                                        characterGroup.rotation.y = targetRotY;
+                                        characterGroup.rotation.x = targetPitchX;
+                                        renderer.render(scene, camera);
+                                    };
 
                                     window.addEventListener('resize', () => {
                                         camera.aspect = container.clientWidth / container.clientHeight;
@@ -392,8 +383,8 @@ fun MayraCharacterView(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        scaleX = transform.zoom * breathScale
-                        scaleY = transform.zoom * breathScale
+                        scaleX = transform.zoom
+                        scaleY = transform.zoom
                     }
             )
         }
