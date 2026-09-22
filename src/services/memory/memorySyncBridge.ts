@@ -293,6 +293,10 @@ export class MemorySyncBridge {
       lines.push(`\n### Active Job Procedure (${relevantJob.name}):`);
       lines.push(`- Procedure: ${relevantJob.procedure}`);
       lines.push(`- Quality Bar: ${relevantJob.qualityBar}`);
+      if (relevantJob.lessons && relevantJob.lessons.length > 0) {
+        lines.push(`- Learned Corrections / Lessons:`);
+        relevantJob.lessons.slice(0, 5).forEach(lesson => lines.push(`  * ${lesson}`));
+      }
 
       // Boot-Chain Runtime Resolution & Priming
       const bootChainSnippets = this.vault.resolveJobBootChain(relevantJob);
