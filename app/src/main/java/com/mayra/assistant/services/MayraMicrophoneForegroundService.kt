@@ -11,6 +11,9 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.AutomaticGainControl
+import android.media.audiofx.NoiseSuppressor
 import android.media.MediaRecorder
 import android.media.RingtoneManager
 import android.net.ConnectivityManager
@@ -137,6 +140,14 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
 
     private var recordingThread: Thread? = null
     private var audioRecord: AudioRecord? = null
+    private var echoCanceler: AcousticEchoCanceler? = null
+    private var automaticGainControl: AutomaticGainControl? = null
+    private var noiseSuppressor: NoiseSuppressor? = null
+
+    // Far-field voice front-end: short PCM windows keep wake latency low while
+    // Android audio effects improve speech pickup in real rooms.
+    private val wakeSampleRate = 16000
+    private val wakeFrameSamples = 512
 
     // Acoustic clap-to-wake detector. Requires two distinct sharp peaks so normal
     // speech/background noise is much less likely to trigger MAYRA.
@@ -486,11 +497,11 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
         if (isRecording) return
 
         try {
-            val sampleRate = 16000
+            val sampleRate = wakeSampleRate
             val channelConfig = AudioFormat.CHANNEL_IN_MONO
             val audioFormat = AudioFormat.ENCODING_PCM_16BIT
             val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
-            val bufferSize = (minBufferSize * 2).coerceAtLeast(2048)
+            val bufferSize = (minBufferSize * 2).coerceAtLeast(wakeFrameSamples * 2)
 
             audioRecord = AudioRecord(
                 MediaRecorder.AudioSource.VOICE_RECOGNITION,
@@ -503,6 +514,31 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
             if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
                 Log.w(TAG, "AudioRecord initialization note or microphone shared")
                 return
+            }
+
+            val sessionId = audioRecord?.audioSessionId ?: 0
+            if (sessionId != 0) {
+                try {
+                    if (AcousticEchoCanceler.isAvailable()) {
+                        echoCanceler = AcousticEchoCanceler.create(sessionId)?.apply { enabled = true }
+                    }
+                } catch (ex: Exception) {
+                    Log.w(TAG, "AEC unavailable: " + ex.message)
+                }
+                try {
+                    if (AutomaticGainControl.isAvailable()) {
+                        automaticGainControl = AutomaticGainControl.create(sessionId)?.apply { enabled = true }
+                    }
+                } catch (ex: Exception) {
+                    Log.w(TAG, "AGC unavailable: " + ex.message)
+                }
+                try {
+                    if (NoiseSuppressor.isAvailable()) {
+                        noiseSuppressor = NoiseSuppressor.create(sessionId)?.apply { enabled = true }
+                    }
+                } catch (ex: Exception) {
+                    Log.w(TAG, "Noise suppression unavailable: " + ex.message)
+                }
             }
 
             audioRecord?.startRecording()
@@ -591,6 +627,13 @@ class MayraMicrophoneForegroundService : Service(), TextToSpeech.OnInitListener 
         try {
             recordingThread?.interrupt()
             recordingThread = null
+
+            try { echoCanceler?.release() } catch (_: Exception) {}
+            try { automaticGainControl?.release() } catch (_: Exception) {}
+            try { noiseSuppressor?.release() } catch (_: Exception) {}
+            echoCanceler = null
+            automaticGainControl = null
+            noiseSuppressor = null
 
             audioRecord?.stop()
             audioRecord?.release()
