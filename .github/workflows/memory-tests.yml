@@ -1,0 +1,32 @@
+name: MAYRA Memory Vault Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  memory-tests:
+    name: Verify MAYRA Memory Vault
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps --include=optional
+
+      - name: Run Memory Vault Integration Suite
+        run: npx tsx scripts/run-memory-vault-tests.ts
