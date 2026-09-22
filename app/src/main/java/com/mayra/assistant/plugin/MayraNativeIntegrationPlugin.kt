@@ -55,8 +55,9 @@ class MayraNativeIntegrationPlugin : Plugin() {
             notifyListeners("onIncomingNotification", event)
         }
 
-        // Bind offline wake word listener to JavaScript bridge
-        MayraMicrophoneForegroundService.onWakeWordDetectedListener = { phrase, command ->
+        // Register instead of assigning one global callback so WebView and Capacitor
+        // both receive every wake event.
+        MayraMicrophoneForegroundService.registerWakeWordListener { phrase, command ->
             val event = JSObject().apply {
                 put("phrase", phrase)
                 put("command", command)
