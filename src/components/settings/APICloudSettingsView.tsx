@@ -234,7 +234,7 @@ export const APICloudSettingsView: React.FC<APICloudSettingsViewProps> = ({
             Real-time web search and live grounding queries for factual answers.
           </p>
           <button
-            onClick={() => alert('Configuring Tavily Deep Research provider...')}
+            onClick={() => setIsSaved(false)}
             className="w-full py-2.5 px-4 rounded-xl bg-[#181922] hover:bg-[#20222f] border border-white/10 text-xs font-bold text-gray-200 transition-colors cursor-pointer"
           >
             Configure Deep Research Settings
