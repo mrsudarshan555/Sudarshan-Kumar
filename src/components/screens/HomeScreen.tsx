@@ -493,8 +493,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         />
       )}
 
-      {/* 3. MINIMAL TOP FLOATING HEADER (Clean & Uncluttered with animated icons) */}
-      <div className="relative z-20 w-full px-3.5 pt-2 flex flex-col gap-1.5 pointer-events-auto">
+      {/* 3. Legacy Home header is intentionally hidden; AndroidPhoneFrame owns the unified top navigation. */}
+      <div className="hidden">
         <header className="w-full flex items-center justify-between">
           {/* Left: MAYRA Branding with Account/Mode Switcher Dropdown */}
           <div className="relative flex items-center gap-1.5 min-w-0">
