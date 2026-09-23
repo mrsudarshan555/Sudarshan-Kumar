@@ -228,6 +228,24 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
     setActiveTab(newTab);
   };
 
+  const planTier = personalConfig?.subscription?.tier || 'free';
+  const currentPlan = {
+    label: planTier === 'elite_pro' ? 'MAX' : planTier === 'premium' ? 'PLUS' : planTier === 'basic' ? 'BASIC' : 'FREE'
+  };
+  const planLabel = currentPlan.label;
+
+  const navigateFromDrawer = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    setIsSettingsOpen(false);
+    setIsSideDrawerOpen(false);
+  };
+
+  const openDrawerSettings = (screen: SettingsSubScreen) => {
+    setCurrentSubScreen(screen);
+    setIsSettingsOpen(true);
+    setIsSideDrawerOpen(false);
+  };
+
   const isDark = appearanceConfig?.darkMode ?? true;
 
   const handleOpenSettingsWithSpring = () => {
@@ -420,13 +438,13 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="px-2.5 py-1 rounded-full bg-white/[0.07] border border-white/10 text-[10px] font-semibold text-slate-200">
-              {currentPlan.label} · {currentPlan.price}
+              {currentPlan.label}
             </span>
             <button onClick={() => openDrawerSettings('subscription_plans')} className="px-2 py-1 rounded-full text-[10px] text-slate-300 hover:bg-white/10" title="Plan and credits">
-              {currentPlan.credits}
+              Plan
             </button>
             <button onClick={() => setIsSideDrawerOpen(true)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:bg-white/10" aria-label="Open menu">
-              <MessageCircleMore className="w-4 h-4" strokeWidth={1.8} />
+              <Menu className="w-4 h-4" strokeWidth={1.8} />
             </button>
           </div>
         </div>
