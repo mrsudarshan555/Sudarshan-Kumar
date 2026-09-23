@@ -257,6 +257,27 @@ export const VOICE_CATALOG: VoiceItem[] = [
   }
 ];
 
+
+/**
+ * OpenAI speech voices supported by the configured OpenAI TTS route.
+ * Keep the list separate from Gemini so provider switching never mixes voice IDs.
+ */
+export const OPENAI_VOICE_CATALOG: VoiceItem[] = [
+  { id: 'marin', name: 'Marin', gender: 'Female', tone: 'Natural & Expressive', category: 'OpenAI', description: 'Natural OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai', badge: 'OpenAI Default' },
+  { id: 'cedar', name: 'Cedar', gender: 'Male', tone: 'Natural & Clear', category: 'OpenAI', description: 'Natural OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'alloy', name: 'Alloy', gender: 'Male', tone: 'Balanced', category: 'OpenAI', description: 'Balanced OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'ash', name: 'Ash', gender: 'Male', tone: 'Warm & Conversational', category: 'OpenAI', description: 'Warm OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'ballad', name: 'Ballad', gender: 'Male', tone: 'Smooth', category: 'OpenAI', description: 'Smooth OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'coral', name: 'Coral', gender: 'Female', tone: 'Warm', category: 'OpenAI', description: 'Warm OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'echo', name: 'Echo', gender: 'Male', tone: 'Clear', category: 'OpenAI', description: 'Clear OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'fable', name: 'Fable', gender: 'Male', tone: 'Expressive', category: 'OpenAI', description: 'Expressive OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'onyx', name: 'Onyx', gender: 'Male', tone: 'Deep', category: 'OpenAI', description: 'Deep OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'nova', name: 'Nova', gender: 'Female', tone: 'Bright', category: 'OpenAI', description: 'Bright OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'sage', name: 'Sage', gender: 'Female', tone: 'Calm', category: 'OpenAI', description: 'Calm OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'shimmer', name: 'Shimmer', gender: 'Female', tone: 'Soft', category: 'OpenAI', description: 'Soft OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+  { id: 'verse', name: 'Verse', gender: 'Male', tone: 'Dynamic', category: 'OpenAI', description: 'Dynamic OpenAI voice.', mtManagerMayaFile: '', mtManagerFridayFile: '', sampleTextEn: 'Hello! I am ready to help you.', sampleTextHi: 'नमस्ते! मैं आपकी मदद करने के लिए तैयार हूँ।', defaultPitch: 1, defaultSpeed: 1, provider: 'openai' },
+];
+
 export class VoiceCatalogManager {
   private static instance: VoiceCatalogManager | null = null;
 
