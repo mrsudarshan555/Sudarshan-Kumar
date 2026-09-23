@@ -6,6 +6,7 @@
  */
 
 export type VoiceGender = 'Female' | 'Male';
+export type VoiceProvider = 'gemini' | 'openai';
 
 export interface VoiceItem {
   id: string;
@@ -21,6 +22,7 @@ export interface VoiceItem {
   defaultPitch: number;
   defaultSpeed: number;
   badge?: string;
+  provider?: VoiceProvider;
 }
 
 export const VOICE_CATALOG: VoiceItem[] = [
@@ -266,7 +268,7 @@ export class VoiceCatalogManager {
   }
 
   public getAllVoices(): VoiceItem[] {
-    return VOICE_CATALOG;
+    return [...VOICE_CATALOG, ...OPENAI_VOICE_CATALOG];
   }
 
   public getVoicesByGender(gender: VoiceGender): VoiceItem[] {
