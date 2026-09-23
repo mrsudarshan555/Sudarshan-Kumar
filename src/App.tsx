@@ -38,54 +38,35 @@ export default function App() {
   const [splashFading, setSplashFading] = useState(false);
 
   useEffect(() => {
-    // Initialize unified shared markdown memory vault
-    MemoryVaultManager.getInstance().initializeVault().catch(() => {});
+    // Startup must never wait for remote/network-bound character resources.
+    // The native-like shell becomes interactive immediately; heavy engines warm
+    // up independently in the background.
+    MemoryVaultManager.getInstance().initializeVault().catch((error) => {
+      console.warn('[MAYRA Startup] Memory vault warm-up deferred:', error);
+    });
 
-    let modelLoaded = (typeof window !== 'undefined' && (window as any).__MAYRA_MODEL_READY__ === true);
-    let minTimePassed = false;
-    let isFadingTriggered = false;
+    let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+    const startedAt = performance.now();
 
-    const tryDismissSplash = () => {
-      if (modelLoaded && minTimePassed && !isFadingTriggered) {
-        isFadingTriggered = true;
+    // Keep the splash only as a very short visual transition. Do NOT block
+    // startup on PMX/WebGL/model loading.
+    const dismissSplash = () => {
+      if (fadeTimer) return;
+      fadeTimer = setTimeout(() => {
         setSplashFading(true);
         setTimeout(() => {
           setIsSplashVisible(false);
-          // Check for first launch onboarding
-          if (typeof window !== 'undefined') {
-            const completed = localStorage.getItem('mayra_onboarding_completed');
-            if (!completed) {
-              setIsOnboardingOpen(true);
-            }
+          if (typeof window !== 'undefined' && !localStorage.getItem('mayra_onboarding_completed')) {
+            setIsOnboardingOpen(true);
           }
-        }, 250);
-      }
+        }, 120);
+      }, Math.max(0, 120 - (performance.now() - startedAt)));
     };
 
-    // Fast startup minimum display duration (200ms)
-    const minTimer = setTimeout(() => {
-      minTimePassed = true;
-      tryDismissSplash();
-    }, 200);
-
-    // Event fired strictly when the 3D character mesh has loaded and rendered its frames
-    const onModelLoaded = () => {
-      modelLoaded = true;
-      tryDismissSplash();
-    };
-
-    window.addEventListener('mayra_model_loaded', onModelLoaded);
-
-    // Safety fallback only after 45s if network is completely broken/offline
-    const offlineTimeout = setTimeout(() => {
-      modelLoaded = true;
-      tryDismissSplash();
-    }, 45000);
+    dismissSplash();
 
     return () => {
-      clearTimeout(minTimer);
-      clearTimeout(offlineTimeout);
-      window.removeEventListener('mayra_model_loaded', onModelLoaded);
+      if (fadeTimer) clearTimeout(fadeTimer);
     };
   }, []);
 
