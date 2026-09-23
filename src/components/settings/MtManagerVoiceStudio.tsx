@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Square, Check, Volume2, Mic, Sparkles, Sliders, Music, Radio } from 'lucide-react';
-import { VOICE_CATALOG, OPENAI_VOICE_CATALOG, VoiceItem, VoiceGender from '../../services/voice/voiceCatalog';
+import { VOICE_CATALOG, OPENAI_VOICE_CATALOG, VoiceItem, VoiceGender } from '../../services/voice/voiceCatalog';
 import { speakText, stopCurrentSpeech } from '../../utils/speechEngine';
 import { AssistantConfig, AssistantMode } from '../../types';
 
@@ -69,7 +69,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
       null,
       v.id,
       provider,
-      provider === 'openai' ? undefined : undefined
+      provider === 'openai' ? (() => { try { const raw = localStorage.getItem('mayra_personal_config'); return raw ? JSON.parse(raw).openaiApiKey : undefined; } catch { return undefined; } })() : (() => { try { const raw = localStorage.getItem('mayra_personal_config'); return raw ? JSON.parse(raw).geminiApiKey : undefined; } catch { return undefined; } })()
     );
   };
 
