@@ -426,27 +426,34 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       
       {/* Unified MAYRA top bar: same on Home, Chat, Camera and Memory. */}
       {!isSettingsOpen && (
-        <div className="h-14 px-3.5 flex items-center justify-between border-b border-white/10 bg-black/45 backdrop-blur-xl z-30 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <button onClick={() => setIsSideDrawerOpen(true)} className="w-9 h-9 rounded-full flex items-center justify-center text-white hover:bg-white/10" aria-label="Open MAYRA menu">
-              <Menu className="w-5 h-5" strokeWidth={1.8} />
-            </button>
-            <button onClick={() => navigateFromDrawer('home')} className="flex items-center gap-2 min-w-0">
-              <MayraLogo size={25} showGlow={false} iconVariant={appearanceConfig.launcherIconVariant} />
-              <span className="font-sans font-semibold text-sm text-white truncate">MAYRA</span>
-            </button>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="px-2.5 py-1 rounded-full bg-white/[0.07] border border-white/10 text-[10px] font-semibold text-slate-200">
-              {currentPlan.label}
+        <div className="h-14 px-3 flex items-center justify-between border-b border-white/10 bg-[#070312]/95 z-30 shrink-0">
+          <button onClick={() => navigateFromDrawer('home')} className="flex items-center gap-2 min-w-0" aria-label="MAYRA Home">
+            <MayraLogo size={28} showGlow={false} iconVariant={appearanceConfig.launcherIconVariant} />
+            <span className="font-semibold text-sm text-white tracking-tight">MAYRA</span>
+            <span className="px-2 py-1 rounded-full bg-white/[0.07] border border-white/10 text-[9px] font-semibold text-slate-200">
+              {planLabel}
             </span>
-            <button onClick={() => openDrawerSettings('subscription_plans')} className="px-2 py-1 rounded-full text-[10px] text-slate-300 hover:bg-white/10" title="Plan and credits">
-              Plan
-            </button>
-            <button onClick={() => setIsSideDrawerOpen(true)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:bg-white/10" aria-label="Open menu">
-              <Menu className="w-4 h-4" strokeWidth={1.8} />
-            </button>
-          </div>
+          </button>
+
+          <nav className="flex items-center gap-1 shrink-0" aria-label="MAYRA navigation">
+            {[
+              { id: 'home' as ActiveTab, icon: Home, label: 'Home' },
+              { id: 'scan' as ActiveTab, icon: Camera, label: 'Camera' },
+              { id: 'memories' as ActiveTab, icon: Brain, label: 'Memory' },
+              { id: 'chat' as ActiveTab, icon: MessageCircleMore, label: 'Chat' }
+            ].map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => navigateFromDrawer(id)}
+                aria-label={label}
+                title={label}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeTab === id ? 'bg-white/12 text-white' : 'text-slate-400 hover:bg-white/[0.07] hover:text-white'}`}
+              >
+                <Icon className="w-[19px] h-[19px]" strokeWidth={activeTab === id ? 2.2 : 1.8} />
+              </button>
+            ))}
+          </nav>
         </div>
       )}
 
