@@ -76,7 +76,7 @@ export function createSafeWebGLRenderer(canvas: HTMLCanvasElement): THREE.WebGLR
     {
       canvas,
       alpha: true,
-      antialias: true,
+      antialias: false,
       powerPreference: 'default',
       failIfMajorPerformanceCaveat: false
     },
