@@ -1033,7 +1033,8 @@ export async function speakText(
             language: lang, 
             voiceName: effectiveVoice, 
             assistant: 'mayra',
-            apiKey: getStoredApiKey()
+            apiKey: provider === 'openai' ? (() => { try { const raw = localStorage.getItem('mayra_personal_config'); return raw ? JSON.parse(raw).openaiApiKey : undefined; } catch { return undefined; } })() : getStoredApiKey(),
+            provider
           }),
           signal: controller.signal
         });
