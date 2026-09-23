@@ -29,7 +29,6 @@ import { useLanguage } from '../services/i18n/languageContext';
 import { MarkLIIUndoToast } from './MarkLIIUndoToast';
 import { MarkLIIConfirmationModal } from './MarkLIIConfirmationModal';
 import { getThemePreset } from '../utils/themePresets';
-import { MayraErrorBoundary } from './common/MayraErrorBoundary';
 import { useAppLock } from './security/useAppLock';
 import { AppLockModal } from './security/AppLockModal';
 import { RoutinesModal } from './routines/RoutinesModal';
@@ -502,10 +501,9 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
         </>
       )}
 
-      {/* Screen Body Viewport with Fast Solid Native Transitions & Error Boundary */}
+      {/* Screen Body Viewport with Fast Solid Native Transitions */}
       <div className="flex-1 flex flex-col relative overflow-hidden min-h-0 bg-[#090a0f]">
-        <MayraErrorBoundary>
-          <AnimatePresence initial={false} custom={direction}>
+        <AnimatePresence initial={false} custom={direction}>
             {/* Settings Full View */}
             {isSettingsOpen ? (
               <motion.div
@@ -645,8 +643,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                 )}
               </motion.div>
             )}
-          </AnimatePresence>
-        </MayraErrorBoundary>
+        </AnimatePresence>
       </div>
 
       {/* Routines / Smart Shortcuts Modal */}
