@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AssistantStatus, UserPersonalConfig, AssistantConfig, PermissionItem, CharacterModelMetadata, ChatMessage, AppearanceConfig } from '../../types';
 import { MayraAvatar } from '../character/MayraAvatar';
 import { MayraOrb, ORB_STYLES, normalizeOrbStyle } from '../character/MayraOrb';
-import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
 import { useCharacterController } from '../../hooks/useCharacterController';
 import { useBarehandsGesture } from '../../hooks/useBarehandsGesture';
 import { BarehandsCameraOverlay } from '../character/BarehandsCameraOverlay';
@@ -13,7 +12,6 @@ import { ApkExportModal } from '../dev/ApkExportModal';
 import { MayraLogo } from '../common/MayraLogo';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
-import { getDynamicSuggestions } from '../../utils/dynamicSuggestions';
 import { StagePhysicsEngine } from '../../services/stage/stagePhysicsEngine';
 import { UserAccount } from '../../types/auth';
 import { ScreenShareHUD } from './ScreenShareHUD';
@@ -322,75 +320,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     );
   }, [messages, status, isProactivePromptActive]);
 
-  const getAssistantMessage = () => {
-    switch (status) {
-      case 'SPEAKING':
-        return 'Speaking response...';
-      case 'THINKING':
-        return 'Reasoning...';
-      case 'LISTENING':
-        return 'Listening... Speak naturally';
-      case 'INTERRUPTED':
-        return 'Interrupted. Listening to you...';
-      case 'ERROR':
-        return 'Microphone unavailable';
-      case 'READY':
-      default: {
-        if (isProactivePromptActive) {
-          const name = personalConfig.preferredName || personalConfig.fullName || 'Zafer';
-          return `${name}, I'm right here if you need anything.`;
-        }
-        const name = personalConfig.preferredName || personalConfig.fullName || 'Zafer';
-        return `Hi ${name}, what should we do today?`;
-      }
-    }
-  };
-
-  const getStatusBadge = () => {
-    switch (status) {
-      case 'SPEAKING':
-        return {
-          label: 'Speaking...',
-          textColor: 'text-emerald-300',
-          dotColor: 'bg-emerald-400'
-        };
-      case 'LISTENING':
-        return {
-          label: 'Listening...',
-          textColor: 'text-cyan-300',
-          dotColor: 'bg-cyan-400'
-        };
-      case 'THINKING':
-        return {
-          label: 'Thinking...',
-          textColor: 'text-amber-300',
-          dotColor: 'bg-amber-400'
-        };
-      case 'READY':
-      default:
-        return {
-          label: 'Online',
-          textColor: 'text-emerald-300',
-          dotColor: 'bg-emerald-400'
-        };
-    }
-  };
-
-  const statusBadge = getStatusBadge();
   const userName = personalConfig.preferredName || personalConfig.fullName || 'Zafer';
-
-  // Dynamic Suggestion Rotation Engine
-  const [rotationSeed, setRotationSeed] = useState<number>(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotationSeed(prev => (prev + 1) % 10);
-    }, 25000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const quickPrompts = useMemo(() => {
-    return getDynamicSuggestions(messages, (assistantConfig as any)?.language || 'en', rotationSeed);
-  }, [messages, assistantConfig, rotationSeed]);
 
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
   const [keyboardOffset, setKeyboardOffset] = useState<number>(0);
