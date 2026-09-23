@@ -31,15 +31,54 @@ export class MayraErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+    // A state-only reset does not remount a crashed React subtree. Force a real
+    // WebView/page reload so transient render/runtime state is recreated cleanly.
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.removeItem('mayra_error_boundary_recovery_attempted');
+      }
+    } catch {
+      // Ignore storage failures.
+    }
+
     if (this.props.onReset) {
       this.props.onReset();
     }
+
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+      return;
+    }
+
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   private handleReload = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
+
+  public componentDidMount() {
+    // Clear a one-time automatic recovery marker only after the app has stayed
+    // mounted for a few seconds. This prevents an endless reload loop while
+    // still recovering from transient WebView/WebGL startup faults.
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.setTimeout(() => {
+          try {
+            window.sessionStorage.removeItem('mayra_error_boundary_recovery_attempted');
+          } catch {
+            // Ignore storage failures.
+          }
+        }, 10000);
+      }
+    } catch {
+      // Ignore storage failures.
+    }
+  }
 
   public render() {
     if (this.state.hasError) {
