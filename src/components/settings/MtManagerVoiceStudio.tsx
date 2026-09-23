@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Square, Check, Volume2, Mic, Sparkles, Sliders, Music, Radio } from 'lucide-react';
-import { VOICE_CATALOG, VoiceItem, VoiceGender } from '../../services/voice/voiceCatalog';
+import { VOICE_CATALOG, OPENAI_VOICE_CATALOG, VoiceItem, VoiceGender from '../../services/voice/voiceCatalog';
 import { speakText, stopCurrentSpeech } from '../../utils/speechEngine';
 import { AssistantConfig, AssistantMode } from '../../types';
 
@@ -20,13 +20,15 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
   );
   const [genderFilter, setGenderFilter] = useState<'All' | VoiceGender>('All');
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
+  const provider = config.voiceProvider || 'gemini';
+  const providerVoices = provider === 'openai' ? OPENAI_VOICE_CATALOG : VOICE_CATALOG;
 
   const currentMayraVoice = config.mayraVoice || config.voiceProfile || 'Aoede';
   const currentStonicxVoice = config.stonicxVoice || 'Charon';
 
   const selectedVoiceId = targetAssistant === 'mayra' ? currentMayraVoice : currentStonicxVoice;
 
-  const filteredVoices = VOICE_CATALOG.filter((v) => {
+  const filteredVoices = providerVoices.filter((v) => {
     if (genderFilter === 'All') return true;
     return v.gender === genderFilter;
   });
@@ -65,7 +67,9 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
       () => setPreviewingVoiceId(v.id),
       () => setPreviewingVoiceId(null),
       null,
-      v.id
+      v.id,
+      provider,
+      provider === 'openai' ? undefined : undefined
     );
   };
 
@@ -102,6 +106,16 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
         </button>
       </div>
 
+
+      <div className="flex items-center gap-2 p-1 bg-white/[0.06] rounded-2xl border border-white/10">
+        {(['gemini','openai'] as const).map((p) => (
+          <button key={p} type="button" onClick={() => onChange({ voiceProvider: p })}
+            className={`flex-1 px-3 py-2 rounded-xl text-[11px] font-bold ${provider === p ? 'bg-white/15 text-white' : 'text-purple-200/60'}`}>
+            {p === 'gemini' ? 'Gemini — Aoede' : 'OpenAI — Marin'}
+          </button>
+        ))}
+      </div>
+
       {/* Gender Filters (All, Female, Male) - Inspired by MT Manager file classification */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 p-1 bg-white/[0.06] backdrop-blur-xl rounded-2xl border border-white/10">
@@ -132,7 +146,7 @@ export const MtManagerVoiceStudio: React.FC<MtManagerVoiceStudioProps> = ({
 
         <div className="text-[10px] font-sans text-purple-200/70 flex items-center gap-1">
           <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
-          <span>16 Neural Voices</span>
+          <span>{providerVoices.length} Voices</span>
         </div>
       </div>
 
