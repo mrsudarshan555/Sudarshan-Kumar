@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChatMessage, AssistantStatus } from '../../types';
 import { MayraLogo } from '../common/MayraLogo';
