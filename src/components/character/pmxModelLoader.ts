@@ -112,21 +112,19 @@ export function resolveTextureUrl(pathOrName: string, customMap?: Record<string,
  * Helper to fetch a URL as ArrayBuffer with failover and integrity check
  */
 async function fetchModelBuffer(): Promise<ArrayBuffer> {
-  const ts = Date.now();
+  // The PMX URL is versioned, so let the browser cache the local asset.
+  // Avoiding cache-busting requests makes repeat launches much faster.
   const candidateUrls = [
     PMX_MODEL_URL,
-    `/models/model.pmx?bust=${ts}`,
-    `/api/model/evelyn.glb?bust=${ts}`,
-    LOCAL_PMX_FALLBACK,
-    '/models/model.pmx'
+    '/models/model.pmx',
+    LOCAL_PMX_FALLBACK
   ];
 
   let lastError: any = null;
   for (const url of candidateUrls) {
     try {
       const response = await fetch(url, {
-        cache: 'reload',
-        headers: { 'Cache-Control': 'no-cache, no-store' }
+        cache: 'force-cache'
       });
       if (response.ok) {
         const buffer = await response.arrayBuffer();
@@ -135,18 +133,10 @@ async function fetchModelBuffer(): Promise<ArrayBuffer> {
           const header = new Uint8Array(buffer.slice(0, 4));
           const magic = String.fromCharCode(...header);
           if (magic === 'PMX ') {
-            // Verify parseability before returning
-            try {
-              const testParser = new ParserClass();
-              const testData = testParser.parsePmx(buffer, true);
-              if (testData && testData.metadata && testData.bones) {
-                console.log(`[PMXLoader] Valid PMX model loaded from ${url} (length: ${buffer.byteLength}, bones: ${testData.bones.length})`);
-                return buffer;
-              }
-            } catch (testErr) {
-              console.warn(`[PMXLoader] Buffer from ${url} failed parse test:`, testErr);
-              continue;
-            }
+            // Header/size validation is enough here; the main loader parses
+            // the buffer once below. Avoid parsing the full PMX twice on startup.
+            console.log(`[PMXLoader] PMX buffer loaded from ${url} (length: ${buffer.byteLength})`);
+            return buffer;
           }
         }
       }
