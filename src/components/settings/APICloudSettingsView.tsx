@@ -21,6 +21,8 @@ export const APICloudSettingsView: React.FC<APICloudSettingsViewProps> = ({
   const [openRouterKey, setOpenRouterKey] = useState(personalConfig.openRouterApiKey || '');
   const [groqKey, setGroqKey] = useState(personalConfig.groqApiKey || '');
   const [geminiKey, setGeminiKey] = useState(personalConfig.geminiApiKey || '');
+  const [openAiKey, setOpenAiKey] = useState(personalConfig.openaiApiKey || '');
+  const [voiceProvider, setVoiceProvider] = useState<'gemini' | 'openai'>('gemini');
   const [deepSeekKey, setDeepSeekKey] = useState(personalConfig.deepSeekApiKey || '');
   const [isSaved, setIsSaved] = useState(false);
 
@@ -30,6 +32,7 @@ export const APICloudSettingsView: React.FC<APICloudSettingsViewProps> = ({
       openRouterApiKey: openRouterKey,
       groqApiKey: groqKey,
       geminiApiKey: geminiKey,
+      openaiApiKey: openAiKey,
       deepSeekApiKey: deepSeekKey
     }));
     setIsSaved(true);
@@ -193,6 +196,39 @@ export const APICloudSettingsView: React.FC<APICloudSettingsViewProps> = ({
             placeholder="AIzaSy..."
             className="w-full bg-[#15161d] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-400/60 transition-colors font-mono"
           />
+        </div>
+
+
+        {/* Voice Provider */}
+        <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 space-y-3">
+          <div>
+            <span className="text-xs font-bold text-white">MAYRA Voice Provider</span>
+            <p className="text-[11px] text-gray-400 mt-1">Gemini is the default. OpenAI is optional when its key is configured.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {(['gemini','openai'] as const).map((provider) => (
+              <button key={provider} type="button" onClick={() => setVoiceProvider(provider)}
+                className={`p-3 rounded-xl border text-left ${voiceProvider === provider ? 'border-purple-500/60 bg-purple-500/10' : 'border-white/10 bg-[#15161d]'}`}>
+                <div className="text-xs font-bold text-white">{provider === 'gemini' ? 'Gemini' : 'OpenAI'}</div>
+                <div className="text-[10px] text-gray-400 mt-1">{provider === 'gemini' ? 'Default • Aoede first' : 'Optional • choose voices'}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* OpenAI API Key */}
+        <div className="p-4 rounded-2xl bg-[#121318] border border-white/5 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-white">OpenAI API Key</span>
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer"
+              className="text-[11px] text-purple-400 hover:underline flex items-center gap-1">
+              <span>Get key</span><ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <p className="text-[11px] text-gray-400">Optional. Add it only if you want OpenAI voice/provider support.</p>
+          <input type="password" value={openAiKey} onChange={(e) => setOpenAiKey(e.target.value)}
+            placeholder="sk-..." autoComplete="off"
+            className="w-full bg-[#15161d] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-400/60 transition-colors font-mono" />
         </div>
 
         {/* DeepSeek API Keys */}
