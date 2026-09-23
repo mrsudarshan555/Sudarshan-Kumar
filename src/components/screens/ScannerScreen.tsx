@@ -400,8 +400,8 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
       {/* 2. TOP BAR: MAYRA VISION | LIVE | Flash | Switch Camera   */}
       {/* ========================================================= */}
       <div className="relative z-10 w-full px-4 pt-3 pb-2 flex items-center justify-between shrink-0">
-        {/* Left: MAYRA VISION Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-xl border border-white/15 shadow-lg">
+        {/* Global MAYRA header already provides branding/navigation; camera keeps only camera-specific controls here. */}
+        <div className="hidden">
           <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(6,182,212,1)]" />
           <span className="text-xs font-semibold tracking-wider text-white font-mono uppercase">
             MAYRA VISION
