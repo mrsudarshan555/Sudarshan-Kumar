@@ -420,10 +420,10 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="px-2.5 py-1 rounded-full bg-white/[0.07] border border-white/10 text-[10px] font-semibold text-slate-200">
-              {planLabel}
+              {currentPlan.label} · {currentPlan.price}
             </span>
             <button onClick={() => openDrawerSettings('subscription_plans')} className="px-2 py-1 rounded-full text-[10px] text-slate-300 hover:bg-white/10" title="Plan and credits">
-              Credits
+              {currentPlan.credits}
             </button>
             <button onClick={() => setIsSideDrawerOpen(true)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:bg-white/10" aria-label="Open menu">
               <MessageCircleMore className="w-4 h-4" strokeWidth={1.8} />
@@ -460,7 +460,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
               <div className="h-px bg-white/10 my-2" />
               {[
                 { label: 'Settings', screen: 'root' as SettingsSubScreen },
-                { label: 'Voice & AI', screen: 'voice' as SettingsSubScreen },
+                { label: 'Voice & AI', screen: 'persona_voice_studio' as SettingsSubScreen },
                 { label: 'Privacy & Permissions', screen: 'permissions' as SettingsSubScreen },
                 { label: 'Upgrade / Plans', screen: 'subscription_plans' as SettingsSubScreen },
                 { label: 'Account', screen: 'user_profile' as SettingsSubScreen },
