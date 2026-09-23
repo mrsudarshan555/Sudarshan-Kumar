@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AssistantStatus, UserPersonalConfig, AssistantConfig, PermissionItem, CharacterModelMetadata, ChatMessage, AppearanceConfig } from '../../types';
 import { MayraAvatar } from '../character/MayraAvatar';
 import { MayraOrb, ORB_STYLES, normalizeOrbStyle } from '../character/MayraOrb';
+import { WebGLFallbackBoundary } from '../character/webglUtils';
 import { useCharacterController } from '../../hooks/useCharacterController';
 import { useBarehandsGesture } from '../../hooks/useBarehandsGesture';
 import { BarehandsCameraOverlay } from '../character/BarehandsCameraOverlay';
@@ -392,24 +393,42 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         </motion.div>
       ) : (
-        <MayraAvatar
-          status={status}
-          emotion={empathyState.emotion}
-          scaleMultiplier={transform.zoom || 1.0}
-          characterZoom={100}
-          characterSkinTone={assistantConfig?.characterSkinTone ?? 50}
-          transform={transform}
-          lockState={lockState}
-          modelMetadata={modelMetadata}
-          isDragging={isDragging}
-          onPointerDown={(e) => handlePointerDown(e.clientX, e.clientY)}
-          onPointerMove={(e) => handlePointerMove(e.clientX, e.clientY)}
-          onPointerUp={handlePointerUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onWheel={handleWheel}
-          onTriggerVoice={onTriggerVoice}
-        />
+        <WebGLFallbackBoundary
+          fallback={
+            <div
+              className="absolute inset-0 flex items-center justify-center cursor-pointer"
+              onClick={onTriggerVoice}
+              aria-label="MAYRA voice"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <MayraLogo size={96} showGlow={false} />
+                <span className="text-xs text-slate-400">MAYRA</span>
+              </div>
+            </div>
+          }
+          onError={(error) => {
+            console.warn('[MAYRA Home] Character renderer failed; using safe static fallback:', error);
+          }}
+        >
+          <MayraAvatar
+            status={status}
+            emotion={empathyState.emotion}
+            scaleMultiplier={transform.zoom || 1.0}
+            characterZoom={100}
+            characterSkinTone={assistantConfig?.characterSkinTone ?? 50}
+            transform={transform}
+            lockState={lockState}
+            modelMetadata={modelMetadata}
+            isDragging={isDragging}
+            onPointerDown={(e) => handlePointerDown(e.clientX, e.clientY)}
+            onPointerMove={(e) => handlePointerMove(e.clientX, e.clientY)}
+            onPointerUp={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onWheel={handleWheel}
+            onTriggerVoice={onTriggerVoice}
+          />
+        </WebGLFallbackBoundary>
       )}
 
       {/* Floating Barehands Camera HUD when Hand Tracking is active */}
