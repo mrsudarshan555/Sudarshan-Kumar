@@ -653,6 +653,24 @@ function normalizeTtsVoiceName(voiceName?: string, assistant?: string): string {
  * Generates natural, human-like voice response using Gemini Audio TTS (gemini-3.1-flash-tts-preview)
  * Returns both raw PCM (for Web Audio API streaming) and standard RIFF WAV (for HTML5 <audio> / Android APK WebViews).
  */
+async function generateOpenAIVoiceAudio(text: string, voiceName: string, customApiKey?: string): Promise<{ audioBase64: string; wavBase64: string; audioUrl: string; mimeType: string; targetVoice: string } | null> {
+  const key = (customApiKey || process.env.OPENAI_API_KEY || '').trim();
+  if (!key || !text?.trim()) return null;
+  const supported = new Set(['alloy','ash','ballad','coral','echo','fable','onyx','nova','sage','shimmer','verse','marin','cedar']);
+  const voice = supported.has((voiceName || '').toLowerCase()) ? voiceName.toLowerCase() : 'marin';
+  try {
+    const cleanText = text.replace(/\\[.*?\\]/g, '').replace(/[*#_~`]/g, '').replace(/https?:\\/\\/\\S+/g, 'link').trim();
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST', headers: { 'Authorization': \`Bearer \${key}\`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-4o-mini-tts', input: cleanText, voice, response_format: 'wav' })
+    });
+    if (!response.ok) { console.warn('[OpenAI Voice] HTTP', response.status); return null; }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const b64 = buffer.toString('base64');
+    return { audioBase64: '', wavBase64: b64, audioUrl: \`data:audio/wav;base64,\${b64}\`, mimeType: 'audio/wav', targetVoice: voice };
+  } catch (err) { console.warn('[OpenAI Voice] TTS error:', err); return null; }
+}
+
 async function generateGeminiVoiceAudio(
   text: string, 
   language?: string, 
@@ -1272,7 +1290,7 @@ app.use(['/tex', '/tex/*'], (req, res) => {
 // Dedicated Voice Synthesis Endpoint: Returns natural human-like voice audio from Gemini TTS
 app.post('/api/voice/speak', async (req, res) => {
   try {
-    const { text, language, voiceName, assistant = 'mayra', apiKey } = req.body;
+    const { text, language, voiceName, assistant = 'mayra', apiKey, provider = 'gemini' } = req.body;
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text is required' });
     }
