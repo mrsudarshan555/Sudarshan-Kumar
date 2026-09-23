@@ -253,7 +253,8 @@ function ModelRenderer({
           pmxData.constraints || [],
           {
             unitStep: 1 / 60,
-            maxStepNum: 3,
+            // Keep cloth/hair physics responsive without allowing catch-up spikes on mobile.
+            maxStepNum: 2,
             gravity: new THREE.Vector3(0, -9.8 * 4.0, 0)
           }
         );
@@ -471,8 +472,12 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
       scene.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
+          // Shadows are not enabled on the avatar canvas; disabling shadow work avoids
+          // unnecessary draw/setup cost on mobile GPUs.
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          // Keep skinned meshes visible while animated; their bounds are not reliably
+          // updated by all PMX pipelines during bone/morph animation.
           mesh.frustumCulled = false;
           if (mesh.material) {
             const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
@@ -710,15 +715,15 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
                   gl.toneMapping = THREE.LinearToneMapping;
                   gl.toneMappingExposure = 1.18;
                 }}
+                dpr={[1, 1.25]}
                 gl={(defaultProps) => createSafeWebGLRenderer(defaultProps.canvas as HTMLCanvasElement)}
               >
                 {/* Professional 6-Point Anime Studio Lighting Rig */}
-                <ambientLight intensity={0.56} color="#fff8f3" />
-                <hemisphereLight color="#f0f5ff" groundColor="#3a2e36" intensity={0.38} />
-                <directionalLight position={[-0.85, 1.7, 2.1]} intensity={0.58} color="#fffaf4" />
-                <directionalLight position={[1.1, 0.45, 1.8]} intensity={0.36} color="#ffebe4" />
-                <directionalLight position={[1.6, 1.8, -1.9]} intensity={0.68} color="#cbe4ff" />
-                <pointLight position={[0, 2.9, 0.35]} intensity={0.48} color="#fffcf5" distance={6} decay={2} />
+                {/* Lightweight mobile-friendly lighting: no shadow maps are used. */}
+                <ambientLight intensity={0.64} color="#fff8f3" />
+                <hemisphereLight color="#f0f5ff" groundColor="#3a2e36" intensity={0.34} />
+                <directionalLight position={[-0.85, 1.7, 2.1]} intensity={0.72} color="#fffaf4" />
+                <directionalLight position={[1.6, 1.8, -1.9]} intensity={0.56} color="#cbe4ff" />
 
                 <ModelRenderer 
                   modelScene={modelScene} 
