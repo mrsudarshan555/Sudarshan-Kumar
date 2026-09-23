@@ -638,20 +638,8 @@ export const MayraAvatar: React.FC<MayraAvatarProps> = ({
       ) : (
         <>
           {/* 2. Loading Overlay */}
-          {isLoading && !hasLoadedOnce && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#050711]/90 backdrop-blur-sm pointer-events-none transition-opacity">
-              <div className="flex flex-col items-center gap-3 p-5 bg-[#080C1E]/95 border border-cyan-500/30 rounded-3xl shadow-[0_0_25px_rgba(6,182,212,0.25)] max-w-xs w-full mx-4 text-center">
-                <div className="relative">
-                  <div className="w-10 h-10 border-2 border-cyan-400/20 border-t-cyan-400 rounded-full animate-spin" />
-                  <Sparkles className="w-4 h-4 text-cyan-300 absolute inset-0 m-auto animate-pulse" />
-                </div>
-                <div>
-                  <p className="text-sm font-sans font-semibold text-white tracking-wide">Starting...</p>
-                  <p className="text-[10px] text-cyan-400/70 font-sans mt-0.5">Initializing AI Engine</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Never block the app shell while the 3D asset warms up. The character
+              appears as soon as the model is ready; the rest of MAYRA remains usable. */}
 
           {/* 3. Error Overlay */}
           {loadError && !isLoading && (
