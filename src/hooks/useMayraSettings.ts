@@ -52,6 +52,7 @@ const DEFAULT_PERSONAL_CONFIG: UserPersonalConfig = {
   countryName: 'India',
   greetingStyle: 'warm',
   geminiApiKey: '',
+  openaiApiKey: '',
   geminiModel: 'gemini-3.1-flash-lite',
   temperature: 0.7,
   favoriteMusicGenre: 'Lofi & Ambient Bollywood',
@@ -287,8 +288,9 @@ function getInitialCharacterSkinTone(): number {
 const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   activeMode: 'mayra',
   personaTone: 'executive',
-  voiceProfile: 'Kore',
-  mayraVoice: 'Kore',
+  voiceProfile: 'Aoede',
+  mayraVoice: 'Aoede',
+  voiceProvider: 'gemini',
   stonicxVoice: 'Charon',
   language: 'en-IN',
   speechRate: 1.0,
@@ -323,8 +325,9 @@ function getInitialAssistantConfig(): AssistantConfig {
     const saved = localStorage.getItem(ASSISTANT_CONFIG_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed.voiceProfile === 'Aoede' || !parsed.voiceProfile) parsed.voiceProfile = 'Kore';
-      if (parsed.mayraVoice === 'Aoede' || !parsed.mayraVoice) parsed.mayraVoice = 'Kore';
+      if (!parsed.voiceProfile) parsed.voiceProfile = 'Aoede';
+      if (!parsed.mayraVoice) parsed.mayraVoice = 'Aoede';
+      if (!parsed.voiceProvider) parsed.voiceProvider = 'gemini';
       return { ...base, ...parsed };
     }
   } catch (e) {}
