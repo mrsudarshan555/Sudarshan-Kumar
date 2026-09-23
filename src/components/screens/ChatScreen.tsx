@@ -1,20 +1,16 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChatMessage, AssistantStatus } from '../../types';
+import { MayraLogo } from '../common/MayraLogo';
 import { 
   Sparkles, Copy, X, FileText, Image as ImageIcon,
   Check, Zap
 } from 'lucide-react';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
-import { HomeAtmosphereBackground } from '../character/HomeAtmosphereBackground';
-import { getDynamicSuggestions } from '../../utils/dynamicSuggestions';
-import { EmptyStateIllustration } from '../common/EmptyStateIllustration';
-import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
 import { PullToRefresh } from '../common/PullToRefresh';
 import { InteractiveQuizWidget } from '../quiz/InteractiveQuizWidget';
 import { GoogleDriveChatCard } from '../drive/GoogleDriveChatCard';
-import { MayraEmpathyEngine, EmpathyState } from '../../services/character/mayraEmpathyEngine';
 
 interface ChatScreenProps {
   messages: ChatMessage[];
@@ -126,29 +122,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     setAttachedFile(null);
   };
 
-  const [rotationSeed, setRotationSeed] = useState<number>(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotationSeed(prev => (prev + 1) % 10);
-    }, 25000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const samplePrompts = useMemo(() => {
-    return getDynamicSuggestions(messages, 'en', rotationSeed);
-  }, [messages, rotationSeed]);
-
-  const empathyState: EmpathyState = useMemo(() => {
-    return MayraEmpathyEngine.evaluateEmpathyState(messages, status);
-  }, [messages, status]);
-
   return (
     <div 
       className="w-full h-full flex flex-col overflow-hidden bg-transparent text-slate-100 relative min-h-0"
     >
-      {/* 1. Atmospheric Ambient Background Depth & Drifting Particles (Matching 3D Avatar/Home) */}
-      <HomeAtmosphereBackground status={status} />
-
       {/* Pull To Refresh Wrapped Messages Stream */}
       <PullToRefresh
         ref={messagesContainerRef}
@@ -158,15 +135,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         className="flex-1 overflow-y-auto p-3.5 flex flex-col min-h-0 scrollbar-thin"
       >
         {messages.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center my-auto min-h-[300px]">
-            <EmptyStateIllustration
-              type="chat"
-              suggestions={samplePrompts.slice(0, 3)}
-              onSelectSuggestion={(sug) => {
-                setInputText(sug);
-                setIsInputFocused(true);
-              }}
-            />
+          <div className="flex-1 flex flex-col items-center justify-center my-auto min-h-[300px] px-6 text-center">
+            <MayraLogo size={58} showGlow={false} variant="raw" />
+            <div className="mt-5 text-2xl font-light tracking-tight text-white">What&apos;s next?</div>
           </div>
         ) : (
           <div className="space-y-3 w-full flex flex-col">
@@ -364,26 +335,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : 'none'
         }}
       >
-        {/* Dynamic Suggested Quick Chips: Bhavna / Emotion & Context-aware pills */}
-        {samplePrompts.length > 0 && (
-          <div className="w-full max-w-lg mb-1.5 flex gap-2 overflow-x-auto scrollbar-none px-1 py-0.5">
-            {samplePrompts.slice(0, 5).map((p, pIdx) => (
-              <motion.button
-                key={`chat-prompt-${p}-${pIdx}`}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.95 }}
-                type="button"
-                onClick={() => {
-                  setInputText(p);
-                  setIsInputFocused(true);
-                }}
-                className="px-3.5 py-1.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-400/30 hover:border-cyan-400/60 rounded-full text-xs text-purple-200 hover:text-white whitespace-nowrap backdrop-blur-xl transition-all shadow-[0_0_10px_rgba(168,85,247,0.15)] cursor-pointer shrink-0"
-              >
-                {p}
-              </motion.button>
-            ))}
-          </div>
-        )}
         <div className="w-full max-w-lg">
           <MorphingAuroraInputBox
             inputText={inputText}
