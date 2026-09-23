@@ -366,12 +366,7 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
 
           {/* Active Scanning Laser Beam */}
           {isScanning && (
-            <motion.div 
-              initial={{ y: -100, opacity: 0 }}
-              animate={{ y: 100, opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute inset-x-8 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_20px_rgba(6,182,212,1)]"
-            />
+            <div className="absolute inset-x-12 h-px bg-cyan-400/30" />
           )}
         </div>
 
@@ -501,32 +496,7 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
       {/* 3. BOTTOM CONTROLS: Mode Switcher + Shutter Row           */}
       {/* ========================================================= */}
       <div className="relative z-10 w-full flex flex-col items-center gap-3 pb-3 pt-2">
-        {/* Mode Switcher: Text OCR | Objects | Scene */}
-        <div className="flex items-center gap-1 bg-black/50 border border-white/20 p-1 rounded-full backdrop-blur-2xl shadow-xl">
-          {[
-            { id: 'ocr', label: 'Text OCR', icon: FileText },
-            { id: 'object', label: 'Objects', icon: Layers },
-            { id: 'scene', label: 'Scene', icon: Globe }
-          ].map((mode) => {
-            const Icon = mode.icon;
-            const isActive = scanMode === mode.id;
-            return (
-              <button
-                key={mode.id}
-                onClick={() => setScanMode(mode.id as any)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold shadow-md shadow-cyan-500/30'
-                    : 'text-slate-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <Icon className="w-3 h-3 stroke-[1.8]" />
-                <span>{mode.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
+        {/* Camera controls stay minimal; advanced vision modes remain available through the scan action. */}
         {/* Controls Row: Gallery | Shutter | Focus/Scan */}
         <div className="w-full max-w-[280px] flex items-center justify-between px-4">
           {/* Left: Gallery Picker (selects existing photos, no capture) */}
