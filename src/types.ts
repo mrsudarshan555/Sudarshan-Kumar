@@ -300,6 +300,7 @@ export interface UserPersonalConfig {
   greetingStyle: 'warm' | 'formal' | 'casual' | 'brief';
   geminiApiKey: string;
   geminiModel: string;
+  openaiApiKey?: string;
   openRouterApiKey?: string;
   groqApiKey?: string;
   deepSeekApiKey?: string;
@@ -317,6 +318,7 @@ export interface AssistantConfig {
   systemPrompt?: string;
   personalityMode?: 'normal' | 'gf' | 'friend' | 'nautanki';
   selectedVoice?: string;
+  voiceProvider?: 'gemini' | 'openai';
   personaTone: 'executive' | 'friendly' | 'technical' | 'concise';
   voiceProfile: string;
   mayraVoice?: string; // Neural voice for Mayra (Aoede, Kore, Charon, Fenrir, etc.)
