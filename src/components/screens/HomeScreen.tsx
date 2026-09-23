@@ -425,8 +425,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       style={keyboardOffset > 0 ? { paddingBottom: `${keyboardOffset}px` } : undefined}
     >
       
-      {/* 1. Atmospheric Ambient Background Depth & Drifting Particles */}
-      <HomeAtmosphereBackground status={status} appearanceConfig={appearanceConfig} />
+      {/* Clean static home background: keep the stage open and uncluttered. */}
+      <div className="absolute inset-0 bg-[#070312]" aria-hidden="true" />
 
       {/* 2. FULL-SCREEN MAYRA 3D CHARACTER LAYER OR ORB LAYER */}
       {appearanceConfig?.useOrbOnHome ? (
@@ -793,46 +793,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 4. LOWER INTERACTION STAGE: Cardless Live Transcript / Prompts & iOS Search Pill */}
       <div className="relative z-20 w-full px-3.5 pb-2 flex flex-col items-center gap-2 pointer-events-auto">
         
-        {/* Dynamic Cardless Transcript / Status / Suggestion Chips */}
-        {status !== 'READY' ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-sm px-2 py-1 flex items-center justify-between text-xs text-slate-200 leading-relaxed font-sans"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dotColor} animate-pulse shrink-0`} />
-              <p className="truncate text-slate-100">
-                {getAssistantMessage()}
-              </p>
-            </div>
-            <Sparkles className="w-3 h-3 text-cyan-400 shrink-0 ml-2 animate-spin" />
-          </motion.div>
-        ) : isProactivePromptActive ? (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.96 }}
-            className="w-full max-w-sm px-3 py-1.5 rounded-xl bg-purple-950/60 border border-purple-500/40 backdrop-blur-xl flex items-center justify-between shadow-lg"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0 animate-pulse" />
-              <p className="text-xs text-purple-100 truncate">
-                "Shant kyun ho? Chalo kuch naya try karte hain!"
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setIsProactivePromptActive(false);
-                onSubmitPrompt("Kuch interesting batao ya naya idea do");
-              }}
-              className="px-2 py-0.5 rounded-lg bg-purple-500/30 hover:bg-purple-500/50 text-[10px] text-purple-200 font-mono shrink-0 ml-2 cursor-pointer transition-colors"
-            >
-              Reply
-            </button>
-          </motion.div>
-        ) : null}
-
+        {/* Status text stays out of the idle home screen; the assistant state is available when interaction starts. */}
         {/* Hidden File Input */}
         <input
           ref={fileInputRef}
@@ -872,7 +833,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             status={status}
             attachedFile={attachedFile}
             onRemoveAttachment={() => setAttachedFile(null)}
-            placeholder="What's your mind today"
+            placeholder="Ask MAYRA"
           />
         </div>
 
