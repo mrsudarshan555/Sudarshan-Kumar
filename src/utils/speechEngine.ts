@@ -961,7 +961,9 @@ export async function speakText(
   onStart?: () => void,
   onEnd?: () => void,
   audioBase64Payload?: string | null,
-  customVoiceName?: string
+  customVoiceName?: string,
+  provider: 'gemini' | 'openai' = 'gemini',
+  apiKey?: string
 ): Promise<void> {
   const cleanText = sanitizeTextForSpeech(text);
   if (!cleanText) {
@@ -969,11 +971,8 @@ export async function speakText(
     return;
   }
 
-  // Map legacy 'Aoede' or missing voices to 'Kore' (Gemini natural female voice)
-  let effectiveVoice = (customVoiceName || 'Kore').trim();
-  if (effectiveVoice.toLowerCase() === 'aoede' || effectiveVoice.toLowerCase() === 'maya') {
-    effectiveVoice = 'Kore';
-  }
+  // Preserve the actual selected provider voice. Aoede is a real Gemini voice.
+  let effectiveVoice = (customVoiceName || (provider === 'openai' ? 'marin' : 'Aoede')).trim();
 
   // 1. If audio base64 is already provided in the response payload, play directly
   if (audioBase64Payload) {
