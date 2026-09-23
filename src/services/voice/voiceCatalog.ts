@@ -278,7 +278,7 @@ export class VoiceCatalogManager {
   }
 
   public getMayraDefaultVoice(): VoiceItem {
-    return VOICE_CATALOG.find((v) => v.id === 'Kore') || VOICE_CATALOG[1] || VOICE_CATALOG[0];
+    return VOICE_CATALOG.find((v) => v.id === 'Aoede') || VOICE_CATALOG[0];
   }
 
   public getStonicxDefaultVoice(): VoiceItem {
@@ -287,10 +287,10 @@ export class VoiceCatalogManager {
 
   public getResolvedVoiceName(assistant: 'mayra' | 'stonicx', preferredVoice?: string): string {
     if (preferredVoice) {
-      if (preferredVoice.toLowerCase() === 'aoede') return 'Kore';
+      if (preferredVoice.toLowerCase() === 'aoede') return 'Aoede';
       const match = this.getVoiceById(preferredVoice);
       if (match) return match.id;
     }
-    return assistant === 'stonicx' ? 'Charon' : 'Kore';
+    return assistant === 'stonicx' ? 'Charon' : 'Aoede';
   }
 }
