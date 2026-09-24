@@ -31,6 +31,7 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
 
   // DOM and stream references
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const backgroundVideoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -46,9 +47,8 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
       }
       streamRef.current = null;
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+    if (backgroundVideoRef.current) backgroundVideoRef.current.srcObject = null;
     setIsStreaming(false);
   }, []);
 
@@ -127,6 +127,13 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
 
     if (mediaStream) {
       streamRef.current = mediaStream;
+      if (backgroundVideoRef.current) {
+        backgroundVideoRef.current.srcObject = mediaStream;
+        backgroundVideoRef.current.muted = true;
+        backgroundVideoRef.current.autoplay = true;
+        backgroundVideoRef.current.play().catch(() => {});
+      }
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         videoRef.current.setAttribute('playsinline', 'true');
@@ -162,6 +169,7 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
       <div className="relative flex-1 min-h-0 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 overflow-hidden bg-[#090a0f]">
           <video
+            ref={backgroundVideoRef}
             autoPlay
             playsInline
             muted
