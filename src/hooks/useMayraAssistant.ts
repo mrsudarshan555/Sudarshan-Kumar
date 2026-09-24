@@ -16,6 +16,7 @@ import {
   schedulePcm24kChunk,
   flushQueuedAudio,
   getAudioContext,
+  playAudioPayload,
   MayraLanguage 
 } from '../utils/speechEngine';
 import { MayraSystemBridge } from '../services/native/MayraSystemIntegrationBridge';
@@ -1446,9 +1447,13 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
                         m.id === assistantMsgId ? { ...m, text: accumulatedText } : m
                       )
                     );
-                  } else if (ev.type === 'sentence' && ev.audio) {
+                  } else if (ev.type === 'sentence' && (ev.audio || ev.wavBase64 || ev.audioUrl)) {
                     receivedAnyAudio = true;
-                    schedulePcm24kChunk(ev.audio, handleSpeechStart, handleSpeechEnd);
+                    if (ev.audio) {
+                      schedulePcm24kChunk(ev.audio, handleSpeechStart, handleSpeechEnd);
+                    } else if (ev.wavBase64 || ev.audioUrl) {
+                      playAudioPayload({ wavBase64: ev.wavBase64, audioUrl: ev.audioUrl }, handleSpeechStart, handleSpeechEnd);
+                    }
                   } else if (ev.type === 'done') {
                     if (ev.autoMemorySaved && onExecuteAction) {
                       onExecuteAction({
@@ -1496,9 +1501,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
           };
           setMessages((prev) => [...prev, assistantMsg]);
           MemorySyncBridge.getInstance().syncConversationTurn('MAYRA', trimmed, reply).catch(() => {});
-          if (data.audioBase64) {
-            schedulePcm24kChunk(
-              data.audioBase64,
+          if (data.audioBase64 || data.wavBase64 || data.audioUrl) {
+            playAudioPayload(
+              { audioBase64: data.audioBase64, wavBase64: data.wavBase64, audioUrl: data.audioUrl },
               handleSpeechStart,
               handleSpeechEnd
             );

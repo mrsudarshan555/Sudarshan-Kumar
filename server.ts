@@ -733,7 +733,7 @@ async function generateGeminiVoiceAudio(
     });
 
     const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 7000)
+      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 20000)
     );
 
     const response = await Promise.race([callPromise, timeoutPromise]) as any;
@@ -2192,16 +2192,22 @@ app.post('/api/chat', async (req, res) => {
             sentenceIndex++;
 
             let sentenceAudio: string | null = null;
+            let sentenceWav: string | null = null;
+            let sentenceUrl: string | null = null;
             if (returnAudio !== false) {
               const audioRes = await generateGeminiVoiceAudio(completedSentence, effectiveLang, effectiveVoice);
               sentenceAudio = audioRes?.audioBase64 || null;
+              sentenceWav = audioRes?.wavBase64 || null;
+              sentenceUrl = audioRes?.audioUrl || null;
             }
 
             res.write(`data: ${JSON.stringify({
               type: 'sentence',
               index: sentenceIndex,
               text: completedSentence,
-              audio: sentenceAudio
+              audio: sentenceAudio,
+              wavBase64: sentenceWav,
+              audioUrl: sentenceUrl
             })}\n\n`);
           }
         }
@@ -2211,15 +2217,21 @@ app.post('/api/chat', async (req, res) => {
           const finalSentence = sentenceBuffer.trim();
           sentenceIndex++;
           let sentenceAudio: string | null = null;
+          let sentenceWav: string | null = null;
+          let sentenceUrl: string | null = null;
           if (returnAudio !== false) {
             const audioRes = await generateGeminiVoiceAudio(finalSentence, effectiveLang, effectiveVoice);
             sentenceAudio = audioRes?.audioBase64 || null;
+            sentenceWav = audioRes?.wavBase64 || null;
+            sentenceUrl = audioRes?.audioUrl || null;
           }
           res.write(`data: ${JSON.stringify({
             type: 'sentence',
             index: sentenceIndex,
             text: finalSentence,
-            audio: sentenceAudio
+            audio: sentenceAudio,
+            wavBase64: sentenceWav,
+            audioUrl: sentenceUrl
           })}\n\n`);
         }
 
@@ -2245,7 +2257,7 @@ app.post('/api/chat', async (req, res) => {
               : `Hello ${userName || 'Zafer'}, I have processed your request regarding "${safeMessage}". All system routines are operational and ready.`));
         const audioRes = (returnAudio !== false) ? await generateGeminiVoiceAudio(reply, effectiveLang, effectiveVoice) : null;
         res.write(`data: ${JSON.stringify({ type: 'chunk', text: reply })}\n\n`);
-        res.write(`data: ${JSON.stringify({ type: 'sentence', index: 1, text: reply, audio: audioRes?.audioBase64 || null })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'sentence', index: 1, text: reply, audio: audioRes?.audioBase64 || null, wavBase64: audioRes?.wavBase64 || null, audioUrl: audioRes?.audioUrl || null })}\n\n`);
         res.write(`data: ${JSON.stringify({ type: 'done', fullText: reply, provider: fallbackResult.provider, modelUsed: fallbackResult.modelUsed, autoMemorySaved })}\n\n`);
         res.end();
         return;
@@ -2270,6 +2282,8 @@ app.post('/api/chat', async (req, res) => {
       provider: fallbackResult.provider,
       modelUsed: fallbackResult.modelUsed,
       audioBase64: audioResult?.audioBase64 || null,
+      wavBase64: audioResult?.wavBase64 || null,
+      audioUrl: audioResult?.audioUrl || null,
       mimeType: audioResult?.mimeType || null
     });
   } catch (error: any) {

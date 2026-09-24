@@ -355,7 +355,14 @@ export async function acquireMicrophoneStream(): Promise<MediaStream | null> {
 export function getAudioContext(): AudioContext {
   if (!outputAudioContext || outputAudioContext.state === 'closed') {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    outputAudioContext = new AudioContextClass({ sampleRate: 24000 });
+    try {
+      outputAudioContext = new AudioContextClass({ sampleRate: 24000 });
+    } catch {
+      outputAudioContext = new AudioContextClass();
+    }
+  }
+  if (outputAudioContext && outputAudioContext.state === 'suspended') {
+    outputAudioContext.resume().catch(() => {});
   }
   return outputAudioContext;
 }
@@ -940,14 +947,56 @@ export function fallbackSpeechSynthesis(
     return;
   }
 
-  // Android APK path: use native system TTS only. Browser speechSynthesis is
-  // intentionally disabled so MAYRA never sounds like a generic browser voice.
+  // 1. Android APK path: use native system TTS if bridge is active
   if (MayraNativeBridgeClient.isAvailableSync()) {
     const started = MayraNativeBridgeClient.speakNativeTts(clean, lang, onStart, onEnd);
     if (started) return;
   }
 
-  console.warn('[Voice Engine] Native Android TTS bridge unavailable; browser voice fallback is disabled.');
+  // 2. Web / Browser fallback: use window.speechSynthesis to guarantee MAYRA is never mute
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-US';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.08;
+
+      const voices = cachedSpeechVoices.length > 0 ? cachedSpeechVoices : window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        const isHi = lang === 'hi';
+        const match = voices.find(v => 
+          isHi 
+            ? (v.lang.includes('hi') || v.name.toLowerCase().includes('hindi'))
+            : (v.lang.includes('en') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('google') || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('samantha')))
+        ) || voices.find(v => isHi ? v.lang.includes('hi') : v.lang.startsWith('en'));
+
+        if (match) {
+          utterance.voice = match;
+        }
+      }
+
+      utterance.onstart = () => {
+        if (onStart) onStart();
+      };
+      utterance.onend = () => {
+        activeUtterance = null;
+        if (onEnd) onEnd();
+      };
+      utterance.onerror = (e) => {
+        console.warn('[Voice Engine] SpeechSynthesis error:', e);
+        activeUtterance = null;
+        if (onEnd) onEnd();
+      };
+
+      activeUtterance = utterance; // Prevent garbage collection on Chromium
+      window.speechSynthesis.speak(utterance);
+      return;
+    } catch (err) {
+      console.warn('[Voice Engine] Web SpeechSynthesis error:', err);
+    }
+  }
+
   onEnd?.();
 }
 
