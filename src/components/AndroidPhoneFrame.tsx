@@ -615,6 +615,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     onOpenChat={() => navigateFromDrawer('chat')}
                     onOpenHome={() => navigateFromDrawer('home')}
                     onEndSession={() => navigateFromDrawer('home')}
+                    onOpenMemory={() => navigateFromDrawer('memories')}
                   />
                 )}
                 {activeTab === 'memories' && (
