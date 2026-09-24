@@ -403,7 +403,7 @@ export type CameraAspectRatio = '9:16' | '3:4' | '1:1' | '4:3' | 'full';
 
 export interface AppearanceConfig {
   darkMode: boolean;
-  themeMode?: 'light' | 'dark' | 'cosmic'; // 'light' (clean white/slate), 'dark' (obsidian dark), 'cosmic' (avatar velvet violet theme)
+  themeMode?: 'light' | 'dark'; // User-visible themes are intentionally limited to Light and Dark
   orbStyle: OrbStyleType;
   orbColor: OrbColorType;
   orbSize: number; // Size in dp (44 to 140, default 64)
