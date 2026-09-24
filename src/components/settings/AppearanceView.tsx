@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { AppearanceConfig, OrbStyleType, OrbColorType, AppThemePreset, HeadingFontType, CameraAspectRatio } from '../../types';
+import { AppearanceConfig, OrbStyleType, OrbColorType, HeadingFontType, CameraAspectRatio } from '../../types';
 import { MayraOrb, ORB_STYLES, ORB_COLORS, normalizeOrbStyle } from '../character/MayraOrb';
 import { AppIconTile } from '../common/AppIconTile';
-import { APP_THEMES, getThemePreset } from '../../utils/themePresets';
 import { 
   ArrowLeft, Moon, Sun, Sparkles, 
-  Palette, Sliders, CheckCircle2, LayoutTemplate, X, Grid2X2, Compass, Droplet, Type, Camera, Maximize2
+  Palette, Sliders, CheckCircle2, LayoutTemplate, X, Grid2X2, Compass, Type, Camera, Maximize2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -97,17 +96,11 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
   const isDark = config.darkMode;
 
   const currentNormalizedStyle = normalizeOrbStyle(config.orbStyle);
-  const selectedThemeId: AppThemePreset = config.appTheme || 'cyan';
-  const currentTheme = getThemePreset(selectedThemeId);
   const selectedFontId: HeadingFontType = config.headingFont || 'system';
   const currentFontDef = FONT_OPTIONS.find(f => f.id === selectedFontId) || FONT_OPTIONS[0];
 
   const handleToggleDarkMode = () => {
     onChange({ darkMode: !config.darkMode });
-  };
-
-  const handleSelectTheme = (themeId: AppThemePreset) => {
-    onChange({ appTheme: themeId });
   };
 
   const handleSelectOrbStyle = (style: OrbStyleType) => {
@@ -127,7 +120,6 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
   };
 
   const colorEntries = Object.values(ORB_COLORS);
-  const themeEntries = Object.values(APP_THEMES);
 
   // Show top 5 styles on main page + 6th slot is "More styles" card
   const primaryStyles = ORB_STYLES.slice(0, 5);
@@ -170,84 +162,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
       {/* Settings Scroll Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-purple-500/20">
 
-        {/* 1. APP THEME PRESET PICKER */}
-        <section className="space-y-2.5">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-purple-500/20 text-purple-300 rounded-full border border-purple-400/30">
-                <Droplet className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <h2 className="font-bold text-[10px] uppercase tracking-widest text-purple-300 font-sans">
-                  APP ACCENT THEME
-                </h2>
-                <p className="text-[10px] font-normal text-purple-300/70 font-sans">
-                  Recolor interface accents, icon tiles, and highlights app-wide
-                </p>
-              </div>
-            </div>
-            <span className={`text-[10px] font-sans px-2.5 py-0.5 rounded-full font-bold border ${currentTheme.activeBg} ${currentTheme.activeText} ${currentTheme.activeBorder}`}>
-              {currentTheme.name}
-            </span>
-          </div>
-
-          {/* Theme Preset Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {themeEntries.map((themeItem) => {
-              const isSelected = selectedThemeId === themeItem.id;
-              return (
-                <button
-                  key={themeItem.id}
-                  onClick={() => handleSelectTheme(themeItem.id)}
-                  className={`p-3.5 rounded-3xl border flex items-center justify-between relative transition-all active:scale-[0.99] text-left cursor-pointer ${
-                    isSelected
-                      ? `bg-[#1c0d36]/90 border-purple-400/80 shadow-[0_8px_32px_rgba(168,85,247,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] ring-1 ring-purple-400/50`
-                      : 'bg-[#160b29]/50 backdrop-blur-2xl border-white/15 hover:border-purple-400/40 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Swatches Stack */}
-                    <div className="flex -space-x-1.5 shrink-0">
-                      {themeItem.previewSwatches.map((colorHex, idx) => (
-                        <div
-                          key={idx}
-                          className="w-5 h-5 rounded-full border-2 border-white/20 shadow-sm shrink-0"
-                          style={{ backgroundColor: colorHex }}
-                        />
-                      ))}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`font-bold text-xs font-sans ${
-                          isSelected ? 'text-white' : 'text-slate-200'
-                        }`}>
-                          {themeItem.name}
-                        </span>
-                        {themeItem.id === 'purple' && (
-                          <span className="text-[8px] font-mono font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/30">
-                            IPHONE GLASS
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] font-normal mt-0.5 line-clamp-1 text-purple-300/60 font-sans">
-                        {themeItem.subtitle}
-                      </p>
-                    </div>
-                  </div>
-
-                  {isSelected && (
-                    <div className={themeItem.activeText}>
-                      <CheckCircle2 className="w-5 h-5 fill-current" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* 2. FEATURED: ORB CUSTOMIZATION STUDIO PROMOTION CARD */}
+        {/* 1. FEATURED: ORB CUSTOMIZATION STUDIO PROMOTION CARD */}
         {onNavigateToOrbStudio && (
           <div 
             onClick={onNavigateToOrbStudio}
@@ -288,7 +203,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
           </div>
         )}
 
-        {/* 3. DARK MODE CARD */}
+        {/* 2. DARK MODE CARD */}
         <section className={`p-4 rounded-3xl border transition-all ${
           isDark 
             ? 'bg-white/[0.07] backdrop-blur-2xl border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)]' 
@@ -335,7 +250,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
           </div>
         </section>
 
-        {/* 4. TEXT STYLE (HEADING FONT) PICKER */}
+        {/* 3. TEXT STYLE (HEADING FONT) PICKER */}
         <section className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
@@ -419,7 +334,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
           </div>
         </section>
 
-        {/* 5. ORB STYLE PICKER */}
+        {/* 4. ORB STYLE PICKER */}
         <section className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <div>
