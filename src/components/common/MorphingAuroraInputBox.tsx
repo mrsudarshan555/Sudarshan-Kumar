@@ -223,9 +223,9 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
     <div className="w-full flex flex-col items-center select-none relative px-0.5">
       <div className="relative w-full max-w-lg flex flex-col items-center">
         <div className={`w-full relative transition-all duration-200 ${isExpanded ? 'rounded-[24px]' : 'rounded-full'}`}
-          style={{ background: isFocused ? 'rgba(226,228,235,0.98)' : 'rgba(235,237,243,0.98)', border: '1px solid rgba(190,193,202,0.9)', boxShadow: '0 2px 10px rgba(0,0,0,0.10)' }}>
+          className={\`w-full relative transition-all duration-200 border border-slate-300/90 dark:border-white/15 shadow-[0_2px_10px_rgba(0,0,0,0.10)] \${isExpanded ? 'rounded-[24px]' : 'rounded-full'} bg-[#ebedf3] dark:bg-[#1a1b20]\`}>
           <div className={`w-full transition-all duration-200 relative overflow-hidden backdrop-blur-xl ${isExpanded ? 'rounded-[23px] px-4 py-3' : 'rounded-full px-4 py-2.5'}`}
-            style={{ background: 'rgba(248,249,252,0.98)' }}>
+            className="w-full transition-all duration-200 relative overflow-hidden backdrop-blur-xl bg-[#f8f9fc] dark:bg-[#111216]">
             {attachedFile && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                 className="mb-2 inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-300 rounded-full text-xs text-slate-700 shadow-sm">
@@ -238,7 +238,7 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
               <div className="flex-1 relative flex items-center min-w-0">
                 <textarea ref={textareaRef} value={inputText} onChange={(e) => handleTextChange(e.target.value)} onKeyDown={handleKeyDown}
                   onFocus={() => handleFocusChange(true)} onBlur={() => handleFocusChange(false)} placeholder={activePlaceholder} rows={1}
-                  className="w-full bg-transparent border-none outline-none resize-none text-[16px] sm:text-[17px] text-slate-900 placeholder-slate-500 font-sans leading-[24px] py-0.5 min-h-[24px] max-h-[88px] scrollbar-thin"
+                  className="w-full bg-transparent border-none outline-none resize-none text-[16px] sm:text-[17px] text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 font-sans leading-[24px] py-0.5 min-h-[24px] max-h-[88px] scrollbar-thin"
                   style={{ height: '24px', transition: 'height 0.12s ease-out' }} />
               </div>
               <div className="shrink-0 flex items-center gap-3 mb-0.5">
@@ -256,14 +256,12 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
           </div>
         </div>
         <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.94 }} type="button" onClick={hasText ? onSubmit : onTriggerVoice}
-          className="mt-2 w-14 h-14 rounded-full bg-white border border-slate-300 shadow-[0_2px_10px_rgba(0,0,0,0.10)] flex items-center justify-center text-black"
+          className="mt-2 w-14 h-14 rounded-full bg-white dark:bg-[#17181d] border border-slate-300 dark:border-white/15 shadow-[0_2px_10px_rgba(0,0,0,0.10)] flex items-center justify-center text-black dark:text-white"
           title={hasText ? "Send message" : "Voice mode"} aria-label={hasText ? "Send message" : "Voice mode"}>
-          {hasText ? <ArrowUp className="w-6 h-6 stroke-[2.2]" /> : (
-            <svg viewBox="0 0 48 48" className="w-9 h-9" aria-hidden="true">
-              <path d="M14 19v10M20 14v20M26 20v8M32 16v16" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round"/>
-              <path d="M35 8l1.8 4.2L41 14l-4.2-1.8L35 8z" fill="currentColor"/>
-            </svg>
-          )}
+          <svg viewBox="0 0 48 48" className="w-9 h-9" aria-hidden="true">
+            <path d="M14 19v10M20 14v20M26 20v8M32 16v16" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round"/>
+            <path d="M35 8l1.8 4.2L41 14l-4.2 1.8L35 8z" fill="currentColor"/>
+          </svg>
         </motion.button>
       </div>
     </div>
