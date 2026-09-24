@@ -23,7 +23,7 @@ import { ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEng
 import { 
   Home, Camera, Brain, MessageSquare, MessageCircleMore,
   Settings as SettingsIcon, Shield, Menu, X as CloseIcon, ChevronRight,
-  Trash2, Plus, Zap, Smartphone, UserCheck, Sparkles, Search
+  Trash2, Plus, Zap, Smartphone, UserCheck, Sparkles, Search, Radio
 } from 'lucide-react';
 import { useLanguage } from '../services/i18n/languageContext';
 import { MarkLIIUndoToast } from './MarkLIIUndoToast';
