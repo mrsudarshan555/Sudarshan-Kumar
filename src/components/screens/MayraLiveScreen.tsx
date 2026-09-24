@@ -124,15 +124,16 @@ export const MayraLiveScreen: React.FC<MayraLiveScreenProps> = ({
         </div>
 
         <div className="mayra-live-bottom">
-          <button className="mayra-live-ctrl mayra-live-video" onClick={onOpenChat} aria-label="Toggle chat">
-            <svg width="22" height="20" viewBox="0 0 24 22" fill="none" aria-hidden="true">
-              <path d="M22 11C22 15.4183 17.5228 19 12 19C10.7 19 9.46 18.81 8.33 18.46L3 20L4.55 15.66C3.58 14.34 3 12.73 3 11C3 6.58172 7.47715 3 13 3C17.4183 3 22 6.58172 22 11Z" fill="currentColor"/>
-            </svg>
-          </button>
           <button className="mayra-live-ctrl mayra-live-home" onClick={onOpenHome} aria-label="Home">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M4 11L12 4L20 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M6 9.5V19C6 19.5523 6.44772 20 7 20H10V15C10 14.4477 10.4477 14 11 14H13C13.5523 14 14 14.4477 14 15V20H17C17.5523 20 18 19.5523 18 19V9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button className="mayra-live-ctrl mayra-live-home" onClick={() => window.dispatchEvent(new CustomEvent('mayra:open-memory'))} aria-label="Memory">
+            <svg width="21" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="4" y="5" width="16" height="14" rx="3" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M8 9H16M8 12H16M8 15H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
           </button>
           <button className={`mayra-live-ctrl mayra-live-mic ${micMuted ? 'muted' : ''}`} onClick={() => setMicMuted(v => !v)} aria-label="Mute">
@@ -144,10 +145,9 @@ export const MayraLiveScreen: React.FC<MayraLiveScreenProps> = ({
               <line className="slash" x1="1.5" y1="22.5" x2="18.5" y2="1.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"/>
             </svg>
           </button>
-          <button className="mayra-live-ctrl mayra-live-end" onClick={endSession} aria-label="End">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <line x1="5" y1="5" x2="19" y2="19" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
-              <line x1="19" y1="5" x2="5" y2="19" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+          <button className="mayra-live-ctrl mayra-live-video" onClick={onOpenChat} aria-label="Toggle chat">
+            <svg width="22" height="20" viewBox="0 0 24 22" fill="none" aria-hidden="true">
+              <path d="M22 11C22 15.4183 17.5228 19 12 19C10.7 19 9.46 18.81 8.33 18.46L3 20L4.55 15.66C3.58 14.34 3 12.73 3 11C3 6.58172 7.47715 3 13 3C17.4183 3 22 6.58172 22 11Z" fill="currentColor"/>
             </svg>
           </button>
         </div>
