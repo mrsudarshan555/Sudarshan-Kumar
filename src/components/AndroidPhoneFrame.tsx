@@ -39,6 +39,7 @@ import { FloatingHomeQuizModal } from './quiz/FloatingHomeQuizModal';
 import { QuizPayload } from '../types';
 import { MicStatusIndicator } from './voice/MicStatusIndicator';
 import { EdgeGlowRing } from './character/EdgeGlowRing';
+import mayraChatIcon from '../assets/mayra-chat-icon.svg';
 
 interface AndroidPhoneFrameProps {
   activeTab: ActiveTab;
@@ -449,7 +450,11 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                 title={label}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeTab === id ? 'bg-white/12 text-white' : 'text-slate-400 hover:bg-white/[0.07] hover:text-white'}`}
               >
-                <Icon className="w-[19px] h-[19px]" strokeWidth={activeTab === id ? 2.2 : 1.8} />
+                {id === 'chat' ? (
+                  <img src={mayraChatIcon} alt="" aria-hidden="true" className="w-[19px] h-[19px] object-contain" />
+                ) : (
+                  <Icon className="w-[19px] h-[19px]" strokeWidth={activeTab === id ? 2.2 : 1.8} />
+                )}
               </button>
             ))}
           </nav>
