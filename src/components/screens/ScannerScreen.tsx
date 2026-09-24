@@ -1,14 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ScanLine, FlipHorizontal, Flashlight, 
-  Sparkles, CheckCircle2, X, FileText, 
-  Layers, Globe, Radio, Image as ImageIcon,
-  RotateCcw, AlertCircle
-} from 'lucide-react';
-import { CameraAspectRatio } from '../../types';
-
-interface ScannerScreenProps {
+import { motion } from 'motion/react';
+import { CheckCircle2, X, AlertCircle, Video, MonitorUp, Mic } from 'lucide-react';
+nterface ScannerScreenProps {
   onSendVisionQuery: (query: string, image?: { base64: string; mimeType?: string }) => void;
   triggerCaptureSignal?: number;
   aspectRatio?: CameraAspectRatio;
@@ -20,12 +13,12 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
 }) => {
   // Live Camera stream & hardware states
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
-  const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
+  const cameraFacing: 'environment' | 'user' = 'environment';
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const [isStartingCamera, setIsStartingCamera] = useState<boolean>(false);
 
   // Vision & Scanning states
-  const [scanMode, setScanMode] = useState<'ocr' | 'object' | 'scene'>('ocr');
+  const scanMode: 'ocr' | 'object' | 'scene' = 'ocr';
   const [scannedResult, setScannedResult] = useState<string | null>(null);
   const [capturedSnapshot, setCapturedSnapshot] = useState<string | null>(null);
 
