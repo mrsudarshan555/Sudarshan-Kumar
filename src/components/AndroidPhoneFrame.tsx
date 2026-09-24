@@ -661,6 +661,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     onOpenRoutines={() => setIsRoutinesOpen(true)}
                     appearanceConfig={appearanceConfig}
                     userName={personalConfig.preferredName || personalConfig.fullName || currentUser?.name || 'there'}
+                    onToolPrompt={(prompt) => onSubmitPrompt(prompt)}
                   />
                 )}
               </motion.div>
