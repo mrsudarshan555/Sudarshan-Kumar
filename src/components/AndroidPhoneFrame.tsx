@@ -23,7 +23,7 @@ import { ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEng
 import { 
   Home, Camera, Brain, MessageSquare, MessageCircleMore,
   Settings as SettingsIcon, Shield, Menu, X as CloseIcon, ChevronRight,
-  Trash2, Plus, Zap, Smartphone, UserCheck, Sparkles, Search, Radio
+  Trash2, Plus, Zap, Smartphone, UserCheck, Sparkles, Search, Radio, Menu as MenuIcon, PenLine, MoreVertical
 } from 'lucide-react';
 import { useLanguage } from '../services/i18n/languageContext';
 import { MarkLIIUndoToast } from './MarkLIIUndoToast';
@@ -424,50 +424,55 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
         <div className="absolute inset-0 pointer-events-none z-50 border border-purple-500/30 rounded-none shadow-[inset_0_0_24px_rgba(168,85,247,0.15)] animate-pulse" />
       )}
       
-      {/* Unified MAYRA top bar: same on Home, Chat, Camera and Memory. */}
+      {/* MAYRA global navigation. Chat uses a clean Gemini-style header; other screens keep the four-icon bar. */}
       {!isSettingsOpen && (
-        <div className={`h-14 px-3 flex items-center justify-between border-b z-30 shrink-0 ${appearanceConfig.darkMode ? "border-white/10 bg-[#070312]/95" : "border-slate-200 bg-white/95"} relative`}>
-          <button onClick={() => navigateFromDrawer('home')} className={`flex items-center gap-2 min-w-0 ${activeTab === 'scan' ? 'opacity-0 pointer-events-none' : ''}`} aria-label="MAYRA Home">
-            <MayraLogo size={28} showGlow={false} iconVariant={appearanceConfig.launcherIconVariant} />
-            <span className={`font-semibold text-sm tracking-tight ${appearanceConfig.darkMode ? "text-white" : "text-slate-900"}`}>MAYRA</span>
-            <span className="px-2 py-1 rounded-full bg-white/[0.07] border border-white/10 text-[9px] font-semibold text-slate-200">
-              {planLabel}
-            </span>
-          </button>
-
-          {activeTab === 'scan' && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex items-center gap-2 text-white text-[22px] font-medium tracking-tight drop-shadow-lg">
-                <Radio className="w-6 h-6 stroke-[2.5]" />
-                <span>Live</span>
-              </div>
-            </div>
-          )}
-
-          <nav className="flex items-center gap-1 shrink-0" aria-label="MAYRA navigation">
-            {[
-              { id: 'home' as ActiveTab, icon: Home, label: 'Home' },
-              { id: 'scan' as ActiveTab, icon: Camera, label: 'Camera' },
-              { id: 'memories' as ActiveTab, icon: Brain, label: 'Memory' },
-              { id: 'chat' as ActiveTab, icon: MessageCircleMore, label: 'Chat' }
-            ].map(({ id, icon: Icon, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => navigateFromDrawer(id)}
-                aria-label={label}
-                title={label}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeTab === id ? 'bg-white/12 text-white' : 'text-slate-400 hover:bg-white/[0.07] hover:text-white'}`}
-              >
-                {id === 'chat' ? (
-                  <img src={mayraChatIcon} alt="" aria-hidden="true" className="w-[19px] h-[19px] object-contain" />
-                ) : (
-                  <Icon className="w-[19px] h-[19px]" strokeWidth={activeTab === id ? 2.2 : 1.8} />
-                )}
+        activeTab === 'chat' ? (
+          <div className={`h-14 px-4 flex items-center justify-between border-b z-30 shrink-0 relative ${appearanceConfig.darkMode ? 'border-white/10 bg-black' : 'border-slate-200 bg-black'}`}>
+            <div className="flex items-center gap-3 min-w-0">
+              <button type="button" onClick={() => setIsSideDrawerOpen(true)} aria-label="Open menu" className="text-white/90">
+                <MenuIcon className="w-7 h-7" strokeWidth={1.7} />
               </button>
-            ))}
-          </nav>
-        </div>
+              <button type="button" className="flex items-center gap-1.5 text-white text-[17px] font-medium">
+                <span>MAYRA {planLabel === 'FREE' ? 'FREE' : planLabel === 'BASIC' ? 'BASIC' : planLabel}</span>
+                <span className="text-white/45 text-[15px]">⌄</span>
+              </button>
+            </div>
+            <div className="flex items-center gap-5 text-white/90">
+              <button type="button" aria-label="New chat" onClick={onClearChat}><PenLine className="w-6 h-6" strokeWidth={1.8} /></button>
+              <button type="button" aria-label="More options"><MoreVertical className="w-6 h-6" strokeWidth={1.8} /></button>
+            </div>
+          </div>
+        ) : (
+          <div className={`h-14 px-3 flex items-center justify-between border-b z-30 shrink-0 ${appearanceConfig.darkMode ? "border-white/10 bg-[#070312]/95" : "border-slate-200 bg-white/95"} relative`}>
+            <button onClick={() => navigateFromDrawer('home')} className="flex items-center gap-2 min-w-0" aria-label="MAYRA Home">
+              <MayraLogo size={28} showGlow={false} iconVariant={appearanceConfig.launcherIconVariant} />
+              <span className={`font-semibold text-sm tracking-tight ${appearanceConfig.darkMode ? "text-white" : "text-slate-900"}`}>MAYRA</span>
+              <span className="px-2 py-1 rounded-full bg-white/[0.07] border border-white/10 text-[9px] font-semibold text-slate-200">{planLabel}</span>
+            </button>
+
+            {activeTab === 'scan' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="flex items-center gap-2 text-white text-[22px] font-medium tracking-tight drop-shadow-lg">
+                  <Radio className="w-6 h-6 stroke-[2.5]" /><span>Live</span>
+                </div>
+              </div>
+            )}
+
+            <nav className="flex items-center gap-1 shrink-0" aria-label="MAYRA navigation">
+              {[
+                { id: 'home' as ActiveTab, icon: Home, label: 'Home' },
+                { id: 'scan' as ActiveTab, icon: Camera, label: 'Camera' },
+                { id: 'memories' as ActiveTab, icon: Brain, label: 'Memory' },
+                { id: 'chat' as ActiveTab, icon: MessageCircleMore, label: 'Chat' }
+              ].map(({ id, icon: Icon, label }) => (
+                <button key={id} type="button" onClick={() => navigateFromDrawer(id)} aria-label={label} title={label}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeTab === id ? 'bg-white/12 text-white' : 'text-slate-400 hover:bg-white/[0.07] hover:text-white'}`}>
+                  {id === 'chat' ? <img src={mayraChatIcon} alt="" aria-hidden="true" className="w-[19px] h-[19px] object-contain" /> : <Icon className="w-[19px] h-[19px]" strokeWidth={activeTab === id ? 2.2 : 1.8} />}
+                </button>
+              ))}
+            </nav>
+          </div>
+        )
       )}
 
       {/* Left swipe drawer: advanced controls live here instead of crowding every screen. */}
@@ -655,6 +660,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     onOpenVisionScanner={() => handleTabSwitch('scan')}
                     onOpenRoutines={() => setIsRoutinesOpen(true)}
                     appearanceConfig={appearanceConfig}
+                    userName={personalConfig.preferredName || personalConfig.fullName || currentUser?.name || 'there'}
                   />
                 )}
               </motion.div>
