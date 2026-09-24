@@ -131,7 +131,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     <div 
       className={`w-full h-full flex flex-col overflow-hidden bg-transparent relative min-h-0 ${appearanceConfig.darkMode ? "text-slate-100" : "text-slate-900"}`}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_100%,rgba(28,74,180,0.34)_0%,rgba(8,17,45,0.20)_38%,transparent_72%)]" />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_92%,rgba(42,86,190,0.46)_0%,rgba(18,43,105,0.30)_34%,rgba(8,17,45,0.14)_58%,transparent_82%)]" />
       <PullToRefresh
         ref={messagesContainerRef}
         onRefresh={async () => { await new Promise(res => setTimeout(res, 600)); }}
@@ -176,8 +176,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         <div className={`flex items-center gap-5 mt-3 ${appearanceConfig.darkMode ? 'text-slate-300' : 'text-slate-500'}`}>
                           <button type="button" aria-label="Like"><ThumbsUp className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
                           <button type="button" aria-label="Dislike"><ThumbsDown className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
-                          <button type="button" onClick={() => copyToClipboard(msg.text, msg.id)} aria-label="Copy">{copiedMessageId === msg.id ? <Check className="w-[19px] h-[19px]" /> : <Copy className="w-[19px] h-[19px]" strokeWidth={1.8} />}</button>
                           <button type="button" aria-label="Share"><Share2 className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
+                          <button type="button" onClick={() => copyToClipboard(msg.text, msg.id)} aria-label="Copy">{copiedMessageId === msg.id ? <Check className="w-[19px] h-[19px]" /> : <Copy className="w-[19px] h-[19px]" strokeWidth={1.8} />}</button>
                           <button type="button" aria-label="More"><MoreHorizontal className="w-[20px] h-[20px]" /></button>
                         </div>
                       </div>
