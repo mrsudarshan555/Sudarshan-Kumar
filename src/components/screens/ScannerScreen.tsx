@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, X, AlertCircle, Video, MonitorUp, Mic } from 'lucide-react';
+import { CameraAspectRatio } from '../../types';
 interface ScannerScreenProps {
   onSendVisionQuery: (query: string, image?: { base64: string; mimeType?: string }) => void;
   triggerCaptureSignal?: number;
