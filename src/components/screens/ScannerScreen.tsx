@@ -160,9 +160,99 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
   // Automatically start live camera on mount without requiring an extra button click
   useEffect(() => {
     startCamera(cameraFacing);
+    return () => {
+      stopAllTracks();
+    };
+  }, [cameraFacing, startCamera, stopAllTracks]);
 
-    // Stop all media tracks when unmounting / leaving the camera screen
-    return (
+  const handleToggleLive = () => {
+    if (isStreaming) stopAllTracks();
+    else startCamera(cameraFacing);
+  };
+
+  const captureFrameFromVideo = (): string | null => {
+    if (!videoRef.current) return null;
+    const video = videoRef.current;
+    if (!video.videoWidth || !video.videoHeight) return null;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.9);
+    } catch (e) {
+      console.warn('[Vision Scanner] Canvas frame capture error:', e);
+      return null;
+    }
+  };
+
+  const analyzeImagePayload = async (base64DataUrl: string) => {
+    setScannedResult(null);
+    const cleanBase64 = base64DataUrl.replace(/^data:image\\/[a-z]+;base64,/, '');
+    const modePrompt = scanMode === 'ocr'
+      ? 'Extract and transcribe all visible text, signs, labels, or writing in this image accurately.'
+      : scanMode === 'object'
+      ? 'Identify and describe the main physical objects, items, and hardware in this camera snapshot.'
+      : 'Describe the overall scene, layout, lighting, and environmental context of this scene.';
+
+    try {
+      const res = await fetch('/api/vision/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: { base64: cleanBase64, mimeType: 'image/jpeg' },
+          query: modePrompt,
+          mode: scanMode,
+          language: 'en'
+        })
+      });
+      const data = await res.json();
+      if (data.description) {
+        setScannedResult(data.description);
+        return;
+      }
+    } catch (err) {
+      console.warn('[Vision Scanner] Network analysis error:', err);
+    }
+    setScannedResult('Vision analysis failed. Please check your network/API configuration and try again.');
+  };
+
+  const handleShutterCapture = () => {
+    if (isStreaming) {
+      const snapshot = captureFrameFromVideo();
+      if (snapshot) {
+        setCapturedSnapshot(snapshot);
+        analyzeImagePayload(snapshot);
+      }
+    } else {
+      startCamera(cameraFacing);
+    }
+  };
+
+  useEffect(() => {
+    if (triggerCaptureSignal && triggerCaptureSignal > 0) {
+      handleShutterCapture();
+    }
+  }, [triggerCaptureSignal]);
+
+  const handleGalleryPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      if (result) {
+        setCapturedSnapshot(result);
+        analyzeImagePayload(result);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  return (
     <div className="w-full h-full relative overflow-hidden bg-[#090a0f] text-white select-none flex flex-col">
       <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handleGalleryPhotoSelected} />
 
