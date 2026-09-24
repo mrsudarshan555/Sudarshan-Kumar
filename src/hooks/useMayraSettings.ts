@@ -75,15 +75,17 @@ function getInitialPersonalConfig(): UserPersonalConfig {
   return DEFAULT_PERSONAL_CONFIG;
 }
 
-function getInitialThemeMode(): 'light' | 'dark' | 'cosmic' {
-  if (typeof window === 'undefined') return 'cosmic';
+function getInitialThemeMode(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'dark';
   try {
     const saved = localStorage.getItem(THEME_MODE_STORAGE_KEY);
-    if (saved === 'light' || saved === 'dark' || saved === 'cosmic') return saved;
+    if (saved === 'light' || saved === 'dark') return saved;
     const darkSaved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
+    if (darkSaved === 'true') return 'dark';
     if (darkSaved === 'false') return 'light';
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   } catch (e) {}
-  return 'cosmic'; // Default: Cosmic Violet (Avatar Velvet)
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function getInitialDarkMode(): boolean {
@@ -92,7 +94,7 @@ function getInitialDarkMode(): boolean {
     const saved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
     if (saved !== null) return saved === 'true';
   } catch (e) {}
-  return true; // Default Dark Mode
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true;
 }
 
 function getInitialHeadingFont(): 'system' | 'orbitron' | 'sora' | 'manrope' | 'space_grotesk' {
