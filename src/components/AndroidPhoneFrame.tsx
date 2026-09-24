@@ -406,7 +406,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
     <div 
       onTouchStart={handleDrawerTouchStart}
       onTouchEnd={handleDrawerTouchEnd}
-      className="w-full h-full flex flex-col relative overflow-hidden bg-[#070312] text-slate-100 select-none"
+      className={`w-full h-full flex flex-col relative overflow-hidden select-none ${appearanceConfig.darkMode ? "bg-[#070312] text-slate-100" : "bg-[#f8f9fc] text-slate-900"}`}
       style={{
         '--theme-primary': currentTheme.primaryHex,
         '--theme-secondary': currentTheme.secondaryHex
@@ -426,7 +426,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       
       {/* Unified MAYRA top bar: same on Home, Chat, Camera and Memory. */}
       {!isSettingsOpen && (
-        <div className="h-14 px-3 flex items-center justify-between border-b border-white/10 bg-[#070312]/95 z-30 shrink-0">
+        <div className={`h-14 px-3 flex items-center justify-between border-b z-30 shrink-0 ${appearanceConfig.darkMode ? "border-white/10 bg-[#070312]/95" : "border-slate-200 bg-white/95"}`}>
           <button onClick={() => navigateFromDrawer('home')} className="flex items-center gap-2 min-w-0" aria-label="MAYRA Home">
             <MayraLogo size={28} showGlow={false} iconVariant={appearanceConfig.launcherIconVariant} />
             <span className="font-semibold text-sm text-white tracking-tight">MAYRA</span>
