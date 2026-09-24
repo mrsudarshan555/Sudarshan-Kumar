@@ -8,7 +8,7 @@ import {
 } from '../types';
 import { UserAccount } from '../types/auth';
 import { HomeScreen } from './screens/HomeScreen';
-import { ScannerScreen } from './screens/ScannerScreen';
+import { MayraLiveScreen } from './screens/MayraLiveScreen';
 import { MemoriesScreen } from './screens/MemoriesScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import { MayraSettingsScreen } from './settings/MayraSettingsScreen';
@@ -611,11 +611,10 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                   />
                 )}
                 {activeTab === 'scan' && (
-                  <ScannerScreen 
-                    onSendVisionQuery={onSendVisionQuery}
-                    triggerCaptureSignal={scanCaptureSignal}
-                    aspectRatio={appearanceConfig.cameraAspectRatio}
-                    onCloseScanner={() => navigateFromDrawer('home')}
+                  <MayraLiveScreen
+                    onOpenChat={() => navigateFromDrawer('chat')}
+                    onOpenHome={() => navigateFromDrawer('home')}
+                    onEndSession={() => navigateFromDrawer('home')}
                   />
                 )}
                 {activeTab === 'memories' && (
