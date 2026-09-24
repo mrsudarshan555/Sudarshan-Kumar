@@ -433,7 +433,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                 <MenuIcon className="w-7 h-7" strokeWidth={1.7} />
               </button>
               <button type="button" className="flex items-center gap-1.5 text-white text-[17px] font-medium">
-                <span>MAYRA {planLabel === 'FREE' ? 'FREE' : planLabel === 'BASIC' ? 'BASIC' : planLabel}</span>
+                <span>Mayra {planLabel === 'PLUS' ? 'Plus' : planLabel === 'MAX' ? 'Max' : planLabel === 'BASIC' ? 'Basic' : 'Free'}</span>
                 <span className="text-white/45 text-[15px]">⌄</span>
               </button>
             </div>
