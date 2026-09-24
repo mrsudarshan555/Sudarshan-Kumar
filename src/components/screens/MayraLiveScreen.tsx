@@ -4,12 +4,14 @@ interface MayraLiveScreenProps {
   onOpenChat?: () => void;
   onOpenHome?: () => void;
   onEndSession?: () => void;
+  onOpenMemory?: () => void;
 }
 
 export const MayraLiveScreen: React.FC<MayraLiveScreenProps> = ({
   onOpenChat,
   onOpenHome,
-  onEndSession
+  onEndSession,
+  onOpenMemory
 }) => {
   const [facing, setFacing] = useState<'user' | 'environment'>('user');
   const [camOn, setCamOn] = useState(false);
@@ -130,7 +132,7 @@ export const MayraLiveScreen: React.FC<MayraLiveScreenProps> = ({
               <path d="M6 9.5V19C6 19.5523 6.44772 20 7 20H10V15C10 14.4477 10.4477 14 11 14H13C13.5523 14 14 14.4477 14 15V20H17C17.5523 20 18 19.5523 18 19V9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button className="mayra-live-ctrl mayra-live-home" onClick={() => window.dispatchEvent(new CustomEvent('mayra:open-memory'))} aria-label="Memory">
+          <button className="mayra-live-ctrl mayra-live-home" onClick={onOpenMemory} aria-label="Memory">
             <svg width="21" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <rect x="4" y="5" width="16" height="14" rx="3" stroke="currentColor" strokeWidth="1.8"/>
               <path d="M8 9H16M8 12H16M8 15H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
