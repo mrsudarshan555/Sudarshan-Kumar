@@ -222,10 +222,8 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   return (
     <div className="w-full flex flex-col items-center select-none relative px-0.5">
       <div className="relative w-full max-w-lg flex flex-col items-center">
-        <div className={`w-full relative transition-all duration-200 ${isExpanded ? 'rounded-[24px]' : 'rounded-full'}`}
-          className={\`w-full relative transition-all duration-200 border border-slate-300/90 dark:border-white/15 shadow-[0_2px_10px_rgba(0,0,0,0.10)] \${isExpanded ? 'rounded-[24px]' : 'rounded-full'} bg-[#ebedf3] dark:bg-[#1a1b20]\`}>
-          <div className={`w-full transition-all duration-200 relative overflow-hidden backdrop-blur-xl ${isExpanded ? 'rounded-[23px] px-4 py-3' : 'rounded-full px-4 py-2.5'}`}
-            className="w-full transition-all duration-200 relative overflow-hidden backdrop-blur-xl bg-[#f8f9fc] dark:bg-[#111216]">
+        <div className={`w-full relative transition-all duration-200 border border-slate-300/90 dark:border-white/15 shadow-[0_2px_10px_rgba(0,0,0,0.10)] ${isExpanded ? 'rounded-[24px]' : 'rounded-full'} bg-[#ebedf3] dark:bg-[#1a1b20]`}>
+          <div className={`w-full transition-all duration-200 relative overflow-hidden backdrop-blur-xl ${isExpanded ? 'rounded-[23px] px-4 py-3' : 'rounded-full px-4 py-2.5'} bg-[#f8f9fc] dark:bg-[#111216]`}>
             {attachedFile && (
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                 className="mb-2 inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-300 rounded-full text-xs text-slate-700 shadow-sm">
