@@ -25,6 +25,7 @@ interface ChatScreenProps {
   onClearChat: () => void;
   onOpenVisionScanner?: () => void;
   onOpenRoutines?: () => void;
+  appearanceConfig?: { darkMode: boolean };
 }
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({
@@ -36,7 +37,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   onTriggerVoice,
   onStartPtt,
   onStopPtt,
-  onOpenVisionScanner
+  onOpenVisionScanner,
+  appearanceConfig = { darkMode: true }
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [attachedFile, setAttachedFile] = useState<AttachmentItem | null>(null);
@@ -125,7 +127,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   return (
     <div 
-      className="w-full h-full flex flex-col overflow-hidden bg-transparent text-slate-100 relative min-h-0"
+      className={`w-full h-full flex flex-col overflow-hidden bg-transparent relative min-h-0 ${appearanceConfig.darkMode ? "text-slate-100" : "text-slate-900"}`}
     >
       {/* Pull To Refresh Wrapped Messages Stream */}
       <PullToRefresh
@@ -138,7 +140,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center my-auto min-h-[300px] px-6 text-center">
             <MayraLogo size={58} showGlow={false} variant="raw" />
-            <div className="mt-5 text-2xl font-light tracking-tight text-white">What&apos;s next?</div>
+            <div className={`mt-5 text-2xl font-light tracking-tight ${appearanceConfig.darkMode ? "text-white" : "text-slate-900"}`}>What&apos;s next?</div>
           </div>
         ) : (
           <div className="space-y-3 w-full flex flex-col">
@@ -159,7 +161,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                       className={`max-w-[86%] rounded-2xl p-3 text-xs leading-relaxed font-sans transition-all ${
                         isUser
                           ? 'bg-gradient-to-br from-blue-600 to-indigo-700 backdrop-blur-xl border border-white/20 text-white rounded-br-sm shadow-[0_4px_20px_rgba(37,99,235,0.25)]'
-                          : 'bg-white/[0.07] backdrop-blur-2xl border border-white/15 text-slate-100 rounded-bl-sm shadow-[0_4px_20px_rgba(0,0,0,0.35)]'
+                          : appearanceConfig.darkMode ? 'bg-white/[0.07] border border-white/15 text-slate-100 rounded-bl-sm shadow-[0_4px_20px_rgba(0,0,0,0.35)]' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-[0_4px_20px_rgba(15,23,42,0.08)]'
                       }`}
                     >
                       {!isUser && (
