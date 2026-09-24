@@ -1,0 +1,49 @@
+name: Apply GPT-Live-1 server integration patch
+
+on:
+  push:
+    branches: [openai-realtime-voice-safe]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Patch server.ts
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'server.ts';
+          let text = fs.readFileSync(path, 'utf8');
+          const marker = "// Dedicated Voice Synthesis Endpoint: Returns natural human-like voice audio from Gemini or OpenAI TTS";
+          if (!text.includes(marker)) throw new Error('Voice endpoint marker not found; refusing blind edit');
+          if (text.includes("/api/voice/openai-realtime/session")) {
+            console.log('GPT-Live route already present; no change needed.');
+          } else {
+            const route = `// GPT-Live-1 WebRTC session broker. The standard OpenAI API key stays server-side.\napp.post('/api/voice/openai-realtime/session', async (req, res) => {\n  const offerSdp = typeof req.body?.sdp === 'string' ? req.body.sdp.trim() : '';\n  if (!offerSdp) {\n    return res.status(400).json({ error: 'An SDP offer is required' });\n  }\n  if (!process.env.OPENAI_API_KEY) {\n    return res.status(503).json({ error: 'OpenAI Live is not configured on the server' });\n  }\n\n  try {\n    const openaiResponse = await fetch('https://api.openai.com/v1/live/sessions', {\n      method: 'POST',\n      headers: {\n        'Content-Type': 'application/json',\n        'Authorization': \`Bearer \${process.env.OPENAI_API_KEY}\`\n      },\n      body: JSON.stringify({\n        session: {\n          model: 'gpt-live-1',\n          audio: { output: { voice: 'willow' } },\n          instructions: 'You are MAYRA, a natural, warm, concise voice assistant. Speak conversationally, handle interruptions naturally, and avoid unnecessary monologues.'\n        },\n        transport: {\n          type: 'webrtc',\n          sdp: offerSdp\n        }\n      })\n    });\n\n    if (!openaiResponse.ok) {\n      const details = await openaiResponse.text();\n      console.error('[MAYRA GPT-Live] Session creation failed:', openaiResponse.status, details);\n      return res.status(502).json({ error: 'OpenAI Live session creation failed' });\n    }\n\n    const liveSession = await openaiResponse.json();\n    const answerSdp = liveSession?.transport?.sdp;\n    if (typeof answerSdp !== 'string' || !answerSdp.trim()) {\n      console.error('[MAYRA GPT-Live] OpenAI returned no SDP answer');\n      return res.status(502).json({ error: 'OpenAI Live returned no SDP answer' });\n    }\n\n    res.type('application/sdp').send(answerSdp);\n  } catch (error: any) {\n    console.error('[MAYRA GPT-Live] Session broker error:', error?.message || error);\n    return res.status(502).json({ error: 'Unable to start OpenAI Live session' });\n  }\n});\n\n`;
+            text = text.replace(marker, route + marker);
+            fs.writeFileSync(path, text);
+          }
+          NODE
+      - name: Verify GPT-Live route and build
+        run: |
+          test -n "$(grep -F "/api/voice/openai-realtime/session" server.ts)"
+          npm install --no-audit --no-fund
+          npm run lint
+          npm run build
+      - name: Commit integration and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/patch-gpt-live-1.yml
+          git add server.ts .github/workflows/patch-gpt-live-1.yml
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Integrate GPT-Live-1 Willow session broker"
+          git push
