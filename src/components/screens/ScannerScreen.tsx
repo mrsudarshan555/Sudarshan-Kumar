@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, X, AlertCircle, Video, MonitorUp, Mic } from 'lucide-react';
-nterface ScannerScreenProps {
+interface ScannerScreenProps {
   onSendVisionQuery: (query: string, image?: { base64: string; mimeType?: string }) => void;
   triggerCaptureSignal?: number;
   aspectRatio?: CameraAspectRatio;
+  onCloseScanner?: () => void;
 }
 
 export const ScannerScreen: React.FC<ScannerScreenProps> = ({ 
   onSendVisionQuery,
-  triggerCaptureSignal
+  triggerCaptureSignal,
+  onCloseScanner
 }) => {
   // Live Camera stream & hardware states
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
