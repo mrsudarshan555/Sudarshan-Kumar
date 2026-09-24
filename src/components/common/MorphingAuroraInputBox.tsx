@@ -220,45 +220,86 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
   const isExpanded = lineCount > 1 || Boolean(attachedFile);
 
   return (
-    <div className="w-full flex flex-col items-center select-none relative px-0.5">
-      <div className="relative w-full max-w-lg flex flex-col items-center">
-        <div className={`w-full relative transition-all duration-200 border border-slate-300/90 dark:border-white/15 shadow-[0_2px_10px_rgba(0,0,0,0.10)] ${isExpanded ? 'rounded-[24px]' : 'rounded-full'} bg-[#ebedf3] dark:bg-[#1a1b20]`}>
-          <div className={`w-full transition-all duration-200 relative overflow-hidden backdrop-blur-xl ${isExpanded ? 'rounded-[23px] px-4 py-3' : 'rounded-full px-4 py-2.5'} bg-[#f8f9fc] dark:bg-[#111216]`}>
-            {attachedFile && (
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                className="mb-2 inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-300 rounded-full text-xs text-slate-700 shadow-sm">
-                <Paperclip className="w-3.5 h-3.5 text-slate-600" />
-                <span className="truncate max-w-[180px] font-medium">{attachedFile.name}</span>
-                {onRemoveAttachment && <button type="button" onClick={onRemoveAttachment} className="p-0.5 hover:bg-slate-200 rounded-full text-slate-500"><X className="w-3 h-3" /></button>}
-              </motion.div>
-            )}
-            <div className={`flex items-end gap-3 w-full ${isExpanded ? 'items-end' : 'items-center'}`}>
-              <div className="flex-1 relative flex items-center min-w-0">
-                <textarea ref={textareaRef} value={inputText} onChange={(e) => handleTextChange(e.target.value)} onKeyDown={handleKeyDown}
-                  onFocus={() => handleFocusChange(true)} onBlur={() => handleFocusChange(false)} placeholder={activePlaceholder} rows={1}
-                  className="w-full bg-transparent border-none outline-none resize-none text-[16px] sm:text-[17px] text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 font-sans leading-[24px] py-0.5 min-h-[24px] max-h-[88px] scrollbar-thin"
-                  style={{ height: '24px', transition: 'height 0.12s ease-out' }} />
-              </div>
-              <div className="shrink-0 flex items-center gap-3 mb-0.5">
-                <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} type="button" onClick={handleMicClick}
-                  onPointerDown={handleMicPointerDown} onPointerUp={handleMicPointerUp} onPointerCancel={handleMicPointerCancel} onPointerLeave={handleMicPointerCancel}
-                  className="p-0.5 rounded-full text-black transition-all cursor-pointer flex items-center justify-center select-none touch-none" title="Hold to talk / Tap for Hands-Free">
-                  <Mic className="w-8 h-8 stroke-[2.4]" />
-                </motion.button>
-                <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} type="button" onClick={onOpenAttachment}
-                  className="p-0.5 text-slate-700 hover:text-black rounded-full transition-colors shrink-0 cursor-pointer" title="Add attachment">
-                  <Plus className="w-9 h-9 stroke-[1.7]" />
-                </motion.button>
+    <div className="w-full flex items-center select-none relative px-0.5">
+      <div className="w-full max-w-lg mx-auto flex items-center gap-3">
+        <div className="relative flex-1 min-w-0">
+          <div className={`w-full relative transition-all duration-200 border border-slate-300/80 dark:border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.08)] ${isExpanded ? 'rounded-[24px]' : 'rounded-full'} bg-[#eceaf2] dark:bg-[#1a1b20]`}>
+            <div className={`w-full transition-all duration-200 relative overflow-hidden backdrop-blur-xl ${isExpanded ? 'rounded-[23px] px-4 py-3' : 'rounded-full px-4 py-2.5'}`}>
+              {attachedFile && (
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                  className="mb-2 inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/10 rounded-full text-xs text-slate-700 dark:text-slate-200 shadow-sm">
+                  <Paperclip className="w-3.5 h-3.5" />
+                  <span className="truncate max-w-[180px] font-medium">{attachedFile.name}</span>
+                  {onRemoveAttachment && (
+                    <button type="button" onClick={onRemoveAttachment} className="p-0.5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full">
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </motion.div>
+              )}
+
+              <div className={`flex w-full ${isExpanded ? 'items-end' : 'items-center'} gap-3`}>
+                <div className="flex-1 relative flex items-center min-w-0">
+                  <textarea
+                    ref={textareaRef}
+                    value={inputText}
+                    onChange={(e) => handleTextChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => handleFocusChange(true)}
+                    onBlur={() => handleFocusChange(false)}
+                    placeholder={activePlaceholder}
+                    rows={1}
+                    className="w-full bg-transparent border-none outline-none resize-none text-[16px] sm:text-[17px] text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 font-sans leading-[24px] py-0.5 min-h-[24px] max-h-[88px] scrollbar-thin"
+                    style={{ height: '24px', transition: 'height 0.12s ease-out' }}
+                  />
+                </div>
+
+                <div className="shrink-0 flex items-center gap-3 mb-0.5">
+                  <motion.button
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.92 }}
+                    type="button"
+                    onClick={handleMicClick}
+                    onPointerDown={handleMicPointerDown}
+                    onPointerUp={handleMicPointerUp}
+                    onPointerCancel={handleMicPointerCancel}
+                    onPointerLeave={handleMicPointerCancel}
+                    className="p-0.5 rounded-full text-slate-900 dark:text-white transition-all cursor-pointer flex items-center justify-center select-none touch-none"
+                    title="Voice input"
+                    aria-label="Voice input"
+                  >
+                    <Mic className="w-[27px] h-[27px]" strokeWidth={2.15} />
+                  </motion.button>
+
+                  <motion.button
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.92 }}
+                    type="button"
+                    onClick={onOpenAttachment}
+                    className="p-0.5 rounded-full text-slate-700 dark:text-white transition-colors shrink-0 cursor-pointer"
+                    title="Add"
+                    aria-label="Add"
+                  >
+                    <Plus className="w-[31px] h-[31px]" strokeWidth={1.75} />
+                  </motion.button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.94 }} type="button" onClick={hasText ? onSubmit : onTriggerVoice}
-          className="mt-2 w-14 h-14 rounded-full bg-white dark:bg-[#17181d] border border-slate-300 dark:border-white/15 shadow-[0_2px_10px_rgba(0,0,0,0.10)] flex items-center justify-center text-black dark:text-white"
-          title={hasText ? "Send message" : "Voice mode"} aria-label={hasText ? "Send message" : "Voice mode"}>
-          <svg viewBox="0 0 48 48" className="w-9 h-9" aria-hidden="true">
-            <path d="M14 19v10M20 14v20M26 20v8M32 16v16" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round"/>
-            <path d="M35 8l1.8 4.2L41 14l-4.2 1.8L35 8z" fill="currentColor"/>
+
+        <motion.button
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.94 }}
+          type="button"
+          onClick={hasText ? onSubmit : onTriggerVoice}
+          className="shrink-0 w-[52px] h-[52px] rounded-full bg-[#eceaf2] dark:bg-[#1a1b20] border border-slate-300/80 dark:border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.08)] flex items-center justify-center text-slate-900 dark:text-white"
+          title={hasText ? "Send message" : "AI assist / voice"}
+          aria-label={hasText ? "Send message" : "AI assist"}
+        >
+          <svg viewBox="0 0 48 48" className="w-[32px] h-[32px]" aria-hidden="true">
+            <path d="M14 20v8M20 14v20M26 20v8M32 17v14" fill="none" stroke="currentColor" strokeWidth="4.2" strokeLinecap="round"/>
+            <path d="M36 7l1.8 4.2L42 13l-4.2 1.8L36 19l-1.8-4.2L30 13l4.2-1.8L36 7z" fill="currentColor"/>
           </svg>
         </motion.button>
       </div>
