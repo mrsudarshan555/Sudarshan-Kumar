@@ -27,6 +27,7 @@ interface ChatScreenProps {
   onOpenRoutines?: () => void;
   appearanceConfig?: { darkMode: boolean };
   userName?: string;
+  onToolPrompt?: (prompt: string) => void;
 }
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({
@@ -40,7 +41,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   onStopPtt,
   onOpenVisionScanner,
   appearanceConfig = { darkMode: true },
-  userName = 'there'
+  userName = 'there',
+  onToolPrompt
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [attachedFile, setAttachedFile] = useState<AttachmentItem | null>(null);
@@ -273,6 +275,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           setAttachedFile(item);
         }}
         onOpenVisionScanner={onOpenVisionScanner}
+        onToolPrompt={onToolPrompt}
       />
 
     </div>
