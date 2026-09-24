@@ -644,6 +644,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     onClearChat={onClearChat}
                     onOpenVisionScanner={() => handleTabSwitch('scan')}
                     onOpenRoutines={() => setIsRoutinesOpen(true)}
+                    appearanceConfig={appearanceConfig}
                   />
                 )}
               </motion.div>
