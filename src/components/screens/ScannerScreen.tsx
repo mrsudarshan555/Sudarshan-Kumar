@@ -21,14 +21,11 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
   // Live Camera stream & hardware states
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
-  const [hasTorchSupport, setHasTorchSupport] = useState<boolean>(false);
-  const [torchOn, setTorchOn] = useState<boolean>(false);
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const [isStartingCamera, setIsStartingCamera] = useState<boolean>(false);
 
   // Vision & Scanning states
   const [scanMode, setScanMode] = useState<'ocr' | 'object' | 'scene'>('ocr');
-  const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scannedResult, setScannedResult] = useState<string | null>(null);
   const [capturedSnapshot, setCapturedSnapshot] = useState<string | null>(null);
 
@@ -53,25 +50,7 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
       videoRef.current.srcObject = null;
     }
     setIsStreaming(false);
-    setTorchOn(false);
-    setHasTorchSupport(false);
   }, []);
-
-  // Check hardware torch capability on current stream
-  const inspectTorchSupport = (stream: MediaStream) => {
-    try {
-      const track = stream.getVideoTracks()[0];
-      if (track && typeof (track as any).getCapabilities === 'function') {
-        const capabilities = (track as any).getCapabilities();
-        const supported = Boolean(capabilities && capabilities.torch);
-        setHasTorchSupport(supported);
-        return;
-      }
-    } catch (e) {
-      console.warn('[Vision Scanner] Capabilities check notice:', e);
-    }
-    setHasTorchSupport(false);
-  };
 
   // Start the live camera stream inside the HTML video element using Web MediaDevices API
   const startCamera = useCallback(async (facing: 'environment' | 'user' = cameraFacing) => {
@@ -148,8 +127,6 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
 
     if (mediaStream) {
       streamRef.current = mediaStream;
-      inspectTorchSupport(mediaStream);
-
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         videoRef.current.setAttribute('playsinline', 'true');
