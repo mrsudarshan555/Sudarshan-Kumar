@@ -414,7 +414,8 @@ export const PersonalSettingsView: React.FC<PersonalSettingsProps> = ({
                 }}
                 className="w-full bg-purple-950/80 border border-white/15 rounded-2xl p-2 text-white font-sans text-xs outline-none focus:border-purple-400/70 cursor-pointer"
               >
-                <option value="gemini-3.7-flash">Gemini 3.7 Flash (Default • Fast)</option>
+                <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fast &amp; Stable • Recommended)</option>
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
                 <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Ultra Fast)</option>
                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Deep Reasoning)</option>
               </select>

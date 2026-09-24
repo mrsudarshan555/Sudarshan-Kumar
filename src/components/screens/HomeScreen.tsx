@@ -95,6 +95,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     handleWheel
   } = useCharacterController(status);
 
+  const statusBadge = (() => {
+    switch (status) {
+      case 'LISTENING':
+        return { label: 'LISTENING', dotColor: 'bg-cyan-400', textColor: 'text-cyan-300' };
+      case 'THINKING':
+        return { label: 'THINKING', dotColor: 'bg-amber-400', textColor: 'text-amber-300' };
+      case 'SPEAKING':
+        return { label: 'SPEAKING', dotColor: 'bg-fuchsia-400', textColor: 'text-fuchsia-300' };
+      case 'ERROR':
+        return { label: 'ERROR', dotColor: 'bg-rose-400', textColor: 'text-rose-400' };
+      case 'INTERRUPTED':
+        return { label: 'PAUSED', dotColor: 'bg-amber-400', textColor: 'text-amber-400' };
+      case 'READY':
+      default:
+        return { label: 'ONLINE', dotColor: 'bg-emerald-400', textColor: 'text-emerald-300' };
+    }
+  })();
+
   // Barehands Hand Tracking & Gesture Control Engine
   const {
     isEnabled: isHandTrackingActive,

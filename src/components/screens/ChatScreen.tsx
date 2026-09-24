@@ -9,6 +9,7 @@ import {
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
 import { PullToRefresh } from '../common/PullToRefresh';
+import { ShimmerSkeleton } from '../common/ShimmerSkeleton';
 import { InteractiveQuizWidget } from '../quiz/InteractiveQuizWidget';
 import { GoogleDriveChatCard } from '../drive/GoogleDriveChatCard';
 

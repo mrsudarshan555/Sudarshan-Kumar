@@ -5,6 +5,7 @@ import {
   Sparkles, Volume2, Mic, Settings as SettingsIcon, X
 } from 'lucide-react';
 import { AssistantConfig } from '../../types';
+import { speakText, stopCurrentSpeech } from '../../utils/speechEngine';
 
 interface VoiceModelsViewProps {
   config: AssistantConfig;
@@ -86,26 +87,28 @@ export const VoiceModelsView: React.FC<VoiceModelsViewProps> = ({
   const handlePlayVoiceSample = (voice: VoiceItem, e: React.MouseEvent) => {
     e.stopPropagation();
     if (playingVoiceId === voice.id) {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      stopCurrentSpeech();
       setPlayingVoiceId(null);
       return;
     }
 
+    stopCurrentSpeech();
     setPlayingVoiceId(voice.id);
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const text = voice.language === 'English' 
-        ? `Hello, I am ${voice.name}, your intelligent AI companion.`
-        : `नमस्ते! मैं हूँ ${voice.name}, आपकी पर्सनल AI सहायक।`;
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = voiceSpeed;
-      utter.pitch = voicePitch === 'Low' ? 0.8 : voicePitch === 'High' ? 1.2 : 1.0;
-      utter.onend = () => setPlayingVoiceId(null);
-      utter.onerror = () => setPlayingVoiceId(null);
-      window.speechSynthesis.speak(utter);
-    } else {
-      setTimeout(() => setPlayingVoiceId(null), 2000);
-    }
+    const text = voice.language === 'English' 
+      ? `Hello! I am ${voice.name}, your intelligent AI companion.`
+      : `नमस्ते! मैं हूँ ${voice.name}, आपकी पर्सनल AI सहायक।`;
+    const lang = voice.language === 'English' ? 'en' : 'hi';
+
+    speakText(
+      text,
+      lang,
+      () => setPlayingVoiceId(voice.id),
+      () => setPlayingVoiceId(null),
+      null,
+      voice.name
+    ).catch(() => {
+      setPlayingVoiceId(null);
+    });
   };
 
   const filteredVoices = VOICE_CATALOG.filter(voice => {

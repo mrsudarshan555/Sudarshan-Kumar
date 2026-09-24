@@ -1382,7 +1382,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       try {
         console.log('[LIVE_WS_STATE] Dispatching via HTTP apiUrl(/api/chat)');
         const abortController = new AbortController();
-        const timeoutId = setTimeout(() => abortController.abort(), 10000);
+        const timeoutId = setTimeout(() => abortController.abort(), 35000);
 
         const res = await fetch(apiUrl('/api/chat'), {
           method: 'POST',
@@ -1394,7 +1394,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
             image: activeImage,
             contextPrompt: effectiveContextPrompt,
             persona: assistantConfig.personaTone,
-            model: personalConfig.geminiModel || 'gemini-2.5-flash',
+            model: personalConfig.geminiModel || 'gemini-3.6-flash',
             temperature: personalConfig.temperature ?? 0.7,
             userName: personalConfig.preferredName || personalConfig.fullName,
             language: detected,

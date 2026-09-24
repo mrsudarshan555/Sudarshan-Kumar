@@ -1,5 +1,5 @@
 import { openDB, IDBPDatabase } from 'idb';
-import { PMX_MODEL_URL } from '../character/pmxModelLoader';
+import { PMX_MODEL_URL } from '../../components/character/pmxModelLoader';
 
 export interface CharacterModelEntry {
   id: string;

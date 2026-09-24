@@ -11,7 +11,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [apiKey, setApiKey] = useState(localStorage.getItem('mayra_gemini_key') || '');
-  const [model, setModel] = useState('gemini-2.5-flash');
+  const [model, setModel] = useState('gemini-3.6-flash');
   const [voiceTone, setVoiceTone] = useState('Intelligent & Direct');
   const [sttEngine, setSttEngine] = useState('Android Native SpeechRecognizer Shell');
   const [ttsVoice, setTtsVoice] = useState('Mayra Neural Violet');
@@ -180,8 +180,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 onChange={(e) => setModel(e.target.value)}
                 className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-xs text-slate-200 outline-none font-mono"
               >
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Target)</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Target)</option>
+                <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fast &amp; Stable • Recommended)</option>
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Deep Reasoning)</option>
               </select>
             </div>
           </div>

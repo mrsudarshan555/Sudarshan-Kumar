@@ -12,6 +12,7 @@
 import { SmartLifestyleIoTEngine } from './SmartLifestyleIoTEngine';
 import { SystemAutomationEmergencyEngine } from '../automation/SystemAutomationEmergencyEngine';
 import { UnifiedAppHubEngine } from '../hub/UnifiedAppHubEngine';
+import { speakText } from '../../utils/speechEngine';
 
 export type BreathPhase = 'INHALE' | 'HOLD' | 'EXHALE' | 'IDLE';
 
@@ -182,15 +183,8 @@ export class LiveWidgetsWorkflowEngine {
   }
 
   public speak(text: string): void {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.05;
-      utterance.pitch = 1.0;
-      utterance.volume = 0.9;
-      window.speechSynthesis.speak(utterance);
-    } catch {}
+    if (typeof window === 'undefined' || !text) return;
+    speakText(text, 'hi').catch(() => {});
   }
 
   // =========================================================================

@@ -53,7 +53,7 @@ const DEFAULT_PERSONAL_CONFIG: UserPersonalConfig = {
   greetingStyle: 'warm',
   geminiApiKey: '',
   openaiApiKey: '',
-  geminiModel: 'gemini-3.1-flash-lite',
+  geminiModel: 'gemini-3.6-flash',
   temperature: 0.7,
   favoriteMusicGenre: 'Lofi & Ambient Bollywood',
   youtubeApiKey: '',

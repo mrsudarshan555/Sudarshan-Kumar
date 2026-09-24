@@ -390,7 +390,7 @@ Synthesize your response by applying the primed user profile, shared memory vaul
           persona: 'technical',
           voiceName: assistantConfig?.stonicxVoice || 'Charon',
           returnAudio: true,
-          model: personalConfig.geminiModel || 'gemini-3.1-flash-lite',
+          model: personalConfig.geminiModel || 'gemini-3.6-flash',
           temperature: 0.35, // Low temperature for high precision & logic
           userName,
           language: 'en'

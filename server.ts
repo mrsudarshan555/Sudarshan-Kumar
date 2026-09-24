@@ -45,18 +45,20 @@ const ai = new GoogleGenAI({
 
 // Map legacy or high-demand aliases to current stable models per gemini-api guidelines
 function normalizeModelName(model?: string): string {
-  if (!model) return 'gemini-3.1-flash-lite';
+  if (!model) return 'gemini-3.6-flash';
   const trimmed = model.trim();
   if (
     trimmed === 'gemini-3.7-flash' ||
     trimmed === 'gemini-flash-latest' || 
     trimmed === 'gemini-flash' || 
     trimmed === 'gemini-lite' || 
-    trimmed === 'flash-lite'
+    trimmed === 'flash-lite' ||
+    trimmed === 'gemini-2.5-flash' ||
+    trimmed === 'gemini-3.1-flash-lite'
   ) {
-    return 'gemini-3.1-flash-lite';
+    return 'gemini-3.6-flash';
   }
-  if (trimmed === 'gemini-pro') {
+  if (trimmed === 'gemini-pro' || trimmed === 'gemini-2.5-pro') {
     return 'gemini-3.1-pro-preview';
   }
   return trimmed;
@@ -80,9 +82,10 @@ async function generateGeminiResponse(
   const candidateModels = Array.from(
     new Set([
       primaryModel,
-      'gemini-3.1-flash-lite',
-      'gemini-2.5-flash'
-    ].filter((m): m is string => Boolean(m && typeof m === 'string' && m.trim().length > 0 && m !== 'gemini-3.7-flash')))
+      'gemini-3.6-flash',
+      'gemini-3.8-flash',
+      'gemini-3.1-flash-lite'
+    ].filter((m): m is string => Boolean(m && typeof m === 'string' && m.trim().length > 0 && m !== 'gemini-3.7-flash' && m !== 'gemini-2.5-flash')))
   );
 
   // Construct multimodal, multi-turn history, or text content payload
@@ -165,7 +168,7 @@ async function generateGeminiResponse(
       });
 
       const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+        setTimeout(() => reject(new Error('TIMEOUT')), 35000)
       );
 
       const response = await Promise.race([callPromise, timeoutPromise]) as any;
@@ -199,9 +202,10 @@ async function* streamGeminiResponse(
   const candidateModels = Array.from(
     new Set([
       primaryModel,
-      'gemini-3.1-flash-lite',
-      'gemini-2.5-flash'
-    ].filter((m): m is string => Boolean(m && typeof m === 'string' && m.trim().length > 0 && m !== 'gemini-3.7-flash')))
+      'gemini-3.6-flash',
+      'gemini-3.8-flash',
+      'gemini-3.1-flash-lite'
+    ].filter((m): m is string => Boolean(m && typeof m === 'string' && m.trim().length > 0 && m !== 'gemini-3.7-flash' && m !== 'gemini-2.5-flash')))
   );
 
   let contentsPayload: any;
@@ -659,15 +663,15 @@ async function generateOpenAIVoiceAudio(text: string, voiceName: string, customA
   const supported = new Set(['alloy','ash','ballad','coral','echo','fable','onyx','nova','sage','shimmer','verse','marin','cedar']);
   const voice = supported.has((voiceName || '').toLowerCase()) ? voiceName.toLowerCase() : 'marin';
   try {
-    const cleanText = text.replace(/\\[.*?\\]/g, '').replace(/[*#_~`]/g, '').replace(/https?:\\/\\/\\S+/g, 'link').trim();
+    const cleanText = text.replace(/\[.*?\]/g, '').replace(/[*#_~`]/g, '').replace(/https?:\/\/\S+/g, 'link').trim();
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST', headers: { 'Authorization': \`Bearer \${key}\`, 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'gpt-4o-mini-tts', input: cleanText, voice, response_format: 'wav' })
     });
     if (!response.ok) { console.warn('[OpenAI Voice] HTTP', response.status); return null; }
     const buffer = Buffer.from(await response.arrayBuffer());
     const b64 = buffer.toString('base64');
-    return { audioBase64: '', wavBase64: b64, audioUrl: \`data:audio/wav;base64,\${b64}\`, mimeType: 'audio/wav', targetVoice: voice };
+    return { audioBase64: '', wavBase64: b64, audioUrl: `data:audio/wav;base64,${b64}`, mimeType: 'audio/wav', targetVoice: voice };
   } catch (err) { console.warn('[OpenAI Voice] TTS error:', err); return null; }
 }
 
@@ -703,7 +707,14 @@ async function generateGeminiVoiceAudio(
 
   try {
     const genAiClient = (customApiKey && customApiKey !== process.env.GEMINI_API_KEY)
-      ? new GoogleGenAI({ apiKey: effectiveKey })
+      ? new GoogleGenAI({
+          apiKey: effectiveKey,
+          httpOptions: {
+            headers: {
+              'User-Agent': 'aistudio-build'
+            }
+          }
+        })
       : ai;
 
     const callPromise = genAiClient.models.generateContent({
@@ -722,7 +733,7 @@ async function generateGeminiVoiceAudio(
     });
 
     const timeoutPromise = new Promise<null>((_, reject) =>
-      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 25000)
+      setTimeout(() => reject(new Error('TTS_TIMEOUT')), 7000)
     );
 
     const response = await Promise.race([callPromise, timeoutPromise]) as any;
@@ -1287,7 +1298,7 @@ app.use(['/tex', '/tex/*'], (req, res) => {
   res.end(transparent1x1);
 });
 
-// Dedicated Voice Synthesis Endpoint: Returns natural human-like voice audio from Gemini TTS
+// Dedicated Voice Synthesis Endpoint: Returns natural human-like voice audio from Gemini or OpenAI TTS
 app.post('/api/voice/speak', async (req, res) => {
   try {
     const { text, language, voiceName, assistant = 'mayra', apiKey, provider = 'gemini' } = req.body;
@@ -1295,7 +1306,20 @@ app.post('/api/voice/speak', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    const audioResult = await generateGeminiVoiceAudio(text, language, voiceName, assistant, apiKey);
+    let audioResult = null;
+
+    if (provider === 'openai') {
+      audioResult = await generateOpenAIVoiceAudio(text, voiceName || 'marin', apiKey);
+      if (!audioResult) {
+        audioResult = await generateGeminiVoiceAudio(text, language, voiceName, assistant);
+      }
+    } else {
+      audioResult = await generateGeminiVoiceAudio(text, language, voiceName, assistant, apiKey);
+      if (!audioResult && (process.env.OPENAI_API_KEY || (apiKey && apiKey.startsWith('sk-')))) {
+        audioResult = await generateOpenAIVoiceAudio(text, voiceName || 'marin', apiKey);
+      }
+    }
+
     if (audioResult) {
       return res.json({
         success: true,
@@ -1432,7 +1456,7 @@ CRITICAL REQUIREMENTS:
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite',
+      model: 'gemini-3.6-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -1503,7 +1527,7 @@ Evaluate the student's answer:
 }`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite',
+      model: 'gemini-3.6-flash',
       contents: evalPrompt,
       config: {
         responseMimeType: 'application/json',
@@ -2039,7 +2063,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // 2. Multimodal AI Generation via Gemini
-    const selectedModel = (typeof model === 'string' && model.trim()) ? model.trim() : 'gemini-3.1-flash-lite';
+    const selectedModel = (typeof model === 'string' && model.trim()) ? model.trim() : 'gemini-3.6-flash';
     const detectedInputLang = detectLang(safeMessage);
     const effectiveLang = (language === 'hi' || language === 'en') ? language : detectedInputLang;
     
@@ -3271,7 +3295,7 @@ async function startServer() {
       try {
         if (process.env.GEMINI_API_KEY) {
           session = await ai.live.connect({
-            model: 'gemini-3.1-flash-live-preview',
+            model: 'gemini-3.8-live',
             config: {
               responseModalities: [Modality.AUDIO],
               inputAudioTranscription: {},
@@ -3452,7 +3476,7 @@ CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Caref
               userPrompt,
               systemInstruction: visionInstruction,
               contextPrompt: parsed.contextPrompt,
-              model: 'gemini-3.1-flash-lite',
+              model: 'gemini-3.6-flash',
               timestamp: Date.now()
             };
 
@@ -3460,7 +3484,7 @@ CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Caref
               userPrompt,
               visionInstruction,
               0.7,
-              'gemini-3.1-flash-lite',
+              'gemini-3.6-flash',
               parsed.image,
               Array.isArray(parsed.history) ? parsed.history : undefined
             ) || 'I have inspected the attached image. It contains visual elements and text that are now registered.';
@@ -3498,7 +3522,7 @@ CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Caref
                 endpoint: '/api/live-ws:live-session',
                 userPrompt: livePromptPayload,
                 contextPrompt: parsed.contextPrompt,
-                model: 'gemini-2.5-flash-native-live',
+                model: 'gemini-3.8-live',
                 timestamp: Date.now()
               };
 
@@ -3526,7 +3550,7 @@ CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Caref
               userPrompt,
               systemInstruction: liveInstruction,
               contextPrompt: parsed.contextPrompt,
-              model: 'gemini-3.1-flash-lite',
+              model: 'gemini-3.6-flash',
               timestamp: Date.now()
             };
 
@@ -3534,7 +3558,7 @@ CRITICAL MULTIMODAL INSTRUCTION: You are given an attached image/document. Caref
               userPrompt, 
               liveInstruction,
               0.7,
-              'gemini-3.1-flash-lite',
+              'gemini-3.6-flash',
               undefined,
               Array.isArray(parsed.history) ? parsed.history : undefined
             ) || `Hello Zafer, I have processed: "${userPrompt}".`;
