@@ -100,7 +100,7 @@ export const AppearanceView: React.FC<AppearanceViewProps> = ({
   const currentFontDef = FONT_OPTIONS.find(f => f.id === selectedFontId) || FONT_OPTIONS[0];
 
   const handleToggleDarkMode = () => {
-    onChange({ darkMode: !config.darkMode });
+    onChange({ darkMode: !config.darkMode, themeMode: config.darkMode ? 'light' : 'dark' });
   };
 
   const handleSelectOrbStyle = (style: OrbStyleType) => {
