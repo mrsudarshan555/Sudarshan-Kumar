@@ -159,6 +159,20 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     ) : (
                       <div className="w-full max-w-[94%]">
                         <div className={`whitespace-pre-wrap text-[16px] leading-[1.62] ${appearanceConfig.darkMode ? 'text-slate-100' : 'text-slate-900'}`}>{msg.text}</div>
+                        {msg.quizData && (
+                          <div className="w-full mt-4">
+                            <InteractiveQuizWidget
+                              quiz={msg.quizData}
+                              onSelectTopic={(topic) => onSubmitPrompt(topic + ' ka quiz banao')}
+                              onExplainResults={(score) => onSubmitPrompt('Maine quiz me ' + score.correct + '/' + score.total + ' score kiya. Meri galtiyan samjhao aur important concepts revise karao.')}
+                            />
+                          </div>
+                        )}
+                        {msg.driveBackupPrompt && (
+                          <div className="w-full mt-4">
+                            <GoogleDriveChatCard folderName={msg.driveBackupPrompt.folderName || 'Mayra'} />
+                          </div>
+                        )}
                         <div className={`flex items-center gap-5 mt-3 ${appearanceConfig.darkMode ? 'text-slate-300' : 'text-slate-500'}`}>
                           <button type="button" aria-label="Like"><ThumbsUp className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
                           <button type="button" aria-label="Dislike"><ThumbsDown className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
