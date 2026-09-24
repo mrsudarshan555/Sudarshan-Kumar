@@ -183,7 +183,16 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
       <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handleGalleryPhotoSelected} />
 
       <div className="relative flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-[#090a0f]" />
+        <div className="absolute inset-0 overflow-hidden bg-[#090a0f]">
+          <video
+            autoPlay
+            playsInline
+            muted
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isStreaming ? 'opacity-100' : 'opacity-0'} blur-2xl scale-110`}
+            aria-hidden="true"
+          />
+          {isStreaming && <div className="absolute inset-0 bg-black/30 pointer-events-none" />}
+        </div>
         <div className="relative w-full h-full overflow-hidden rounded-[52px] bg-black shadow-[0_0_35px_rgba(0,0,0,0.45)]">
           <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover transition-opacity duration-300 ${isStreaming ? 'opacity-100' : 'opacity-0'}`} />
           {!isStreaming && <div className="absolute inset-0 flex items-center justify-center bg-[#101114]">{isStartingCamera && <div className="w-7 h-7 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />}</div>}
@@ -195,20 +204,6 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
               <button onClick={() => startCamera(cameraFacing)} className="px-3 py-1.5 rounded-full bg-white text-black font-semibold">Retry</button>
             </div>
           )}
-
-          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center pt-5">
-            <div className="flex items-center gap-2 text-white text-[23px] font-medium tracking-tight drop-shadow-lg">
-              <Radio className="w-6 h-6 stroke-[2.5]" /><span>Live</span>
-            </div>
-          </div>
-
-          <div className="absolute top-5 right-5 z-10">
-            <button type="button" onClick={handleToggleTorch} disabled={!hasTorchSupport}
-              className="w-12 h-12 rounded-full bg-black/25 border border-white/20 backdrop-blur-md flex items-center justify-center text-white"
-              aria-label="Camera controls">
-              <SlidersHorizontal className="w-6 h-6 stroke-[2]" />
-            </button>
-          </div>
 
           {scannedResult && (
             <div className="absolute left-5 right-5 bottom-28 z-20">
@@ -245,7 +240,7 @@ export const ScannerScreen: React.FC<ScannerScreenProps> = ({
         </motion.button>
         <motion.button whileTap={{ scale: 0.94 }} onClick={() => { stopAllTracks(); onCloseScanner?.(); }}
           className="w-[72px] h-[72px] rounded-full bg-[#ef3028] text-white flex items-center justify-center shadow-lg" aria-label="Close camera">
-          <CircleX className="w-10 h-10 stroke-[2.1]" />
+          <X className="w-10 h-10 stroke-[2.5]" />
         </motion.button>
       </div>
     </div>
