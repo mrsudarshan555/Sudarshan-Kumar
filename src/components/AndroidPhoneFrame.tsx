@@ -601,6 +601,7 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                     onSendVisionQuery={onSendVisionQuery}
                     triggerCaptureSignal={scanCaptureSignal}
                     aspectRatio={appearanceConfig.cameraAspectRatio}
+                    onCloseScanner={() => navigateFromDrawer('home')}
                   />
                 )}
                 {activeTab === 'memories' && (
