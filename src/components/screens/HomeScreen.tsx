@@ -370,12 +370,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       initial={{ opacity: 0, scale: 0.99 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-      className="relative w-full h-full flex flex-col justify-between overflow-hidden bg-[#070312] text-slate-100 select-none min-h-0 transition-[padding-bottom] duration-200 ease-out"
+      className={`relative w-full h-full flex flex-col justify-between overflow-hidden select-none min-h-0 transition-[padding-bottom] duration-200 ease-out ${appearanceConfig?.darkMode ? "bg-[#070312] text-slate-100" : "bg-[#f8f9fc] text-slate-900"}`}
       style={keyboardOffset > 0 ? { paddingBottom: `${keyboardOffset}px` } : undefined}
     >
       
       {/* Clean static home background: keep the stage open and uncluttered. */}
-      <div className="absolute inset-0 bg-[#070312]" aria-hidden="true" />
+      <div className={`absolute inset-0 ${appearanceConfig?.darkMode ? "bg-[#070312]" : "bg-[#f8f9fc]"}`} aria-hidden="true" />
 
       {/* 2. FULL-SCREEN MAYRA 3D CHARACTER LAYER OR ORB LAYER */}
       {appearanceConfig?.useOrbOnHome ? (
