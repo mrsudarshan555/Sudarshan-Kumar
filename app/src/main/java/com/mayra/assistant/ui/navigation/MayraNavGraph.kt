@@ -19,7 +19,6 @@ fun MayraNavGraph(
         modifier = modifier
     ) {
         composable("home") { HomeScreen(navController) }
-        composable("scanner") { ScannerScreen(navController) }
         composable("memories") { MemoriesScreen(navController) }
         composable("chat") { ChatScreen(navController) }
         
