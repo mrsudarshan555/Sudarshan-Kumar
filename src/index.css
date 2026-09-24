@@ -1,3 +1,5 @@
+@custom-variant dark (&:where(.dark, .dark *));
+
 @import "tailwindcss";
 
 @layer base {
@@ -6,8 +8,8 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     font-weight: 400;
     letter-spacing: -0.012em;
-    background-color: #070312;
-    color: #f8fafc;
+    background-color: #f8f9fc;
+    color: #0f172a;
     overflow: hidden;
   }
   
@@ -117,3 +119,7 @@
   transition: none !important;
   scroll-behavior: auto !important;
 }
+
+
+html.dark body { background-color: #070312; color: #f8fafc; }
+html:not(.dark) body { background-color: #f8f9fc; color: #0f172a; }
