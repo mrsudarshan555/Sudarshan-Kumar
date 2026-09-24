@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Mic, Camera, Shield, ArrowRight, ArrowLeft, Check, 
-  Moon, Sun, Bell, User, Mail, Smartphone, RefreshCw, Layers,
+  Bell, User, Mail, Smartphone, RefreshCw, Layers,
   Globe, AlertTriangle, Search
 } from 'lucide-react';
 import { MayraLogo } from '../common/MayraLogo';
@@ -183,23 +183,6 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
     setAssistantConfig(prev => ({ ...prev, language: lang }));
     if (typeof window !== 'undefined') {
       localStorage.setItem('mayra_preferred_language', lang);
-    }
-  };
-
-  const handleToggleDarkMode = (dark: boolean) => {
-    setAppearanceConfig(prev => ({
-      ...prev,
-      darkMode: dark
-    }));
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('mayra_dark_mode', String(dark));
-      if (dark) {
-        document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-      }
     }
   };
 
