@@ -51,17 +51,6 @@ function playCelebrationChime() {
   }
 }
 
-const THEME_OPTIONS: { id: AppThemePreset; name: string; hex: string; desc: string }[] = [
-  { id: 'purple', name: 'Cosmic Purple', hex: '#a855f7', desc: 'MAYRA Official Signature' },
-  { id: 'royal_blue', name: 'Royal Blue', hex: '#2563eb', desc: 'Deep Ocean Blue' },
-  { id: 'cyan', name: 'Cyan Pulse', hex: '#06b6d4', desc: 'Electric Cyan Glow' },
-  { id: 'aura_red', name: 'Aura Red', hex: '#ef4444', desc: 'Dynamic Ruby Aura' },
-  { id: 'emerald', name: 'Emerald Cyber', hex: '#10b981', desc: 'Vibrant Matrix Green' },
-  { id: 'amber', name: 'Amber Gold', hex: '#f59e0b', desc: 'Luminous Solar Gold' },
-  { id: 'rose_pink', name: 'Rose Pink', hex: '#f43f5e', desc: 'Soft Ethereal Pink' },
-  { id: 'midnight', name: 'Midnight Stealth', hex: '#64748b', desc: 'Obsidian Minimalist' }
-];
-
 export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
   isOpen,
   onClose,
@@ -78,7 +67,7 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
   // Step 1: Welcome Hero (Exact match of user's screenshot)
   // Step 2: Sign In & Profile Setup (User enters their name, email/phone)
   // Step 3: System Permissions (With inline explanations, sub-capabilities, risk warnings, and privacy policy)
-  // Step 4: Theme Selection (Default: Purple, Live Dark/Light mode update)
+  // Step 4 is intentionally removed: the app follows the system theme at first launch.
   // Step 5: Final Ready to Launch (Welcome Hero with user's customized name)
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [languageSearchQuery, setLanguageSearchQuery] = useState<string>('');
@@ -135,9 +124,11 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+    if (currentStep === 5) {
+      setCurrentStep(3);
+      return;
     }
+    if (currentStep > 0) setCurrentStep(prev => prev - 1);
   };
 
   const handleNameChange = (val: string) => {
@@ -193,17 +184,6 @@ export const OnboardingFlowModal: React.FC<OnboardingFlowModalProps> = ({
     setAssistantConfig(prev => ({ ...prev, language: lang }));
     if (typeof window !== 'undefined') {
       localStorage.setItem('mayra_preferred_language', lang);
-    }
-  };
-
-  // LIVE THEME UPDATE HANDLERS
-  const handleSelectTheme = (themeId: AppThemePreset) => {
-    setAppearanceConfig(prev => ({
-      ...prev,
-      appTheme: themeId
-    }));
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('mayra_app_theme', themeId);
     }
   };
 
