@@ -758,7 +758,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       />
 
       {/* 4. LOWER INTERACTION STAGE: Cardless Live Transcript / Prompts & iOS Search Pill */}
-      <div className="relative z-20 w-full px-3.5 pb-2 flex flex-col items-center gap-2 pointer-events-auto">
+      <div className="relative z-20 w-full px-3.5 pb-0 flex flex-col items-center gap-2 pointer-events-auto">
         
         {/* Status text stays out of the idle home screen; the assistant state is available when interaction starts. */}
         {/* Hidden File Input */}
