@@ -81,6 +81,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
 
   const wsRef = useRef<WebSocket | null>(null);
   const openAiVoiceRef = useRef<OpenAILiveVoice | null>(null);
+  const openAiConnectingRef = useRef(false);
+  const voiceActionInFlightRef = useRef(false);
+  const outputMessageFinalizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeModelMsgIdRef = useRef<string | null>(null);
   const activeUserMsgIdRef = useRef<string | null>(null);
 
@@ -1613,6 +1616,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   // OpenAI Realtime is the primary WebRTC voice path. Gemini Live remains the fallback.
   const connectOpenAIRealtime = useCallback(async (): Promise<boolean> => {
     if (openAiVoiceRef.current) return true;
+    if (openAiConnectingRef.current) return false;
+    openAiConnectingRef.current = true;
+
     const engine = new OpenAILiveVoice({
       voice: 'willow',
       onState: (state) => {
@@ -1655,6 +1661,10 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         const type = typeof event?.type === 'string' ? event.type : '';
         if (type === 'session.output_transcript.delta' && typeof event?.delta === 'string') {
           const delta = event.delta;
+          setStatus('SPEAKING');
+          if (outputMessageFinalizeTimerRef.current) {
+            clearTimeout(outputMessageFinalizeTimerRef.current);
+          }
           setMessages((prev) => {
             if (activeModelMsgIdRef.current) {
               return prev.map((m) => m.id === activeModelMsgIdRef.current ? { ...m, text: (m.text || '') + delta } : m);
@@ -1686,13 +1696,22 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       openAiVoiceRef.current = null;
       console.warn('[OPENAI_REALTIME] Initial connection failed -> Gemini fallback:', error);
       return false;
+    } finally {
+      openAiConnectingRef.current = false;
     }
   }, [getOrConnectLiveWs]);
 
   // Backtalk-Style Continuous Voice Mode Toggle: 1st tap = Continuous ON, 2nd tap = Continuous OFF
   const triggerVoice = useCallback(async () => {
-    console.log('[MAYRA Pipeline] MIC_CLICK triggered. Current ListeningMode:', isListeningModeRef.current, 'Status:', status);
-    prewarmAudioEngine();
+    if (voiceActionInFlightRef.current) {
+      console.log('[MAYRA Pipeline] MIC_CLICK ignored while voice transition is already running.');
+      return;
+    }
+    voiceActionInFlightRef.current = true;
+
+    try {
+      console.log('[MAYRA Pipeline] MIC_CLICK triggered. Current ListeningMode:', isListeningModeRef.current, 'Status:', status);
+      prewarmAudioEngine();
 
     // If currently speaking, tapping mic acts as instant manual interruption
     if (status === 'SPEAKING') {
@@ -1728,7 +1747,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       // Release its capture before interactive WebView voice starts to avoid two
       // simultaneous microphone pipelines causing audio failure/app instability.
       if (MayraNativeBridgeClient.isAvailableSync()) {
-        MayraNativeBridgeClient.pauseOfflineWakeWord();
+        // Release the native foreground recognizer before WebRTC asks for the
+        // microphone. Awaiting this prevents two capture engines racing for one mic.
+        await MayraNativeBridgeClient.pauseOfflineWakeWord();
       }
 
       // Play custom activation sound strictly ONCE on explicit physical user mic click
@@ -1760,6 +1781,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       if (!started) {
         console.warn('[MAYRA Pipeline] Could not start PCM capture.');
       }
+    }
+    } finally {
+      voiceActionInFlightRef.current = false;
     }
   }, [connectOpenAIRealtime, getOrConnectLiveWs, status]);
 
