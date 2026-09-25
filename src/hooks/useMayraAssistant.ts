@@ -31,7 +31,6 @@ import { DelegationRouter } from '../services/router/delegationRouter';
 import { QuizDataService, QuizConfig } from '../services/quiz/quizDataService';
 import { UndoService } from '../services/markLII/undoService';
 import { ConfirmationGateService } from '../services/markLII/confirmationGateService';
-import { InstantAcknowledgmentEngine } from '../services/markLII/instantAcknowledgmentEngine';
 import { MarkLIIToolsService } from '../services/markLII/markLIITools';
 import { MultiAgentSwarmCoordinator } from '../services/agent/multiAgentSwarm';
 import { ProactiveSmartGuardianEngine, ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEngine';
@@ -41,6 +40,7 @@ import { UnifiedSettingsManager } from '../services/settings/UnifiedSettingsMana
 import { AppearanceConfig } from '../types';
 import { hybridAiRouter, ActiveAiMode } from '../services/offline/hybridAiRouter';
 import { offlineMayraProvider } from '../services/offline/offlineMayraProvider';
+import { OpenAILiveVoice } from '../services/voice/openaiRealtimeVoice';
 
 export interface UseMayraAssistantProps {
   personalConfig: UserPersonalConfig;
@@ -79,6 +79,10 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   }, []);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const openAiVoiceRef = useRef<OpenAILiveVoice | null>(null);
+  const openAiConnectingRef = useRef(false);
+  const voiceActionInFlightRef = useRef(false);
+  const outputMessageFinalizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeModelMsgIdRef = useRef<string | null>(null);
   const activeUserMsgIdRef = useRef<string | null>(null);
 
@@ -816,7 +820,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         timestamp: Date.now()
       };
       setMessages(prev => [...prev, ackMsg]);
-      speakText(immediateAck, detected, handleSpeechStart, undefined);
 
       const swarmTaskId = `swarm-${Date.now()}`;
       setActiveAgentTask({
@@ -970,7 +973,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         timestamp: Date.now()
       };
       setMessages((prev) => [...prev, ackMsg]);
-      speakText(immediateAck, detected, handleSpeechStart, undefined);
 
       agentEngineRef.current.executeTask(trimmed, {
         userName,
@@ -985,23 +987,18 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       const cityMatch = trimmed.match(/(?:in|of|for|का|के|में)\s+([a-zA-Z\u0900-\u097F]+)/i);
       const city = cityMatch ? cityMatch[1].trim() : 'Delhi';
 
-      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'weather', target: city, lang: detected === 'en' ? 'en' : 'hi' });
-      const ackId = `msg-m-ack-${Date.now()}`;
-      setMessages((prev) => [...prev, {
-        id: ackId,
-        sender: 'mayra',
-        text: ack,
-        timestamp: Date.now()
-      }]);
-      speakText(ack, detected, handleSpeechStart, undefined);
-
       try {
         const weather = await MarkLIIToolsService.fetchWeather(city);
         const reply = detected === 'en'
           ? `**Live Weather in ${weather.city}:** ${weather.temperature}°C, ${weather.condition}. Feels like ${weather.feelsLike}°C with ${weather.humidity}% humidity and wind at ${weather.windSpeed}. ${weather.summary}`
           : `**${weather.city} में लाइव मौसम:** ${weather.temperature}°C, ${weather.condition}। यह ${weather.feelsLike}°C जैसा महसूस हो रहा है, नमी ${weather.humidity}% और हवा की गति ${weather.windSpeed} है। ${weather.summary}`;
 
-        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setMessages((prev) => [...prev, {
+          id: `msg-m-weather-${Date.now()}`,
+          sender: 'mayra',
+          text: reply,
+          timestamp: Date.now()
+        }]);
         setStatus('READY');
         speakText(reply.replace(/\*\*/g, ''), detected, handleSpeechStart, handleSpeechEnd);
         return;
@@ -1012,16 +1009,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
 
     // 0.07 MARK-LII PORTED FEATURE: FLIGHT FINDER WITH INSTANT ACKNOWLEDGMENT
     if (!image && trimmed && (lower.includes('flight') || lower.includes('उड़ान') || lower.includes('टिकट') || lower.includes('airfare')) && (lower.includes(' to ') || lower.includes(' se ') || lower.includes('से') || lower.includes('तक'))) {
-      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'flight', lang: detected === 'en' ? 'en' : 'hi' });
-      const ackId = `msg-m-ack-${Date.now()}`;
-      setMessages((prev) => [...prev, {
-        id: ackId,
-        sender: 'mayra',
-        text: ack,
-        timestamp: Date.now()
-      }]);
-      speakText(ack, detected, handleSpeechStart, undefined);
-
       try {
         let origin = 'Delhi';
         let dest = 'Mumbai';
@@ -1036,7 +1023,12 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
           ? `**Commercial Flights from ${origin} to ${dest}:**\n${listSummary}\n\n_${flightsData.bookingHint || 'Check-in opens 48h before flight.'}_`
           : `**${origin} से ${dest} के लिए उपलब्ध उड़ानें:**\n${listSummary}\n\n_${flightsData.bookingHint || 'उड़ान से 48 घंटे पहले ऑनलाइन चेक-इन खुलता है।'}_`;
 
-        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setMessages((prev) => [...prev, {
+          id: `msg-m-flight-${Date.now()}`,
+          sender: 'mayra',
+          text: reply,
+          timestamp: Date.now()
+        }]);
         setStatus('READY');
         speakText(`${origin} se ${dest} ke liye ${flightsData.flights.length} flights mil gayi hain.`, detected, handleSpeechStart, handleSpeechEnd);
         return;
@@ -1047,23 +1039,18 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
 
     // 0.08 MARK-LII PORTED FEATURE: REAL-TIME SYSTEM TELEMETRY WITH INSTANT ACKNOWLEDGMENT
     if (!image && trimmed && (lower.includes('system status') || lower.includes('telemetry') || lower.includes('सिस्टम स्टेटस') || lower.includes('cpu status') || lower.includes('ram usage'))) {
-      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'system', lang: detected === 'en' ? 'en' : 'hi' });
-      const ackId = `msg-m-ack-${Date.now()}`;
-      setMessages((prev) => [...prev, {
-        id: ackId,
-        sender: 'mayra',
-        text: ack,
-        timestamp: Date.now()
-      }]);
-      speakText(ack, detected, handleSpeechStart, undefined);
-
       try {
         const telemetry = await MarkLIIToolsService.getSystemTelemetry();
         const reply = detected === 'en'
           ? `**System Telemetry Diagnostics:**\n• **Platform:** ${telemetry.platform} (${telemetry.architecture})\n• **CPU Load:** ${telemetry.cpu.load1m} avg (${telemetry.cpu.count} Cores)\n• **RAM Usage:** ${telemetry.memory.percentage}% (${telemetry.memory.usedMb}MB / ${telemetry.memory.totalMb}MB)\n• **System Uptime:** ${telemetry.uptime.formatted}\n• **Status:** Optimal Performance`
           : `**सिस्टम टेलीमेट्री डायग्नोस्टिक्स:**\n• **प्लेटफ़ॉर्म:** ${telemetry.platform} (${telemetry.architecture})\n• **CPU लोड:** ${telemetry.cpu.load1m} औसत (${telemetry.cpu.count} कोर)\n• **RAM उपयोग:** ${telemetry.memory.percentage}% (${telemetry.memory.usedMb}MB / ${telemetry.memory.totalMb}MB)\n• **अपटाइम:** ${telemetry.uptime.formatted}\n• **स्थिति:** उत्तम (Optimal)`;
 
-        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setMessages((prev) => [...prev, {
+          id: `msg-m-system-${Date.now()}`,
+          sender: 'mayra',
+          text: reply,
+          timestamp: Date.now()
+        }]);
         setStatus('READY');
         speakText(detected === 'en' ? `System telemetry is optimal with ${telemetry.memory.percentage} percent RAM usage.` : `सिस्टम सुचारु रूप से चल रहा है, रैम उपयोग ${telemetry.memory.percentage} प्रतिशत है।`, detected, handleSpeechStart, handleSpeechEnd);
         return;
@@ -1114,7 +1101,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         setStatus('SPEAKING');
 
         // 2. Immediately speak out loud in user's detected language so user gets instant voice feedback
-        speakText(interimAckText, detected, handleSpeechStart, undefined);
 
         try {
           // 3. Execute delegated task in the background
@@ -1210,7 +1196,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         timestamp: Date.now()
       };
       setMessages((prev) => [...prev, ackMsg]);
-      speakText(immediateAck, detected, handleSpeechStart, undefined);
 
       agentEngineRef.current.executeTask(trimmed, {
         userName,
@@ -1608,15 +1593,111 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     sendGeminiText(textToSend, image);
   }, [inputText, sendGeminiText]);
 
+  // OpenAI Realtime is the primary WebRTC voice path. Gemini Live remains the fallback.
+  const connectOpenAIRealtime = useCallback(async (): Promise<boolean> => {
+    if (openAiVoiceRef.current) return true;
+    if (openAiConnectingRef.current) return false;
+    openAiConnectingRef.current = true;
+
+    const engine = new OpenAILiveVoice({
+      voice: 'willow',
+      onState: (state) => {
+        console.log('[OPENAI_REALTIME_STATE]', state);
+        if (state === 'connected') setStatus('LISTENING');
+      },
+      onUserTranscript: (transcript) => {
+        const normalized = transcript.trim().toLowerCase();
+        // "रुको" / "stop" is a hard local interruption command. It does not wait
+        // for another model turn and never needs a server round-trip.
+        if (/(^|\s)(रुको|रुक जाओ|बस|stop|stop now|be quiet|shut up)(\s|$)/i.test(normalized)) {
+          openAiVoiceRef.current?.interrupt();
+          continuousEngineRef.current?.interruptManually();
+          flushQueuedAudio();
+          stopCurrentSpeech();
+          setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY');
+        }
+      },
+      onReconnectFailed: (error) => {
+        if (!isListeningModeRef.current || openAiVoiceRef.current !== engine) return;
+        openAiVoiceRef.current = null;
+        console.warn('[OPENAI_REALTIME] Reconnect exhausted -> starting Gemini fallback:', error);
+        void (async () => {
+          try {
+            await continuousEngineRef.current?.startContinuousMode();
+            const ws = getOrConnectLiveWs();
+            const started = await startPcm16kCapture((pcmBase64) => {
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ audio: pcmBase64 }));
+              }
+            });
+            if (!started) setStatus('ERROR');
+          } catch (fallbackError) {
+            console.warn('[OPENAI_REALTIME] Gemini fallback failed:', fallbackError);
+            setStatus('ERROR');
+          }
+        })();
+      },
+      onEvent: (event) => {
+        const type = typeof event?.type === 'string' ? event.type : '';
+        if (type === 'session.output_transcript.delta' && typeof event?.delta === 'string') {
+          const delta = event.delta;
+          setStatus('SPEAKING');
+          if (outputMessageFinalizeTimerRef.current) {
+            clearTimeout(outputMessageFinalizeTimerRef.current);
+          }
+          setMessages((prev) => {
+            if (activeModelMsgIdRef.current) {
+              return prev.map((m) => m.id === activeModelMsgIdRef.current ? { ...m, text: (m.text || '') + delta } : m);
+            }
+            const id = 'msg-m-openai-' + Date.now();
+            activeModelMsgIdRef.current = id;
+            return [...prev, { id, sender: 'mayra', text: delta, timestamp: Date.now() }];
+          });
+        }
+        if (type === 'session.input_transcript.delta') {
+          setStatus('LISTENING');
+          flushQueuedAudio();
+        }
+        if (type === 'session.output_transcript.delta') setStatus('SPEAKING');
+        if (type === 'session.closed') {
+          setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY');
+          activeModelMsgIdRef.current = null;
+        }
+      },
+      onError: (error) => console.warn('[OPENAI_REALTIME] Primary voice notice:', error)
+    });
+    try {
+      await engine.connect();
+      openAiVoiceRef.current = engine;
+      console.log('[OPENAI_REALTIME] PRIMARY voice connected');
+      return true;
+    } catch (error) {
+      engine.disconnect();
+      openAiVoiceRef.current = null;
+      console.warn('[OPENAI_REALTIME] Initial connection failed -> Gemini fallback:', error);
+      return false;
+    } finally {
+      openAiConnectingRef.current = false;
+    }
+  }, [getOrConnectLiveWs]);
+
   // Backtalk-Style Continuous Voice Mode Toggle: 1st tap = Continuous ON, 2nd tap = Continuous OFF
   const triggerVoice = useCallback(async () => {
-    console.log('[MAYRA Pipeline] MIC_CLICK triggered. Current ListeningMode:', isListeningModeRef.current, 'Status:', status);
-    prewarmAudioEngine();
+    if (voiceActionInFlightRef.current) {
+      console.log('[MAYRA Pipeline] MIC_CLICK ignored while voice transition is already running.');
+      return;
+    }
+    voiceActionInFlightRef.current = true;
+
+    try {
+      console.log('[MAYRA Pipeline] MIC_CLICK triggered. Current ListeningMode:', isListeningModeRef.current, 'Status:', status);
+      prewarmAudioEngine();
 
     // If currently speaking, tapping mic acts as instant manual interruption
     if (status === 'SPEAKING') {
       console.log('[MAYRA Pipeline] Assistant speaking -> Manual interruption triggered');
       continuousEngineRef.current?.interruptManually();
+      openAiVoiceRef.current?.interrupt();
       flushQueuedAudio();
       stopCurrentSpeech();
       setStatus('LISTENING');
@@ -1628,6 +1709,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       setIsListeningMode(false);
       isListeningModeRef.current = false;
       continuousEngineRef.current?.stopContinuousMode();
+      openAiVoiceRef.current?.disconnect();
+      openAiVoiceRef.current = null;
       stopPcm16kCapture();
       flushQueuedAudio();
       if (wsRef.current) {
@@ -1644,7 +1727,9 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       // Release its capture before interactive WebView voice starts to avoid two
       // simultaneous microphone pipelines causing audio failure/app instability.
       if (MayraNativeBridgeClient.isAvailableSync()) {
-        MayraNativeBridgeClient.pauseOfflineWakeWord();
+        // Release the native foreground recognizer before WebRTC asks for the
+        // microphone. Awaiting this prevents two capture engines racing for one mic.
+        await MayraNativeBridgeClient.pauseOfflineWakeWord();
       }
 
       // Play custom activation sound strictly ONCE on explicit physical user mic click
@@ -1657,10 +1742,15 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       setStatus('LISTENING');
       console.log('[MAYRA Pipeline] CONTINUOUS_VOICE: ON -> LISTENING');
 
-      // Start continuous turn detection & VAD barge-in loop
-      await continuousEngineRef.current?.startContinuousMode();
+      // OpenAI Realtime WebRTC is primary. Existing Gemini Live remains fallback.
+      const openAiConnected = await connectOpenAIRealtime();
+      if (openAiConnected) {
+        setStatus('LISTENING');
+        console.log('[MAYRA Pipeline] OPENAI_REALTIME: PRIMARY voice active');
+        return;
+      }
 
-      // Connect WebSocket and start continuous raw 16kHz PCM stream
+      await continuousEngineRef.current?.startContinuousMode();
       const ws = getOrConnectLiveWs();
       const started = await startPcm16kCapture((pcmBase64) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -1672,7 +1762,10 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         console.warn('[MAYRA Pipeline] Could not start PCM capture.');
       }
     }
-  }, [getOrConnectLiveWs, status]);
+    } finally {
+      voiceActionInFlightRef.current = false;
+    }
+  }, [connectOpenAIRealtime, getOrConnectLiveWs, status]);
 
   // Backtalk-Style Push-to-Talk (PTT / Hold-to-Talk)
   const startPtt = useCallback(async () => {
@@ -1797,6 +1890,10 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Ensure the primary OpenAI WebRTC session cannot outlive this hook.
+      // This prevents a hidden mic/audio pipeline after screen/app teardown.
+      openAiVoiceRef.current?.disconnect();
+      openAiVoiceRef.current = null;
       continuousEngineRef.current?.stopContinuousMode();
       stopPcm16kCapture();
       flushQueuedAudio();

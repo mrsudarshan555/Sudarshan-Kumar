@@ -427,17 +427,17 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       {/* MAYRA global navigation. Chat uses a clean Gemini-style header; other screens keep the four-icon bar. */}
       {!isSettingsOpen && (
         activeTab === 'chat' ? (
-          <div className={`h-14 px-4 flex items-center justify-between border-b z-30 shrink-0 relative ${appearanceConfig.darkMode ? 'border-white/10 bg-black' : 'border-slate-200 bg-black'}`}>
+          <div className={`h-14 px-4 flex items-center justify-between border-b z-30 shrink-0 relative ${appearanceConfig.darkMode ? 'border-white/10 bg-black' : 'border-slate-200 bg-white'}`}>
             <div className="flex items-center gap-3 min-w-0">
-              <button type="button" onClick={() => setIsSideDrawerOpen(true)} aria-label="Open menu" className="text-white/90">
+              <button type="button" onClick={() => setIsSideDrawerOpen(true)} aria-label="Open menu" className={appearanceConfig.darkMode ? 'text-white/90' : 'text-slate-900'}>
                 <MenuIcon className="w-7 h-7" strokeWidth={1.7} />
               </button>
-              <button type="button" className="flex items-center gap-1.5 text-white text-[17px] font-medium">
+              <button type="button" className={`flex items-center gap-1.5 text-[17px] font-medium ${appearanceConfig.darkMode ? 'text-white' : 'text-slate-900'}`}>
                 <span>Mayra {planLabel === 'PLUS' ? 'Plus' : planLabel === 'MAX' ? 'Max' : planLabel === 'BASIC' ? 'Basic' : 'Free'}</span>
-                <span className="text-white/45 text-[15px]">⌄</span>
+                <span className={appearanceConfig.darkMode ? 'text-white/45 text-[15px]' : 'text-slate-400 text-[15px]'}>⌄</span>
               </button>
             </div>
-            <div className="flex items-center gap-5 text-white/90">
+            <div className={`flex items-center gap-5 ${appearanceConfig.darkMode ? 'text-white/90' : 'text-slate-900'}`}>
               <button type="button" aria-label="New chat" onClick={onClearChat}><PenLine className="w-6 h-6" strokeWidth={1.8} /></button>
               <button type="button" aria-label="More options"><MoreVertical className="w-6 h-6" strokeWidth={1.8} /></button>
             </div>
@@ -466,9 +466,9 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
                 { id: 'chat' as ActiveTab, icon: MessageCircleMore, label: 'Chat' }
               ].map(({ id, icon: Icon, label }) => (
                 <button key={id} type="button" onClick={() => navigateFromDrawer(id)} aria-label={label} title={label}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeTab === id ? 'bg-white/12 text-white' : 'text-slate-400 hover:bg-white/[0.07] hover:text-white'}`}>
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${appearanceConfig.darkMode ? (activeTab === id ? 'bg-white/12 text-white' : 'text-slate-400 hover:bg-white/[0.07] hover:text-white') : (activeTab === id ? 'bg-slate-900/10 text-slate-900' : 'text-slate-500 hover:bg-slate-900/[0.06] hover:text-slate-900')}`}>
                   {id === 'chat' ? (
-                    <img src={mayraChatIcon} alt="" aria-hidden="true" className="w-[19px] h-[19px] object-contain" />
+                    <img src={mayraChatIcon} alt="" aria-hidden="true" className={`w-[19px] h-[19px] object-contain ${appearanceConfig.darkMode ? '' : '[filter:brightness(0)]'}`} />
                   ) : id === 'home' ? (
                     <svg width="20" height="20" viewBox="0 0 1536 1404" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
                       <path fill="currentColor" fillRule="evenodd" d="M 1384 764 L 1332 711 L 1300 707 L 1284 722 L 1275 782 L 1269 1257 L 1204 1283 L 1009 1281 L 993 1272 L 994 867 L 983 814 L 959 778 L 913 743 L 857 729 L 679 729 L 609 747 L 566 784 L 535 847 L 526 1291 L 333 1285 L 276 1267 L 265 1186 L 262 768 L 233 722 L 190 719 L 155 752 L 145 798 L 144 1211 L 159 1291 L 223 1364 L 299 1394 L 558 1401 L 618 1383 L 645 1326 L 652 855 L 695 838 L 833 836 L 876 844 L 894 864 L 894 1311 L 903 1382 L 938 1395 L 1232 1399 L 1281 1386 L 1350 1336 L 1391 1248 L 1395 826Z M 7 651 L 12 680 L 36 714 L 54 724 L 85 714 L 205 613 L 661 198 L 749 124 L 769 116 L 828 160 L 1452 716 L 1467 724 L 1491 716 L 1516 695 L 1531 668 L 1516 632 L 1469 584 L 928 95 L 843 28 L 786 7 L 738 11 L 707 23 L 603 97 L 76 570 L 24 623Z"/>

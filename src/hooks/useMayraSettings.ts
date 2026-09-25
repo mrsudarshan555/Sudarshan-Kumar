@@ -83,9 +83,9 @@ function getInitialThemeMode(): 'light' | 'dark' {
     const darkSaved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
     if (darkSaved === 'true') return 'dark';
     if (darkSaved === 'false') return 'light';
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'dark';
   } catch (e) {}
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
 
 function getInitialDarkMode(): boolean {
@@ -94,7 +94,7 @@ function getInitialDarkMode(): boolean {
     const saved = localStorage.getItem(DARK_MODE_STORAGE_KEY);
     if (saved !== null) return saved === 'true';
   } catch (e) {}
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true;
+  return true;
 }
 
 function getInitialHeadingFont(): 'system' | 'orbitron' | 'sora' | 'manrope' | 'space_grotesk' {
@@ -297,7 +297,7 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   language: 'en-IN',
   speechRate: 1.0,
   speechPitch: 1.0,
-  responseStyle: 'instant',
+  responseStyle: 'stream',
   hapticFeedback: true,
   audioChimes: true,
   autoReadback: false,
@@ -305,7 +305,7 @@ const DEFAULT_ASSISTANT_CONFIG: AssistantConfig = {
   voiceAlertCalls: true,
   voiceAlertMessages: true,
   voiceAlertAutoPrompt: true,
-  proactiveIdleCheckin: true,
+  proactiveIdleCheckin: false,
   characterSize: 'medium',
   characterScaleMultiplier: 1.0,
   characterZoom: 100,
@@ -327,6 +327,7 @@ function getInitialAssistantConfig(): AssistantConfig {
     const saved = localStorage.getItem(ASSISTANT_CONFIG_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      parsed.proactiveIdleCheckin = false;
       if (!parsed.voiceProfile) parsed.voiceProfile = 'Aoede';
       if (!parsed.mayraVoice) parsed.mayraVoice = 'Aoede';
       if (!parsed.voiceProvider) parsed.voiceProvider = 'gemini';

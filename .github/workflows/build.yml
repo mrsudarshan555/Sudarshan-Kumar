@@ -2,7 +2,7 @@ name: Build Mayra Capacitor Web APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, openai-realtime-voice-safe ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
@@ -45,7 +45,14 @@ jobs:
           npm install --legacy-peer-deps --include=optional
           npm install -D --legacy-peer-deps @tailwindcss/oxide-linux-x64-gnu
 
-      # 2. Build Web UI (HTML, CSS, React, 3D Assets, JS bundle)
+      # 2. Static type-check and repeatable voice integration checks
+      - name: TypeScript Check
+        run: npm run lint
+
+      - name: Realtime Voice Verification
+        run: npm run verify:voice
+
+      # 3. Build Web UI (HTML, CSS, React, 3D Assets, JS bundle)
       - name: Build Web App (Vite)
         run: npx vite build
 
@@ -57,18 +64,18 @@ jobs:
           fi
           npx cap sync android
 
-      # 4. Compile Capacitor Android APK
+      # 5. Compile Capacitor Android APK
       - name: Build Debug APK with Gradle
         run: |
           chmod +x android/gradlew
           cd android
           ./gradlew assembleDebug --no-daemon
 
-      # 5. Give the installable APK a clear final name
+      # 6. Give the installable APK a clear final name
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/MAYRA.apk
 
-      # 6. Upload APK Artifact (Direct download from GitHub Actions)
+      # 7. Upload APK Artifact (Direct download from GitHub Actions)
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -76,7 +83,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/MAYRA.apk
           retention-days: 30
 
-      # 6. Create GitHub Release
+      # 8. Create GitHub Release
       - name: Create GitHub Release and Upload APK
         uses: softprops/action-gh-release@v2
         continue-on-error: true
