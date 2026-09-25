@@ -9,6 +9,7 @@ export type OpenAILiveVoiceOptions = {
   onState?: (state: RTCPeerConnectionState) => void;
   onError?: (error: Error) => void;
   onEvent?: (event: any) => void;
+  onUserTranscript?: (text: string) => void;
 };
 
 export class OpenAILiveVoice {
@@ -21,7 +22,10 @@ export class OpenAILiveVoice {
   private onState?: OpenAILiveVoiceOptions['onState'];
   private onError?: OpenAILiveVoiceOptions['onError'];
   private onEvent?: OpenAILiveVoiceOptions['onEvent'];
+  private onUserTranscript?: OpenAILiveVoiceOptions['onUserTranscript'];
   private dataChannel: RTCDataChannel | null = null;
+  private reconnecting = false;
+  private stopped = false;
 
   constructor(options: OpenAILiveVoiceOptions = {}) {
     this.sessionUrl = options.sessionUrl || '/api/voice/openai-live/session';
@@ -30,14 +34,25 @@ export class OpenAILiveVoice {
     this.onState = options.onState;
     this.onError = options.onError;
     this.onEvent = options.onEvent;
+    this.onUserTranscript = options.onUserTranscript;
   }
 
   async connect(): Promise<void> {
+    this.stopped = false;
     if (this.pc) return;
     try {
       const pc = new RTCPeerConnection();
       this.pc = pc;
-      pc.onconnectionstatechange = () => this.onState?.(pc.connectionState);
+      pc.onconnectionstatechange = () => {
+        this.onState?.(pc.connectionState);
+        if (
+          (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') &&
+          !this.stopped &&
+          !this.reconnecting
+        ) {
+          void this.reconnect();
+        }
+      };
       pc.ontrack = (event) => {
         const stream = event.streams[0];
         if (!stream) return;
@@ -54,7 +69,23 @@ export class OpenAILiveVoice {
       };
       this.dataChannel = pc.createDataChannel('oai-events');
       this.dataChannel.addEventListener('message', (event) => {
-        try { this.onEvent?.(JSON.parse(event.data)); } catch { /* ignore non-JSON events */ }
+        try {
+          const parsed = JSON.parse(event.data);
+          this.onEvent?.(parsed);
+          const type = typeof parsed?.type === 'string' ? parsed.type : '';
+          if (
+            type === 'conversation.item.input_audio_transcription.completed' &&
+            typeof parsed?.transcript === 'string'
+          ) {
+            this.onUserTranscript?.(parsed.transcript);
+          }
+          if (type === 'error') {
+            const code = String(parsed?.error?.code || '').toLowerCase();
+            if (code.includes('expired') || code.includes('session')) {
+              void this.reconnect();
+            }
+          }
+        } catch { /* ignore non-JSON events */ }
       });
       this.localStream = await navigator.mediaDevices.getUserMedia({audio:true});
       for (const track of this.localStream.getAudioTracks()) pc.addTrack(track, this.localStream);
@@ -95,7 +126,29 @@ export class OpenAILiveVoice {
     }
   }
 
+  async reconnect(): Promise<void> {
+    if (this.stopped || this.reconnecting) return;
+    this.reconnecting = true;
+    try {
+      this.disconnect();
+      for (let attempt = 1; attempt <= 2 && !this.stopped; attempt += 1) {
+        try {
+          await this.connect();
+          return;
+        } catch (error) {
+          this.onError?.(error instanceof Error ? error : new Error(String(error)));
+          if (attempt < 2) {
+            await new Promise(resolve => window.setTimeout(resolve, 500 * attempt));
+          }
+        }
+      }
+    } finally {
+      this.reconnecting = false;
+    }
+  }
+
   disconnect(): void {
+    this.stopped = true;
     this.localStream?.getTracks().forEach(t=>t.stop());
     this.localStream = null;
     this.dataChannel?.close();
