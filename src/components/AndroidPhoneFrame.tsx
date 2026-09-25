@@ -427,17 +427,17 @@ export const AndroidPhoneFrame: React.FC<AndroidPhoneFrameProps> = ({
       {/* MAYRA global navigation. Chat uses a clean Gemini-style header; other screens keep the four-icon bar. */}
       {!isSettingsOpen && (
         activeTab === 'chat' ? (
-          <div className={`h-14 px-4 flex items-center justify-between border-b z-30 shrink-0 relative ${appearanceConfig.darkMode ? 'border-white/10 bg-black' : 'border-slate-200 bg-black'}`}>
+          <div className={`h-14 px-4 flex items-center justify-between border-b z-30 shrink-0 relative ${appearanceConfig.darkMode ? 'border-white/10 bg-black' : 'border-slate-200 bg-white'}`}>
             <div className="flex items-center gap-3 min-w-0">
-              <button type="button" onClick={() => setIsSideDrawerOpen(true)} aria-label="Open menu" className="text-white/90">
+              <button type="button" onClick={() => setIsSideDrawerOpen(true)} aria-label="Open menu" className={appearanceConfig.darkMode ? 'text-white/90' : 'text-slate-900'}>
                 <MenuIcon className="w-7 h-7" strokeWidth={1.7} />
               </button>
-              <button type="button" className="flex items-center gap-1.5 text-white text-[17px] font-medium">
+              <button type="button" className={`flex items-center gap-1.5 text-[17px] font-medium ${appearanceConfig.darkMode ? 'text-white' : 'text-slate-900'}`}>
                 <span>Mayra {planLabel === 'PLUS' ? 'Plus' : planLabel === 'MAX' ? 'Max' : planLabel === 'BASIC' ? 'Basic' : 'Free'}</span>
-                <span className="text-white/45 text-[15px]">⌄</span>
+                <span className={appearanceConfig.darkMode ? 'text-white/45 text-[15px]' : 'text-slate-400 text-[15px]'}>⌄</span>
               </button>
             </div>
-            <div className="flex items-center gap-5 text-white/90">
+            <div className={`flex items-center gap-5 ${appearanceConfig.darkMode ? 'text-white/90' : 'text-slate-900'}`}>
               <button type="button" aria-label="New chat" onClick={onClearChat}><PenLine className="w-6 h-6" strokeWidth={1.8} /></button>
               <button type="button" aria-label="More options"><MoreVertical className="w-6 h-6" strokeWidth={1.8} /></button>
             </div>
