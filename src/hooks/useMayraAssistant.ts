@@ -1876,6 +1876,10 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Ensure the primary OpenAI WebRTC session cannot outlive this hook.
+      // This prevents a hidden mic/audio pipeline after screen/app teardown.
+      openAiVoiceRef.current?.disconnect();
+      openAiVoiceRef.current = null;
       continuousEngineRef.current?.stopContinuousMode();
       stopPcm16kCapture();
       flushQueuedAudio();
