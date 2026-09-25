@@ -3,6 +3,7 @@
  * The OpenAI API key remains server-side; this client receives only the Live session SDP.
  */
 import { getAudioContext } from '../../utils/speechEngine';
+import { apiUrl } from '../../config/api';
 
 export type OpenAILiveVoiceOptions = {
   sessionUrl?: string;
@@ -37,7 +38,8 @@ export class OpenAILiveVoice {
   private inputTranscriptBuffer = '';
 
   constructor(options: OpenAILiveVoiceOptions = {}) {
-    this.sessionUrl = options.sessionUrl || '/api/voice/openai-live/session';
+    // Packaged Capacitor APKs do not run server.ts locally; use the configured remote backend.
+    this.sessionUrl = options.sessionUrl || apiUrl('/api/voice/openai-live/session');
     this.voice = options.voice || 'willow';
     this.onRemoteStream = options.onRemoteStream;
     this.onState = options.onState;
@@ -54,6 +56,13 @@ export class OpenAILiveVoice {
     if (this.pc) return;
 
     try {
+      if (typeof RTCPeerConnection === 'undefined') {
+        throw new Error('WebRTC is unavailable in this Android WebView');
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Microphone capture is unavailable in this Android WebView');
+      }
+
       const pc = new RTCPeerConnection();
       this.pc = pc;
 
