@@ -2,7 +2,7 @@ name: Build Mayra Capacitor Web APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, openai-realtime-voice-safe ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
