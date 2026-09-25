@@ -5,6 +5,7 @@ import fs from 'fs';
 import os from 'os';
 import https from 'https';
 import dotenv from 'dotenv';
+import { Codex } from '@openai/codex-sdk';
 // Codex Live delegation integration prepared.
 import { GoogleGenAI, Modality, FunctionDeclaration, Type } from '@google/genai';
 import { WebSocketServer, WebSocket } from 'ws';
