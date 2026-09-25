@@ -19,6 +19,151 @@ import {
 dotenv.config();
 
 const app = express();
+/**
+ * GPT-Live client-delegation bridge.
+ * The Live session remains the spoken conversation; Codex is a read-only
+ * backend agent used only when GPT-Live asks the app to inspect the repo.
+ */
+type LiveCodexState = {
+  socket: WebSocket;
+  thread: ReturnType<Codex['startThread']> | null;
+  inputTranscript: string;
+  outputTranscript: string;
+  activeDelegations: Set<string>;
+};
+
+const liveCodexStates = new Map<string, LiveCodexState>();
+
+function appendLiveTranscript(current: string, delta: unknown, max = 6000): string {
+  if (typeof delta !== 'string' || !delta.trim()) return current;
+  return (current + delta).slice(-max);
+}
+
+async function answerLiveDelegation(
+  state: LiveCodexState,
+  delegationId: string,
+  apiKey: string
+): Promise<void> {
+  if (state.activeDelegations.has(delegationId)) return;
+  state.activeDelegations.add(delegationId);
+
+  try {
+    if (!state.thread) {
+      const codex = new Codex({ apiKey });
+      state.thread = codex.startThread({
+        workingDirectory: process.cwd(),
+        sandboxMode: 'read-only',
+        approvalPolicy: 'never',
+      });
+    }
+
+    const context = [
+      'Latest user request:',
+      state.inputTranscript || '(No user transcript captured yet.)',
+      '',
+      'Recent assistant transcript:',
+      state.outputTranscript || '(None.)',
+    ].join('\\n');
+
+    const { finalResponse } = await state.thread.run(
+      `Answer the latest question using this repo.
+Reply in two short spoken sentences.
+Do not modify files. Only inspect and reason from the repository.
+${context}`
+    );
+
+    const content = String(finalResponse || '').trim().slice(0, 1800) ||
+      'I checked the repository, but I could not produce a concise result yet.';
+
+    if (state.socket.readyState === WebSocket.OPEN) {
+      state.socket.send(JSON.stringify({
+        type: 'session.commentary.append',
+        event_id: `codex_result_${Date.now()}`,
+        delegation_id: delegationId,
+        content,
+      }));
+    }
+  } catch (error: any) {
+    console.error('[GPT-LIVE-CODEX] Delegation failed:', error?.message || error);
+    if (state.socket.readyState === WebSocket.OPEN) {
+      state.socket.send(JSON.stringify({
+        type: 'session.commentary.append',
+        event_id: `codex_error_${Date.now()}`,
+        delegation_id: delegationId,
+        content: 'I could not inspect the repository right now. The voice session is still active.',
+      }));
+    }
+  } finally {
+    state.activeDelegations.delete(delegationId);
+  }
+}
+
+function attachCodexToLiveSession(sessionId: string, apiKey: string): void {
+  if (!sessionId || !apiKey || liveCodexStates.has(sessionId)) return;
+
+  const socket = new WebSocket(
+    `wss://api.openai.com/v1/live/sessions/${encodeURIComponent(sessionId)}/attach`,
+    { headers: { Authorization: `Bearer ${apiKey}` } }
+  );
+
+  const state: LiveCodexState = {
+    socket,
+    thread: null,
+    inputTranscript: '',
+    outputTranscript: '',
+    activeDelegations: new Set(),
+  };
+  liveCodexStates.set(sessionId, state);
+
+  socket.on('open', () => {
+    console.log('[GPT-LIVE-CODEX] Sideband attached:', sessionId);
+  });
+
+  socket.on('message', (raw: any) => {
+    try {
+      const event = JSON.parse(raw.toString());
+      const type = typeof event?.type === 'string' ? event.type : '';
+
+      if (type === 'session.input_transcript.delta') {
+        state.inputTranscript = appendLiveTranscript(state.inputTranscript, event.delta);
+        return;
+      }
+
+      if (type === 'session.output_transcript.delta') {
+        state.outputTranscript = appendLiveTranscript(state.outputTranscript, event.delta);
+        return;
+      }
+
+      if (
+        type === 'session.delegation.created' &&
+        event?.delegation?.target === 'client' &&
+        typeof event?.delegation?.id === 'string'
+      ) {
+        void answerLiveDelegation(state, event.delegation.id, apiKey);
+        return;
+      }
+
+      if (type === 'session.closed') {
+        state.activeDelegations.clear();
+      }
+    } catch (error: any) {
+      console.warn('[GPT-LIVE-CODEX] Sideband event parse error:', error?.message || error);
+    }
+  });
+
+  socket.on('error', (error: any) => {
+    console.warn('[GPT-LIVE-CODEX] Sideband error:', error?.message || error);
+  });
+
+  socket.on('close', () => {
+    if (liveCodexStates.get(sessionId)?.socket === socket) {
+      liveCodexStates.delete(sessionId);
+    }
+    console.log('[GPT-LIVE-CODEX] Sideband closed:', sessionId);
+  });
+}
+
+
 const PORT = 3000;
 
 // Universal CORS configuration for APK (WebViews, file://, capacitor, localhost) and browser environments
@@ -3310,9 +3455,10 @@ app.post('/api/voice/openai-live/session', async (req, res) => {
       body: JSON.stringify({
         session: {
           model,
+          delegation: { type: 'client' },
           audio: { output: { voice } },
           instructions:
-            'You are MAYRA, a natural conversational voice assistant. Speak naturally, listen while speaking, handle interruptions gracefully, and keep responses concise unless the user asks for detail. Do not use scripted backchannel phrases; respond naturally to the conversation.'
+            'You are MAYRA, a natural conversational voice assistant. Speak naturally, listen while speaking, handle interruptions gracefully, and keep responses concise unless the user asks for detail. Do not use scripted backchannel phrases; respond naturally to the conversation.\\n\\nDelegation: when the user asks for repo/code inspection, verification, debugging, or an answer that requires the MAYRA repository, delegate to the read-only backend. Do not delegate ordinary conversation.'
         },
         transport: { type: 'webrtc', sdp }
       })
@@ -3323,6 +3469,14 @@ app.post('/api/voice/openai-live/session', async (req, res) => {
       console.error('[GPT-LIVE] Session creation failed:', openAiResponse.status, payload);
       return res.status(502).json({ error: 'GPT-Live session creation failed.' });
     }
+
+    const sessionId = typeof payload?.session?.id === 'string' ? payload.session.id : '';
+    if (sessionId) {
+      attachCodexToLiveSession(sessionId, apiKey);
+    } else {
+      console.warn('[GPT-LIVE-CODEX] Live session id missing; delegation bridge not attached.');
+    }
+
     return res.status(201).json(payload);
   } catch (error) {
     console.error('[GPT-LIVE] Session route error:', error);
