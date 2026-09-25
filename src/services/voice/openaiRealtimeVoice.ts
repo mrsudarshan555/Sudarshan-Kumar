@@ -130,7 +130,8 @@ export class OpenAILiveVoice {
     if (this.stopped || this.reconnecting) return;
     this.reconnecting = true;
     try {
-      this.disconnect();
+      this.disconnect(false);
+      this.stopped = false;
       for (let attempt = 1; attempt <= 2 && !this.stopped; attempt += 1) {
         try {
           await this.connect();
@@ -147,8 +148,8 @@ export class OpenAILiveVoice {
     }
   }
 
-  disconnect(): void {
-    this.stopped = true;
+  disconnect(stopPermanently = true): void {
+    if (stopPermanently) this.stopped = true;
     this.localStream?.getTracks().forEach(t=>t.stop());
     this.localStream = null;
     this.dataChannel?.close();
