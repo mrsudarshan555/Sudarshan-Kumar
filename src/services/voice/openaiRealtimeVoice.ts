@@ -2,6 +2,8 @@
  * MAYRA GPT-Live-1 WebRTC transport.
  * The OpenAI API key remains server-side; this client receives only the Live session SDP.
  */
+import { getAudioContext } from '../../utils/speechEngine';
+
 export type OpenAILiveVoiceOptions = {
   sessionUrl?: string;
   voice?: string;
@@ -17,6 +19,9 @@ export class OpenAILiveVoice {
   private pc: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private audioElement: HTMLAudioElement | null = null;
+  private outputAudioContext: AudioContext | null = null;
+  private remoteSource: MediaStreamAudioSourceNode | null = null;
+  private remoteSourceConnected = false;
   private dataChannel: RTCDataChannel | null = null;
   private sessionUrl: string;
   private voice: string;
@@ -68,6 +73,22 @@ export class OpenAILiveVoice {
         if (!stream) return;
         this.onRemoteStream?.(stream);
 
+        // Route GPT-Live's remote WebRTC audio through the same AudioContext
+        // that MAYRA prewarms from the user's mic tap. This avoids relying on a
+        // later autoplay decision inside Android WebView.
+        try {
+          const audioContext = getAudioContext();
+          this.outputAudioContext = audioContext;
+          void audioContext.resume().catch(() => {});
+          this.remoteSource?.disconnect();
+          this.remoteSource = audioContext.createMediaStreamSource(stream);
+          this.remoteSource.connect(audioContext.destination);
+          this.remoteSourceConnected = true;
+          return;
+        } catch (error) {
+          console.warn('[OPENAI_REALTIME] WebAudio remote output unavailable; using media element fallback.', error);
+        }
+
         if (!this.audioElement) {
           this.audioElement = document.createElement('audio');
           this.audioElement.autoplay = true;
@@ -102,6 +123,14 @@ export class OpenAILiveVoice {
           }
 
           if (type === 'session.output_transcript.delta' && typeof parsed?.delta === 'string') {
+            if (this.remoteSource && !this.remoteSourceConnected && this.outputAudioContext) {
+              try {
+                this.remoteSource.connect(this.outputAudioContext.destination);
+                this.remoteSourceConnected = true;
+              } catch {
+                // Ignore a duplicate/released AudioNode connection.
+              }
+            }
             this.onState?.('connected');
           }
 
@@ -182,6 +211,14 @@ export class OpenAILiveVoice {
    * element prevents stale audio from continuing locally.
    */
   interrupt(): void {
+    if (this.remoteSource && this.remoteSourceConnected) {
+      try {
+        this.remoteSource.disconnect();
+      } catch {
+        // Ignore an already disconnected node.
+      }
+      this.remoteSourceConnected = false;
+    }
     if (this.audioElement) {
       this.audioElement.pause();
       this.audioElement.currentTime = 0;
@@ -226,6 +263,10 @@ export class OpenAILiveVoice {
     this.localStream = null;
     this.dataChannel?.close();
     this.dataChannel = null;
+    try { this.remoteSource?.disconnect(); } catch {}
+    this.remoteSource = null;
+    this.remoteSourceConnected = false;
+    this.outputAudioContext = null;
     this.pc?.close();
     this.pc = null;
 
