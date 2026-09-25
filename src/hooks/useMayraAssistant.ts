@@ -1618,28 +1618,38 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       onState: (state) => {
         console.log('[OPENAI_REALTIME_STATE]', state);
         if (state === 'connected') setStatus('LISTENING');
-        if (state === 'failed' || state === 'disconnected' || state === 'closed') {
-          if (isListeningModeRef.current && openAiVoiceRef.current === engine) {
-            openAiVoiceRef.current = null;
-            setStatus('LISTENING');
-            console.warn('[OPENAI_REALTIME] Connection lost -> starting Gemini fallback');
-            void (async () => {
-              try {
-                await continuousEngineRef.current?.startContinuousMode();
-                const ws = getOrConnectLiveWs();
-                const started = await startPcm16kCapture((pcmBase64) => {
-                  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                    wsRef.current.send(JSON.stringify({ audio: pcmBase64 }));
-                  }
-                });
-                if (!started) setStatus('ERROR');
-              } catch (fallbackError) {
-                console.warn('[OPENAI_REALTIME] Gemini fallback failed:', fallbackError);
-                setStatus('ERROR');
-              }
-            })();
-          }
+      },
+      onUserTranscript: (transcript) => {
+        const normalized = transcript.trim().toLowerCase();
+        // "रुको" / "stop" is a hard local interruption command. It does not wait
+        // for another model turn and never needs a server round-trip.
+        if (/(^|\\s)(रुको|रुक जाओ|बस|stop|stop now|be quiet|shut up)(\\s|$)/i.test(normalized)) {
+          openAiVoiceRef.current?.interrupt();
+          continuousEngineRef.current?.interruptManually();
+          flushQueuedAudio();
+          stopCurrentSpeech();
+          setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY');
         }
+      },
+      onReconnectFailed: (error) => {
+        if (!isListeningModeRef.current || openAiVoiceRef.current !== engine) return;
+        openAiVoiceRef.current = null;
+        console.warn('[OPENAI_REALTIME] Reconnect exhausted -> starting Gemini fallback:', error);
+        void (async () => {
+          try {
+            await continuousEngineRef.current?.startContinuousMode();
+            const ws = getOrConnectLiveWs();
+            const started = await startPcm16kCapture((pcmBase64) => {
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ audio: pcmBase64 }));
+              }
+            });
+            if (!started) setStatus('ERROR');
+          } catch (fallbackError) {
+            console.warn('[OPENAI_REALTIME] Gemini fallback failed:', fallbackError);
+            setStatus('ERROR');
+          }
+        })();
       },
       onEvent: (event) => {
         const type = typeof event?.type === 'string' ? event.type : '';
@@ -1647,7 +1657,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
           const delta = event.delta;
           setMessages((prev) => {
             if (activeModelMsgIdRef.current) {
-              return prev.map((m) => m.id === activeModelMsgIdRef.current ? { ...m, text: m.text + delta } : m);
+              return prev.map((m) => m.id === activeModelMsgIdRef.current ? { ...m, text: (m.text || '') + delta } : m);
             }
             const id = 'msg-m-openai-' + Date.now();
             activeModelMsgIdRef.current = id;
@@ -1659,12 +1669,13 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
           flushQueuedAudio();
         }
         if (type === 'response.created') setStatus('THINKING');
+        if (type === 'response.audio.delta' || type === 'response.output_audio.delta') setStatus('SPEAKING');
         if (type === 'response.done') {
           setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY');
           activeModelMsgIdRef.current = null;
         }
       },
-      onError: (error) => console.warn('[OPENAI_REALTIME] Primary voice failed:', error)
+      onError: (error) => console.warn('[OPENAI_REALTIME] Primary voice notice:', error)
     });
     try {
       await engine.connect();
@@ -1674,7 +1685,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     } catch (error) {
       engine.disconnect();
       openAiVoiceRef.current = null;
-      console.warn('[OPENAI_REALTIME] Falling back to Gemini Live:', error);
+      console.warn('[OPENAI_REALTIME] Initial connection failed -> Gemini fallback:', error);
       return false;
     }
   }, [getOrConnectLiveWs]);
