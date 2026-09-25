@@ -60,7 +60,19 @@ export class OpenAILiveVoice {
       for (const track of this.localStream.getAudioTracks()) pc.addTrack(track, this.localStream);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      const response = await fetch(this.sessionUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sdp:offer.sdp || '',voice:this.voice})});
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+      let response: Response;
+      try {
+        response = await fetch(this.sessionUrl, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({sdp:offer.sdp || '',voice:this.voice}),
+          signal: controller.signal
+        });
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
       if (!response.ok) throw new Error(`OpenAI Realtime session failed: HTTP ${response.status}`);
       const data = await response.json() as {sdp?:string};
       if (!data.sdp) throw new Error('OpenAI Realtime session returned no SDP answer');
