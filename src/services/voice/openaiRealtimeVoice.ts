@@ -8,6 +8,7 @@ export type OpenAILiveVoiceOptions = {
   onRemoteStream?: (stream: MediaStream) => void;
   onState?: (state: RTCPeerConnectionState) => void;
   onError?: (error: Error) => void;
+  onReconnectFailed?: (error: Error) => void;
   onEvent?: (event: any) => void;
   onUserTranscript?: (text: string) => void;
 };
@@ -21,6 +22,7 @@ export class OpenAILiveVoice {
   private onRemoteStream?: OpenAILiveVoiceOptions['onRemoteStream'];
   private onState?: OpenAILiveVoiceOptions['onState'];
   private onError?: OpenAILiveVoiceOptions['onError'];
+  private onReconnectFailed?: OpenAILiveVoiceOptions['onReconnectFailed'];
   private onEvent?: OpenAILiveVoiceOptions['onEvent'];
   private onUserTranscript?: OpenAILiveVoiceOptions['onUserTranscript'];
   private dataChannel: RTCDataChannel | null = null;
@@ -33,6 +35,7 @@ export class OpenAILiveVoice {
     this.onRemoteStream = options.onRemoteStream;
     this.onState = options.onState;
     this.onError = options.onError;
+    this.onReconnectFailed = options.onReconnectFailed;
     this.onEvent = options.onEvent;
     this.onUserTranscript = options.onUserTranscript;
   }
@@ -143,6 +146,9 @@ export class OpenAILiveVoice {
           }
         }
       }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.onReconnectFailed?.(err);
     } finally {
       this.reconnecting = false;
     }
