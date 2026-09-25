@@ -31,7 +31,6 @@ import { DelegationRouter } from '../services/router/delegationRouter';
 import { QuizDataService, QuizConfig } from '../services/quiz/quizDataService';
 import { UndoService } from '../services/markLII/undoService';
 import { ConfirmationGateService } from '../services/markLII/confirmationGateService';
-import { InstantAcknowledgmentEngine } from '../services/markLII/instantAcknowledgmentEngine';
 import { MarkLIIToolsService } from '../services/markLII/markLIITools';
 import { MultiAgentSwarmCoordinator } from '../services/agent/multiAgentSwarm';
 import { ProactiveSmartGuardianEngine, ProactiveAlert } from '../services/automation/ProactiveSmartGuardianEngine';
