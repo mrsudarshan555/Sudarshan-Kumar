@@ -356,7 +356,14 @@ export function useMayraWakeWord({
     return () => {
       window.removeEventListener('click', handleFirstGesture);
       window.removeEventListener('touchstart', handleFirstGesture);
-      stopWakeWordEngine();
+
+      // IMPORTANT: Native Android wake-word listening lives in a Foreground Service.
+      // Do not stop that service just because this React/WebView component unmounts
+      // (navigation, WebView recreation, or leaving the app screen).
+      // The explicit `enabled === false` path above remains the user-controlled stop.
+      if (!isNativeOfflineActive) {
+        stopWebWakeWordEngine();
+      }
     };
   }, [enabled, startWakeWordEngine, stopWakeWordEngine, ensureMicrophoneAccess]);
 
