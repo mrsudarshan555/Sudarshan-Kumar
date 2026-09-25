@@ -25,7 +25,7 @@ export class OpenAILiveVoice {
 
   constructor(options: OpenAILiveVoiceOptions = {}) {
     this.sessionUrl = options.sessionUrl || '/api/voice/openai-live/session';
-    this.voice = options.voice || 'willow';
+    this.voice = options.voice || 'marin';
     this.onRemoteStream = options.onRemoteStream;
     this.onState = options.onState;
     this.onError = options.onError;
@@ -70,6 +70,16 @@ export class OpenAILiveVoice {
       const err = e instanceof Error ? e : new Error(String(e));
       this.onError?.(err);
       throw err;
+    }
+  }
+
+  interrupt(): void {
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.currentTime = 0;
+    }
+    if (this.dataChannel?.readyState === 'open') {
+      try { this.dataChannel.send(JSON.stringify({ type: 'response.cancel' })); } catch { /* ignore */ }
     }
   }
 
