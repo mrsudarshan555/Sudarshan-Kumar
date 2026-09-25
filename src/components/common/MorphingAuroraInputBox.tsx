@@ -119,11 +119,6 @@ export const MorphingAuroraInputBox: React.FC<MorphingAuroraInputBoxProps> = ({
     micPressStartTimeRef.current = Date.now();
     isMicHoldingRef.current = false;
 
-    if (status === 'SPEAKING') {
-      onTriggerVoice();
-      return;
-    }
-
     micPressTimerRef.current = setTimeout(() => {
       isMicHoldingRef.current = true;
       onStartPtt?.();
