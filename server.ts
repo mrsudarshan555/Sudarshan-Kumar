@@ -3288,7 +3288,7 @@ app.post('/api/voice/openai-live/session', async (req, res) => {
     if (!sdp) return res.status(400).json({ error: 'Missing WebRTC SDP offer.' });
 
     const requestedVoice = typeof req.body?.voice === 'string' ? req.body.voice.trim().toLowerCase() : '';
-    const configuredVoice = (process.env.OPENAI_REALTIME_VOICE || 'willow').trim().toLowerCase();
+    const configuredVoice = (process.env.OPENAI_LIVE_VOICE || 'willow').trim().toLowerCase();
     const supportedVoices = new Set([
       'quartz','ripple','vesper','willow','stone','gleam',
       'meridian','bossa','tempo','beacon','delta','cinder'
