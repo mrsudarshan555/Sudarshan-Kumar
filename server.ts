@@ -3284,8 +3284,8 @@ app.post('/api/voice/openai-live/session', async (req, res) => {
     if (!apiKey) return res.status(503).json({ error: 'OpenAI voice is not configured.' });
     const sdp = typeof req.body?.sdp === 'string' ? req.body.sdp : '';
     if (!sdp.trim()) return res.status(400).json({ error: 'Missing SDP offer.' });
-    const voice = typeof req.body?.voice === 'string' && req.body.voice.trim() ? req.body.voice.trim() : 'willow';
-    const model = (process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime').trim();
+    const voice = typeof req.body?.voice === 'string' && req.body.voice.trim() ? req.body.voice.trim() : 'marin';
+    const model = (process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-2.1').trim();
     const form = new FormData();
     form.append('sdp', sdp);
     form.append('session', JSON.stringify({ type: 'realtime', model, audio: { output: { voice } } }));
