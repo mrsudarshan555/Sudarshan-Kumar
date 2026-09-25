@@ -5,6 +5,7 @@ import fs from 'fs';
 import os from 'os';
 import https from 'https';
 import dotenv from 'dotenv';
+// Codex Live delegation integration prepared.
 import { GoogleGenAI, Modality, FunctionDeclaration, Type } from '@google/genai';
 import { WebSocketServer, WebSocket } from 'ws';
 import { buildMayraSystemPrompt } from './src/services/character/mayraPersonality';
