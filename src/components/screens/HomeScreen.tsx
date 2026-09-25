@@ -370,12 +370,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       initial={{ opacity: 0, scale: 0.99 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative w-full h-full flex flex-col justify-between overflow-hidden select-none min-h-0 transition-[padding-bottom] duration-200 ease-out ${appearanceConfig?.darkMode ? "bg-[#070312] text-slate-100" : "bg-[#f8f9fc] text-slate-900"}`}
+      className="relative w-full h-full flex flex-col justify-end overflow-hidden bg-[#070312] text-slate-100 select-none min-h-0 transition-[padding-bottom] duration-200 ease-out"
       style={keyboardOffset > 0 ? { paddingBottom: `${keyboardOffset}px` } : undefined}
     >
       
       {/* Clean static home background: keep the stage open and uncluttered. */}
-      <div className={`absolute inset-0 ${appearanceConfig?.darkMode ? "bg-[#070312]" : "bg-[#f8f9fc]"}`} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[#070312]" aria-hidden="true" />
 
       {/* 2. FULL-SCREEN MAYRA 3D CHARACTER LAYER OR ORB LAYER */}
       {appearanceConfig?.useOrbOnHome ? (
@@ -757,8 +757,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         isAnalyzing={isScreenAnalyzing}
       />
 
-      {/* 4. LOWER INTERACTION STAGE: Cardless Live Transcript / Prompts & iOS Search Pill */}
-      <div className="relative z-20 w-full px-3.5 pb-2 flex flex-col items-center gap-2 pointer-events-auto">
+      {/* 4. LOWER INTERACTION STAGE: Chat box pinned to the bottom of the Home screen */}
+      <div className="mt-auto relative z-20 w-full px-3.5 pb-2.5 sm:pb-3 flex flex-col items-center gap-1.5 pointer-events-auto">
         
         {/* Status text stays out of the idle home screen; the assistant state is available when interaction starts. */}
         {/* Hidden File Input */}
@@ -769,8 +769,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           onChange={handleFileChange}
         />
 
-        {/* Morphing Fluid Capsule / Card Input Box (Matching .mp4 video) */}
-        <div className="w-full max-w-sm">
+        {/* New Chat Input Bar with Equalizer Sparkle Button */}
+        <div className="w-full max-w-[480px]">
           <MorphingAuroraInputBox
             inputText={inputText}
             setInputText={setInputText}
@@ -800,7 +800,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             status={status}
             attachedFile={attachedFile}
             onRemoveAttachment={() => setAttachedFile(null)}
-            placeholder="Ask MAYRA"
+            placeholder="Ask anything"
+            showHeading={false}
           />
         </div>
 

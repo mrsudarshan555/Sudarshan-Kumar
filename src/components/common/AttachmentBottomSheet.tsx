@@ -60,7 +60,7 @@ export const AttachmentBottomSheet: React.FC<AttachmentBottomSheetProps> = ({
     onToolPrompt?.(prompt);
   };
 
-  const chip = (label: string, Icon: React.ElementType, onClick: () => void) => (
+  const chip = (label: string, Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>, onClick: () => void) => (
     <button type="button" onClick={onClick}
       className="min-w-[86px] h-[94px] px-3 rounded-[27px] bg-[#151515] border border-white/[0.035] flex flex-col items-center justify-center gap-2 text-white/90 active:scale-[0.98] transition-transform">
       <Icon className="w-6 h-6" strokeWidth={1.65} />
@@ -68,7 +68,7 @@ export const AttachmentBottomSheet: React.FC<AttachmentBottomSheetProps> = ({
     </button>
   );
 
-  const row = (label: string, Icon: React.ElementType, onClick: () => void, badge?: string) => (
+  const row = (label: string, Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>, onClick: () => void, badge?: string) => (
     <button type="button" onClick={onClick}
       className="w-full h-[58px] px-2 flex items-center gap-4 text-left text-white/90 active:bg-white/[0.06] rounded-xl">
       <Icon className="w-[24px] h-[24px]" strokeWidth={1.7} />

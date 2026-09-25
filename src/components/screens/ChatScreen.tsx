@@ -4,7 +4,7 @@ import { ChatMessage, AssistantStatus } from '../../types';
 import { MayraLogo } from '../common/MayraLogo';
 import { 
   Sparkles, Copy, X, FileText, Image as ImageIcon,
-  Check, Zap, ThumbsUp, ThumbsDown, Share2, MoreHorizontal
+  Check, Zap
 } from 'lucide-react';
 import { AttachmentBottomSheet, AttachmentItem } from '../common/AttachmentBottomSheet';
 import { MorphingAuroraInputBox } from '../common/MorphingAuroraInputBox';
@@ -26,8 +26,6 @@ interface ChatScreenProps {
   onOpenVisionScanner?: () => void;
   onOpenRoutines?: () => void;
   appearanceConfig?: { darkMode: boolean };
-  userName?: string;
-  onToolPrompt?: (prompt: string) => void;
 }
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({
@@ -40,9 +38,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   onStartPtt,
   onStopPtt,
   onOpenVisionScanner,
-  appearanceConfig = { darkMode: true },
-  userName = 'there',
-  onToolPrompt
+  appearanceConfig = { darkMode: true }
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [attachedFile, setAttachedFile] = useState<AttachmentItem | null>(null);
@@ -133,62 +129,173 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     <div 
       className={`w-full h-full flex flex-col overflow-hidden bg-transparent relative min-h-0 ${appearanceConfig.darkMode ? "text-slate-100" : "text-slate-900"}`}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_92%,rgba(42,86,190,0.46)_0%,rgba(18,43,105,0.30)_34%,rgba(8,17,45,0.14)_58%,transparent_82%)]" />
+      {/* Pull To Refresh Wrapped Messages Stream */}
       <PullToRefresh
         ref={messagesContainerRef}
-        onRefresh={async () => { await new Promise(res => setTimeout(res, 600)); }}
-        className="relative z-[1] flex-1 overflow-y-auto px-4 pt-5 pb-3 flex flex-col min-h-0 scrollbar-thin"
+        onRefresh={async () => {
+          await new Promise(res => setTimeout(res, 600));
+        }}
+        className="flex-1 overflow-y-auto p-3.5 flex flex-col min-h-0 scrollbar-thin"
       >
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center my-auto min-h-[300px] px-6 text-center">
             <MayraLogo size={58} showGlow={false} variant="raw" />
-            <div className={`mt-5 text-[27px] font-light tracking-tight ${appearanceConfig.darkMode ? 'text-white' : 'text-slate-900'}`}>
-              What&apos;s next, {userName}?
-            </div>
+            <div className={`mt-5 text-2xl font-light tracking-tight ${appearanceConfig.darkMode ? "text-white" : "text-slate-900"}`}>What&apos;s next?</div>
           </div>
         ) : (
-          <div className="space-y-10 w-full flex flex-col pt-3">
+          <div className="space-y-3 w-full flex flex-col">
             <AnimatePresence initial={false}>
               {messages.map((msg) => {
                 const isUser = msg.sender === 'user';
+
                 return (
-                  <motion.div key={msg.id} id={`msg-${msg.id}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className={`group flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-                    {isUser ? (
-                      <div className="max-w-[76%] px-5 py-3 rounded-[28px] bg-[#202124] text-white text-[15px] leading-relaxed shadow-sm">
-                        {msg.image && (msg.image.url || msg.image.base64) && <img src={msg.image.url || msg.image.base64} alt="Attachment" className="w-full rounded-2xl mb-2 max-h-52 object-cover" />}
-                        <div className="whitespace-pre-wrap">{msg.text}</div>
-                      </div>
-                    ) : (
-                      <div className="w-full max-w-[94%]">
-                        <div className={`whitespace-pre-wrap text-[16px] leading-[1.62] ${appearanceConfig.darkMode ? 'text-slate-100' : 'text-slate-900'}`}>{msg.text}</div>
-                        {msg.quizData && (
-                          <div className="w-full mt-4">
-                            <InteractiveQuizWidget
-                              quiz={msg.quizData}
-                              onSelectTopic={(topic) => onSubmitPrompt(topic + ' ka quiz banao')}
-                              onExplainResults={(score) => onSubmitPrompt('Maine quiz me ' + score.correct + '/' + score.total + ' score kiya. Meri galtiyan samjhao aur important concepts revise karao.')}
-                            />
-                          </div>
-                        )}
-                        {msg.driveBackupPrompt && (
-                          <div className="w-full mt-4">
-                            <GoogleDriveChatCard folderName={msg.driveBackupPrompt.folderName || 'Mayra'} />
-                          </div>
-                        )}
-                        <div className={`flex items-center gap-5 mt-3 ${appearanceConfig.darkMode ? 'text-slate-300' : 'text-slate-500'}`}>
-                          <button type="button" aria-label="Like"><ThumbsUp className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
-                          <button type="button" aria-label="Dislike"><ThumbsDown className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
-                          <button type="button" aria-label="Share"><Share2 className="w-[19px] h-[19px]" strokeWidth={1.8} /></button>
-                          <button type="button" onClick={() => copyToClipboard(msg.text, msg.id)} aria-label="Copy">{copiedMessageId === msg.id ? <Check className="w-[19px] h-[19px]" /> : <Copy className="w-[19px] h-[19px]" strokeWidth={1.8} />}</button>
-                          <button type="button" aria-label="More"><MoreHorizontal className="w-[20px] h-[20px]" /></button>
+                  <motion.div
+                    id={`msg-${msg.id}`}
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.24, ease: 'easeOut' }}
+                    className={`group flex flex-col ${isUser ? 'items-end' : 'items-start'} transition-all`}
+                  >
+                    <div
+                      className={`max-w-[86%] rounded-2xl p-3 text-xs leading-relaxed font-sans transition-all ${
+                        isUser
+                          ? 'bg-gradient-to-br from-blue-600 to-indigo-700 backdrop-blur-xl border border-white/20 text-white rounded-br-sm shadow-[0_4px_20px_rgba(37,99,235,0.25)]'
+                          : appearanceConfig.darkMode ? 'bg-white/[0.07] border border-white/15 text-slate-100 rounded-bl-sm shadow-[0_4px_20px_rgba(0,0,0,0.35)]' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-[0_4px_20px_rgba(15,23,42,0.08)]'
+                      }`}
+                    >
+                      {!isUser && (
+                        <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-white/10 text-[9px] font-mono text-cyan-300 font-bold">
+                          <span className="flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-cyan-400" />
+                            <span>MAYRA</span>
+                          </span>
+                          <motion.button
+                            whileHover={{ scale: 1.15 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => copyToClipboard(msg.text, msg.id)}
+                            className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Copy response"
+                          >
+                            {copiedMessageId === msg.id ? (
+                              <Check className="w-2.5 h-2.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-2.5 h-2.5" />
+                            )}
+                          </motion.button>
                         </div>
+                      )}
+
+                      {/* Delegated Sub-Agent / STONICX Badge */}
+                      {!isUser && msg.delegatedAgentBadge && (
+                        <div className={`mb-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono w-fit border transition-all ${
+                          msg.isDelegationPending 
+                            ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-200 animate-pulse shadow-[0_0_12px_rgba(6,182,212,0.3)]' 
+                            : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
+                        }`}>
+                          {msg.isDelegationPending ? (
+                            <Sparkles className="w-3 h-3 text-cyan-300 animate-spin" />
+                          ) : (
+                            <Zap className="w-3 h-3 text-cyan-400" />
+                          )}
+                          <span>{msg.delegatedAgentBadge.name} • {msg.isDelegationPending ? 'Executing in background...' : msg.delegatedAgentBadge.role}</span>
+                        </div>
+                      )}
+
+                      {/* Render attached image or document in user bubble if present */}
+                      {msg.image && (msg.image.url || msg.image.base64) && (
+                        <div className="mb-2">
+                          {msg.image.mimeType?.startsWith('image/') || (!msg.image.mimeType && !msg.image.name?.match(/\.(pdf|txt|csv|json|md|doc|docx)$/i)) ? (
+                            <div className="overflow-hidden rounded-lg border border-white/20 max-w-[220px]">
+                              <img 
+                                src={msg.image.url || msg.image.base64} 
+                                alt="Attached vision snapshot" 
+                                className="w-full h-auto object-cover max-h-48"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 p-2.5 bg-black/40 rounded-xl border border-white/20 text-left max-w-[240px]">
+                              <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-300 shrink-0">
+                                <FileText className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-medium text-white truncate">{msg.image.name || 'Document'}</p>
+                                <p className="text-[9px] text-slate-300 uppercase">{msg.image.mimeType?.split('/')[1] || 'PDF'}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="whitespace-pre-wrap leading-relaxed">
+                        {msg.text}
+                      </div>
+
+                      {/* Quiz Details Quick-Tap Chips */}
+                      {msg.quizConfigPrompt?.optionsChips && msg.quizConfigPrompt.optionsChips.length > 0 && (
+                        <div className="mt-3 pt-2 border-t border-white/10 flex flex-wrap gap-1.5">
+                          {msg.quizConfigPrompt.optionsChips.map((chip, chipIdx) => (
+                            <button
+                              key={chipIdx}
+                              type="button"
+                              onClick={() => {
+                                setInputText(chip.actionValue);
+                                setIsInputFocused(true);
+                              }}
+                              className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/10 hover:bg-white/20 border border-white/15 text-cyan-200 hover:text-white backdrop-blur-md transition-all shadow-sm active:scale-95 flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>{chip.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Interactive Objective (MCQ) Quiz Widget if attached to message */}
+                    {msg.quizData && (
+                      <div className="w-full max-w-[98%] mt-2 self-stretch">
+                        <InteractiveQuizWidget 
+                          quiz={msg.quizData}
+                          onSelectTopic={(topic) => onSubmitPrompt(`${topic} ka quiz banao`)}
+                          onExplainResults={(score) => {
+                            onSubmitPrompt(`Maine quiz me ${score.correct}/${score.total} score kiya. Meri galtiyan samjhao aur important concepts revise karao.`);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Interactive Google Drive Backup Card */}
+                    {msg.driveBackupPrompt && (
+                      <div className="w-full max-w-[98%] mt-2 self-stretch">
+                        <GoogleDriveChatCard 
+                          folderName={msg.driveBackupPrompt.folderName || 'Mayra'} 
+                        />
                       </div>
                     )}
                   </motion.div>
                 );
               })}
             </AnimatePresence>
-            {status === 'THINKING' && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-[94%] text-slate-300 text-sm"><div className="flex items-center gap-2"><Sparkles className="w-4 h-4 animate-pulse" /> MAYRA is thinking…</div></motion.div>}
+
+            {/* Shimmering Reasoning Card for Thinking State */}
+            {status === 'THINKING' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="max-w-[75%] rounded-2xl rounded-bl-sm p-3 bg-slate-900/90 border border-cyan-400/40 backdrop-blur-2xl shadow-[0_4px_24px_rgba(6,182,212,0.25)] space-y-2"
+              >
+                <div className="flex items-center gap-2 text-cyan-300 font-mono text-[10px] font-bold">
+                  <Sparkles className="w-3 h-3 text-cyan-400 animate-spin" />
+                  <span>MAYRA Neural Reasoning...</span>
+                </div>
+                <div className="space-y-1.5 pt-0.5">
+                  <ShimmerSkeleton width="100%" height="8px" className="rounded-full bg-cyan-950/40" />
+                  <ShimmerSkeleton width="75%" height="8px" className="rounded-full bg-cyan-950/40" />
+                </div>
+              </motion.div>
+            )}
           </div>
         )}
       </PullToRefresh>
@@ -231,7 +338,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : 'none'
         }}
       >
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-[480px]">
           <MorphingAuroraInputBox
             inputText={inputText}
             setInputText={setInputText}
@@ -261,7 +368,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             status={status}
             attachedFile={attachedFile}
             onRemoveAttachment={() => setAttachedFile(null)}
-            placeholder="Ask Mayra anything..."
+            placeholder="Ask anything"
             showHeading={false}
           />
         </div>
@@ -275,7 +382,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           setAttachedFile(item);
         }}
         onOpenVisionScanner={onOpenVisionScanner}
-        onToolPrompt={onToolPrompt}
       />
 
     </div>
