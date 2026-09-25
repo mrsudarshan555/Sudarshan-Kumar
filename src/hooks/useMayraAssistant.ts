@@ -1614,7 +1614,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   const connectOpenAIRealtime = useCallback(async (): Promise<boolean> => {
     if (openAiVoiceRef.current) return true;
     const engine = new OpenAILiveVoice({
-      voice: 'marin',
+      voice: 'willow',
       onState: (state) => {
         console.log('[OPENAI_REALTIME_STATE]', state);
         if (state === 'connected') setStatus('LISTENING');
@@ -1653,7 +1653,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       },
       onEvent: (event) => {
         const type = typeof event?.type === 'string' ? event.type : '';
-        if (type.includes('output_audio_transcript') && typeof event?.delta === 'string') {
+        if (type === 'session.output_transcript.delta' && typeof event?.delta === 'string') {
           const delta = event.delta;
           setMessages((prev) => {
             if (activeModelMsgIdRef.current) {
@@ -1664,13 +1664,12 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
             return [...prev, { id, sender: 'mayra', text: delta, timestamp: Date.now() }];
           });
         }
-        if (type === 'input_audio_buffer.speech_started') {
+        if (type === 'session.input_transcript.delta') {
           setStatus('LISTENING');
           flushQueuedAudio();
         }
-        if (type === 'response.created') setStatus('THINKING');
-        if (type === 'response.audio.delta' || type === 'response.output_audio.delta') setStatus('SPEAKING');
-        if (type === 'response.done') {
+        if (type === 'session.output_transcript.delta') setStatus('SPEAKING');
+        if (type === 'session.closed') {
           setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY');
           activeModelMsgIdRef.current = null;
         }
