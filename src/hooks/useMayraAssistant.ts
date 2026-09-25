@@ -1619,7 +1619,26 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         console.log('[OPENAI_REALTIME_STATE]', state);
         if (state === 'connected') setStatus('LISTENING');
         if (state === 'failed' || state === 'disconnected' || state === 'closed') {
-          if (isListeningModeRef.current) setStatus('READY');
+          if (isListeningModeRef.current && openAiVoiceRef.current === engine) {
+            openAiVoiceRef.current = null;
+            setStatus('LISTENING');
+            console.warn('[OPENAI_REALTIME] Connection lost -> starting Gemini fallback');
+            void (async () => {
+              try {
+                await continuousEngineRef.current?.startContinuousMode();
+                const ws = getOrConnectLiveWs();
+                const started = await startPcm16kCapture((pcmBase64) => {
+                  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                    wsRef.current.send(JSON.stringify({ audio: pcmBase64 }));
+                  }
+                });
+                if (!started) setStatus('ERROR');
+              } catch (fallbackError) {
+                console.warn('[OPENAI_REALTIME] Gemini fallback failed:', fallbackError);
+                setStatus('ERROR');
+              }
+            })();
+          }
         }
       },
       onEvent: (event) => {
@@ -1658,7 +1677,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       console.warn('[OPENAI_REALTIME] Falling back to Gemini Live:', error);
       return false;
     }
-  }, []);
+  }, [getOrConnectLiveWs]);
 
   // Backtalk-Style Continuous Voice Mode Toggle: 1st tap = Continuous ON, 2nd tap = Continuous OFF
   const triggerVoice = useCallback(async () => {
