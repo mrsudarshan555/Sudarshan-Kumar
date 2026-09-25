@@ -821,7 +821,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         timestamp: Date.now()
       };
       setMessages(prev => [...prev, ackMsg]);
-      speakText(immediateAck, detected, handleSpeechStart, undefined);
 
       const swarmTaskId = `swarm-${Date.now()}`;
       setActiveAgentTask({
@@ -975,7 +974,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         timestamp: Date.now()
       };
       setMessages((prev) => [...prev, ackMsg]);
-      speakText(immediateAck, detected, handleSpeechStart, undefined);
 
       agentEngineRef.current.executeTask(trimmed, {
         userName,
@@ -990,23 +988,18 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       const cityMatch = trimmed.match(/(?:in|of|for|का|के|में)\s+([a-zA-Z\u0900-\u097F]+)/i);
       const city = cityMatch ? cityMatch[1].trim() : 'Delhi';
 
-      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'weather', target: city, lang: detected === 'en' ? 'en' : 'hi' });
-      const ackId = `msg-m-ack-${Date.now()}`;
-      setMessages((prev) => [...prev, {
-        id: ackId,
-        sender: 'mayra',
-        text: ack,
-        timestamp: Date.now()
-      }]);
-      speakText(ack, detected, handleSpeechStart, undefined);
-
       try {
         const weather = await MarkLIIToolsService.fetchWeather(city);
         const reply = detected === 'en'
           ? `**Live Weather in ${weather.city}:** ${weather.temperature}°C, ${weather.condition}. Feels like ${weather.feelsLike}°C with ${weather.humidity}% humidity and wind at ${weather.windSpeed}. ${weather.summary}`
           : `**${weather.city} में लाइव मौसम:** ${weather.temperature}°C, ${weather.condition}। यह ${weather.feelsLike}°C जैसा महसूस हो रहा है, नमी ${weather.humidity}% और हवा की गति ${weather.windSpeed} है। ${weather.summary}`;
 
-        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setMessages((prev) => [...prev, {
+          id: `msg-m-weather-${Date.now()}`,
+          sender: 'mayra',
+          text: reply,
+          timestamp: Date.now()
+        }]);
         setStatus('READY');
         speakText(reply.replace(/\*\*/g, ''), detected, handleSpeechStart, handleSpeechEnd);
         return;
@@ -1017,16 +1010,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
 
     // 0.07 MARK-LII PORTED FEATURE: FLIGHT FINDER WITH INSTANT ACKNOWLEDGMENT
     if (!image && trimmed && (lower.includes('flight') || lower.includes('उड़ान') || lower.includes('टिकट') || lower.includes('airfare')) && (lower.includes(' to ') || lower.includes(' se ') || lower.includes('से') || lower.includes('तक'))) {
-      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'flight', lang: detected === 'en' ? 'en' : 'hi' });
-      const ackId = `msg-m-ack-${Date.now()}`;
-      setMessages((prev) => [...prev, {
-        id: ackId,
-        sender: 'mayra',
-        text: ack,
-        timestamp: Date.now()
-      }]);
-      speakText(ack, detected, handleSpeechStart, undefined);
-
       try {
         let origin = 'Delhi';
         let dest = 'Mumbai';
@@ -1041,7 +1024,12 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
           ? `**Commercial Flights from ${origin} to ${dest}:**\n${listSummary}\n\n_${flightsData.bookingHint || 'Check-in opens 48h before flight.'}_`
           : `**${origin} से ${dest} के लिए उपलब्ध उड़ानें:**\n${listSummary}\n\n_${flightsData.bookingHint || 'उड़ान से 48 घंटे पहले ऑनलाइन चेक-इन खुलता है।'}_`;
 
-        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setMessages((prev) => [...prev, {
+          id: `msg-m-flight-${Date.now()}`,
+          sender: 'mayra',
+          text: reply,
+          timestamp: Date.now()
+        }]);
         setStatus('READY');
         speakText(`${origin} se ${dest} ke liye ${flightsData.flights.length} flights mil gayi hain.`, detected, handleSpeechStart, handleSpeechEnd);
         return;
@@ -1052,23 +1040,18 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
 
     // 0.08 MARK-LII PORTED FEATURE: REAL-TIME SYSTEM TELEMETRY WITH INSTANT ACKNOWLEDGMENT
     if (!image && trimmed && (lower.includes('system status') || lower.includes('telemetry') || lower.includes('सिस्टम स्टेटस') || lower.includes('cpu status') || lower.includes('ram usage'))) {
-      const ack = InstantAcknowledgmentEngine.getAcknowledgment({ taskType: 'system', lang: detected === 'en' ? 'en' : 'hi' });
-      const ackId = `msg-m-ack-${Date.now()}`;
-      setMessages((prev) => [...prev, {
-        id: ackId,
-        sender: 'mayra',
-        text: ack,
-        timestamp: Date.now()
-      }]);
-      speakText(ack, detected, handleSpeechStart, undefined);
-
       try {
         const telemetry = await MarkLIIToolsService.getSystemTelemetry();
         const reply = detected === 'en'
           ? `**System Telemetry Diagnostics:**\n• **Platform:** ${telemetry.platform} (${telemetry.architecture})\n• **CPU Load:** ${telemetry.cpu.load1m} avg (${telemetry.cpu.count} Cores)\n• **RAM Usage:** ${telemetry.memory.percentage}% (${telemetry.memory.usedMb}MB / ${telemetry.memory.totalMb}MB)\n• **System Uptime:** ${telemetry.uptime.formatted}\n• **Status:** Optimal Performance`
           : `**सिस्टम टेलीमेट्री डायग्नोस्टिक्स:**\n• **प्लेटफ़ॉर्म:** ${telemetry.platform} (${telemetry.architecture})\n• **CPU लोड:** ${telemetry.cpu.load1m} औसत (${telemetry.cpu.count} कोर)\n• **RAM उपयोग:** ${telemetry.memory.percentage}% (${telemetry.memory.usedMb}MB / ${telemetry.memory.totalMb}MB)\n• **अपटाइम:** ${telemetry.uptime.formatted}\n• **स्थिति:** उत्तम (Optimal)`;
 
-        setMessages((prev) => prev.map((m) => m.id === ackId ? { ...m, text: reply } : m));
+        setMessages((prev) => [...prev, {
+          id: `msg-m-system-${Date.now()}`,
+          sender: 'mayra',
+          text: reply,
+          timestamp: Date.now()
+        }]);
         setStatus('READY');
         speakText(detected === 'en' ? `System telemetry is optimal with ${telemetry.memory.percentage} percent RAM usage.` : `सिस्टम सुचारु रूप से चल रहा है, रैम उपयोग ${telemetry.memory.percentage} प्रतिशत है।`, detected, handleSpeechStart, handleSpeechEnd);
         return;
@@ -1119,7 +1102,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         setStatus('SPEAKING');
 
         // 2. Immediately speak out loud in user's detected language so user gets instant voice feedback
-        speakText(interimAckText, detected, handleSpeechStart, undefined);
 
         try {
           // 3. Execute delegated task in the background
@@ -1215,7 +1197,6 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         timestamp: Date.now()
       };
       setMessages((prev) => [...prev, ackMsg]);
-      speakText(immediateAck, detected, handleSpeechStart, undefined);
 
       agentEngineRef.current.executeTask(trimmed, {
         userName,
