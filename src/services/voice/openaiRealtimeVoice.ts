@@ -112,7 +112,7 @@ export class OpenAILiveVoice {
       if (!data.sdp) throw new Error('OpenAI Realtime session returned no SDP answer');
       await pc.setRemoteDescription({type:'answer',sdp:data.sdp});
     } catch (e) {
-      this.disconnect();
+      this.disconnect(!this.reconnecting);
       const err = e instanceof Error ? e : new Error(String(e));
       this.onError?.(err);
       throw err;
@@ -135,17 +135,20 @@ export class OpenAILiveVoice {
     try {
       this.disconnect(false);
       this.stopped = false;
+      let lastError: Error | null = null;
       for (let attempt = 1; attempt <= 2 && !this.stopped; attempt += 1) {
         try {
           await this.connect();
           return;
         } catch (error) {
-          this.onError?.(error instanceof Error ? error : new Error(String(error)));
+          lastError = error instanceof Error ? error : new Error(String(error));
+          this.onError?.(lastError);
           if (attempt < 2) {
             await new Promise(resolve => window.setTimeout(resolve, 500 * attempt));
           }
         }
       }
+      if (lastError) this.onReconnectFailed?.(lastError);
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.onReconnectFailed?.(err);
