@@ -3276,7 +3276,30 @@ Valid JSON only, no markdown wrappers outside JSON.`;
 
 // Serve frontend in production or integrate Vite middleware in dev
 async function startServer() {
-  const server = http.createServer(app);
+  
+// OpenAI Realtime WebRTC session broker. API key stays server-side.
+app.post('/api/voice/openai-live/session', async (req, res) => {
+  try {
+    const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+    if (!apiKey) return res.status(503).json({ error: 'OpenAI voice is not configured.' });
+    const sdp = typeof req.body?.sdp === 'string' ? req.body.sdp : '';
+    if (!sdp.trim()) return res.status(400).json({ error: 'Missing SDP offer.' });
+    const voice = typeof req.body?.voice === 'string' && req.body.voice.trim() ? req.body.voice.trim() : 'willow';
+    const model = (process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime').trim();
+    const form = new FormData();
+    form.append('sdp', sdp);
+    form.append('session', JSON.stringify({ type: 'realtime', model, audio: { output: { voice } } }));
+    const upstream = await fetch('https://api.openai.com/v1/realtime/calls', { method: 'POST', headers: { Authorization: 'Bearer ' + apiKey }, body: form });
+    const answer = await upstream.text();
+    if (!upstream.ok) return res.status(upstream.status).json({ error: 'OpenAI Realtime session failed.', upstreamStatus: upstream.status });
+    return res.type('application/json').send(JSON.stringify({ sdp: answer }));
+  } catch (error: any) {
+    console.error('[OpenAI Realtime] Session broker error:', error?.message || error);
+    return res.status(500).json({ error: 'OpenAI Realtime session broker failed.' });
+  }
+});
+
+const server = http.createServer(app);
 
   // Initialize WebSocket server for real-time Gemini Live session streaming
   const wss = new WebSocketServer({ noServer: true });
