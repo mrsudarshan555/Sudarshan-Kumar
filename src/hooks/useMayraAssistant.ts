@@ -1669,6 +1669,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     if (status === 'SPEAKING') {
       console.log('[MAYRA Pipeline] Assistant speaking -> Manual interruption triggered');
       continuousEngineRef.current?.interruptManually();
+      openAiVoiceRef.current?.interrupt();
       flushQueuedAudio();
       stopCurrentSpeech();
       setStatus('LISTENING');
