@@ -3281,40 +3281,52 @@ async function startServer() {
 app.post('/api/voice/openai-live/session', async (req, res) => {
   try {
     const apiKey = (process.env.OPENAI_API_KEY || '').trim();
-    if (!apiKey) return res.status(503).json({ error: 'OpenAI voice is not configured.' });
+    if (!apiKey) {
+      return res.status(503).json({ error: 'OpenAI voice is not configured on the server.' });
+    }
     const sdp = typeof req.body?.sdp === 'string' ? req.body.sdp : '';
-    if (!sdp.trim()) return res.status(400).json({ error: 'Missing SDP offer.' });
-    const requestedVoice = typeof req.body?.voice === 'string' && req.body.voice.trim() ? req.body.voice.trim() : '';
-    // OpenAI's currently documented Realtime voices include marin/cedar; keep the
-    // server configurable and never pretend an unsupported voice such as "Willow"
-    // is available. If the client sends an unsupported name, use the configured
-    // safe default instead of failing the whole session.
-    const configuredVoice = (process.env.OPENAI_REALTIME_VOICE || 'marin').trim();
-    const supportedVoices = new Set(['alloy','ash','ballad','coral','echo','sage','shimmer','verse','marin','cedar']);
-    const voice = supportedVoices.has(requestedVoice) ? requestedVoice : configuredVoice;
-    const model = (process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-2.1').trim();
-    const form = new FormData();
-    form.append('sdp', sdp);
-    form.append('session', JSON.stringify({
-      type: 'realtime',
-      model,
-      audio: {
-        output: { voice },
-        input: {
-          transcription: { model: 'gpt-4o-transcribe' },
-          turn_detection: { type: 'semantic_vad', eagerness: 'medium', create_response: true, interrupt_response: true }
-        }
-      }
-    }));
-    const upstream = await fetch('https://api.openai.com/v1/realtime/calls', { method: 'POST', headers: { Authorization: 'Bearer ' + apiKey }, body: form });
-    const answer = await upstream.text();
-    if (!upstream.ok) return res.status(upstream.status).json({ error: 'OpenAI Realtime session failed.', upstreamStatus: upstream.status });
-    return res.type('application/json').send(JSON.stringify({ sdp: answer }));
-  } catch (error: any) {
-    console.error('[OpenAI Realtime] Session broker error:', error?.message || error);
-    return res.status(500).json({ error: 'OpenAI Realtime session broker failed.' });
+    if (!sdp) return res.status(400).json({ error: 'Missing WebRTC SDP offer.' });
+
+    const requestedVoice = typeof req.body?.voice === 'string' ? req.body.voice.trim().toLowerCase() : '';
+    const configuredVoice = (process.env.OPENAI_REALTIME_VOICE || 'willow').trim().toLowerCase();
+    const supportedVoices = new Set([
+      'quartz','ripple','vesper','willow','stone','gleam',
+      'meridian','bossa','tempo','beacon','delta','cinder'
+    ]);
+    const voice = supportedVoices.has(requestedVoice)
+      ? requestedVoice
+      : (supportedVoices.has(configuredVoice) ? configuredVoice : 'willow');
+
+    const model = (process.env.OPENAI_LIVE_MODEL || 'gpt-live-1').trim();
+
+    const openAiResponse = await fetch('https://api.openai.com/v1/live/sessions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        session: {
+          model,
+          audio: { output: { voice } },
+          instructions:
+            'You are MAYRA, a natural conversational voice assistant. Speak naturally, listen while speaking, handle interruptions gracefully, and keep responses concise unless the user asks for detail. Do not use scripted backchannel phrases; respond naturally to the conversation.'
+        },
+        transport: { type: 'webrtc', sdp }
+      })
+    });
+
+    const payload = await openAiResponse.json().catch(() => ({}));
+    if (!openAiResponse.ok) {
+      console.error('[GPT-LIVE] Session creation failed:', openAiResponse.status, payload);
+      return res.status(502).json({ error: 'GPT-Live session creation failed.' });
+    }
+    return res.status(201).json(payload);
+  } catch (error) {
+    console.error('[GPT-LIVE] Session route error:', error);
+    return res.status(500).json({ error: 'GPT-Live session setup failed.' });
   }
-});
+});;
 
 const server = http.createServer(app);
 
