@@ -41,6 +41,7 @@ import { UnifiedSettingsManager } from '../services/settings/UnifiedSettingsMana
 import { AppearanceConfig } from '../types';
 import { hybridAiRouter, ActiveAiMode } from '../services/offline/hybridAiRouter';
 import { offlineMayraProvider } from '../services/offline/offlineMayraProvider';
+import { OpenAILiveVoice } from '../services/voice/openaiRealtimeVoice';
 
 export interface UseMayraAssistantProps {
   personalConfig: UserPersonalConfig;
@@ -79,6 +80,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
   }, []);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const openAiVoiceRef = useRef<OpenAILiveVoice | null>(null);
   const activeModelMsgIdRef = useRef<string | null>(null);
   const activeUserMsgIdRef = useRef<string | null>(null);
 
@@ -1608,6 +1610,56 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
     sendGeminiText(textToSend, image);
   }, [inputText, sendGeminiText]);
 
+  // OpenAI Realtime is the primary WebRTC voice path. Gemini Live remains the fallback.
+  const connectOpenAIRealtime = useCallback(async (): Promise<boolean> => {
+    if (openAiVoiceRef.current) return true;
+    const engine = new OpenAILiveVoice({
+      voice: 'marin',
+      onState: (state) => {
+        console.log('[OPENAI_REALTIME_STATE]', state);
+        if (state === 'connected') setStatus('LISTENING');
+        if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+          if (isListeningModeRef.current) setStatus('READY');
+        }
+      },
+      onEvent: (event) => {
+        const type = typeof event?.type === 'string' ? event.type : '';
+        if (type.includes('output_audio_transcript') && typeof event?.delta === 'string') {
+          const delta = event.delta;
+          setMessages((prev) => {
+            if (activeModelMsgIdRef.current) {
+              return prev.map((m) => m.id === activeModelMsgIdRef.current ? { ...m, text: m.text + delta } : m);
+            }
+            const id = 'msg-m-openai-' + Date.now();
+            activeModelMsgIdRef.current = id;
+            return [...prev, { id, sender: 'mayra', text: delta, timestamp: Date.now() }];
+          });
+        }
+        if (type === 'input_audio_buffer.speech_started') {
+          setStatus('LISTENING');
+          flushQueuedAudio();
+        }
+        if (type === 'response.created') setStatus('THINKING');
+        if (type === 'response.done') {
+          setStatus(isListeningModeRef.current ? 'LISTENING' : 'READY');
+          activeModelMsgIdRef.current = null;
+        }
+      },
+      onError: (error) => console.warn('[OPENAI_REALTIME] Primary voice failed:', error)
+    });
+    try {
+      await engine.connect();
+      openAiVoiceRef.current = engine;
+      console.log('[OPENAI_REALTIME] PRIMARY voice connected');
+      return true;
+    } catch (error) {
+      engine.disconnect();
+      openAiVoiceRef.current = null;
+      console.warn('[OPENAI_REALTIME] Falling back to Gemini Live:', error);
+      return false;
+    }
+  }, []);
+
   // Backtalk-Style Continuous Voice Mode Toggle: 1st tap = Continuous ON, 2nd tap = Continuous OFF
   const triggerVoice = useCallback(async () => {
     console.log('[MAYRA Pipeline] MIC_CLICK triggered. Current ListeningMode:', isListeningModeRef.current, 'Status:', status);
@@ -1628,6 +1680,8 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       setIsListeningMode(false);
       isListeningModeRef.current = false;
       continuousEngineRef.current?.stopContinuousMode();
+      openAiVoiceRef.current?.disconnect();
+      openAiVoiceRef.current = null;
       stopPcm16kCapture();
       flushQueuedAudio();
       if (wsRef.current) {
@@ -1657,10 +1711,15 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
       setStatus('LISTENING');
       console.log('[MAYRA Pipeline] CONTINUOUS_VOICE: ON -> LISTENING');
 
-      // Start continuous turn detection & VAD barge-in loop
-      await continuousEngineRef.current?.startContinuousMode();
+      // OpenAI Realtime WebRTC is primary. Existing Gemini Live remains fallback.
+      const openAiConnected = await connectOpenAIRealtime();
+      if (openAiConnected) {
+        setStatus('LISTENING');
+        console.log('[MAYRA Pipeline] OPENAI_REALTIME: PRIMARY voice active');
+        return;
+      }
 
-      // Connect WebSocket and start continuous raw 16kHz PCM stream
+      await continuousEngineRef.current?.startContinuousMode();
       const ws = getOrConnectLiveWs();
       const started = await startPcm16kCapture((pcmBase64) => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -1672,7 +1731,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         console.warn('[MAYRA Pipeline] Could not start PCM capture.');
       }
     }
-  }, [getOrConnectLiveWs, status]);
+  }, [connectOpenAIRealtime, getOrConnectLiveWs, status]);
 
   // Backtalk-Style Push-to-Talk (PTT / Hold-to-Talk)
   const startPtt = useCallback(async () => {
