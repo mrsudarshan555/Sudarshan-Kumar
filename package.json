@@ -33,7 +33,8 @@
     "three": "^0.185.1",
     "three-stdlib": "^2.36.1",
     "vite": "^6.2.3",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "@openai/codex-sdk": "^0.42.0"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.2",
