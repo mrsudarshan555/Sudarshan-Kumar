@@ -1623,7 +1623,7 @@ export function useMayraAssistant({ personalConfig, assistantConfig, appearanceC
         const normalized = transcript.trim().toLowerCase();
         // "रुको" / "stop" is a hard local interruption command. It does not wait
         // for another model turn and never needs a server round-trip.
-        if (/(^|\\s)(रुको|रुक जाओ|बस|stop|stop now|be quiet|shut up)(\\s|$)/i.test(normalized)) {
+        if (/(^|\s)(रुको|रुक जाओ|बस|stop|stop now|be quiet|shut up)(\s|$)/i.test(normalized)) {
           openAiVoiceRef.current?.interrupt();
           continuousEngineRef.current?.interruptManually();
           flushQueuedAudio();
