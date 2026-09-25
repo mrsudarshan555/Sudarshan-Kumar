@@ -1,5 +1,5 @@
 /**
- * MAYRA GPT-Live-1 WebRTC transport.
+ * MAYRA OpenAI Realtime WebRTC transport.
  * The API key remains server-side; this client receives only a SDP answer.
  */
 export type OpenAILiveVoiceOptions = {
@@ -8,6 +8,7 @@ export type OpenAILiveVoiceOptions = {
   onRemoteStream?: (stream: MediaStream) => void;
   onState?: (state: RTCPeerConnectionState) => void;
   onError?: (error: Error) => void;
+  onEvent?: (event: any) => void;
 };
 
 export class OpenAILiveVoice {
@@ -19,6 +20,8 @@ export class OpenAILiveVoice {
   private onRemoteStream?: OpenAILiveVoiceOptions['onRemoteStream'];
   private onState?: OpenAILiveVoiceOptions['onState'];
   private onError?: OpenAILiveVoiceOptions['onError'];
+  private onEvent?: OpenAILiveVoiceOptions['onEvent'];
+  private dataChannel: RTCDataChannel | null = null;
 
   constructor(options: OpenAILiveVoiceOptions = {}) {
     this.sessionUrl = options.sessionUrl || '/api/voice/openai-live/session';
@@ -26,6 +29,7 @@ export class OpenAILiveVoice {
     this.onRemoteStream = options.onRemoteStream;
     this.onState = options.onState;
     this.onError = options.onError;
+    this.onEvent = options.onEvent;
   }
 
   async connect(): Promise<void> {
@@ -48,14 +52,18 @@ export class OpenAILiveVoice {
         this.audioElement.srcObject = stream;
         void this.audioElement.play().catch(() => undefined);
       };
+      this.dataChannel = pc.createDataChannel('oai-events');
+      this.dataChannel.addEventListener('message', (event) => {
+        try { this.onEvent?.(JSON.parse(event.data)); } catch { /* ignore non-JSON events */ }
+      });
       this.localStream = await navigator.mediaDevices.getUserMedia({audio:true});
       for (const track of this.localStream.getAudioTracks()) pc.addTrack(track, this.localStream);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       const response = await fetch(this.sessionUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sdp:offer.sdp || '',voice:this.voice})});
-      if (!response.ok) throw new Error(`GPT-Live session failed: HTTP ${response.status}`);
+      if (!response.ok) throw new Error(`OpenAI Realtime session failed: HTTP ${response.status}`);
       const data = await response.json() as {sdp?:string};
-      if (!data.sdp) throw new Error('GPT-Live session returned no SDP answer');
+      if (!data.sdp) throw new Error('OpenAI Realtime session returned no SDP answer');
       await pc.setRemoteDescription({type:'answer',sdp:data.sdp});
     } catch (e) {
       this.disconnect();
@@ -68,6 +76,8 @@ export class OpenAILiveVoice {
   disconnect(): void {
     this.localStream?.getTracks().forEach(t=>t.stop());
     this.localStream = null;
+    this.dataChannel?.close();
+    this.dataChannel = null;
     this.pc?.close();
     this.pc = null;
     if (this.audioElement) { this.audioElement.srcObject=null; this.audioElement.remove(); this.audioElement=null; }
